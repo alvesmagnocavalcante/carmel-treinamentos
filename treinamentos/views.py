@@ -24,7 +24,6 @@ from .services.pipeline import (
     approve_and_generate, attach_uploaded_video, generation_params, mark_awaiting_video,
     start_pipeline_async, validate_script,
 )
-from .services.storage import is_allowed_extension, new_source_path, safe_filename, title_from_filename
 
 Status = TrainingVideo.Status
 logger = logging.getLogger(__name__)
@@ -86,55 +85,6 @@ def queue_view(request):
     return render(request, 'treinamentos/queue.html', {
         'jobs': jobs,
         'has_active_jobs': any(j.is_in_progress for j in jobs),
-    })
-
-
-@login_required
-def upload_document_view(request):
-    """Upload manual de documento (gestores e administradores)."""
-    profile = _require_manager(request)
-    departments = profile.visible_departments()
-
-    if request.method == 'POST':
-        upload = request.FILES.get('file')
-        dept = departments.filter(id=request.POST.get('department_id') or 0).first()
-        title = request.POST.get('title', '').strip()[:250]
-
-        error = None
-        if not upload:
-            error = "Selecione um arquivo."
-        elif not dept:
-            error = "Setor inválido ou sem permissão."
-        elif not is_allowed_extension(upload.name):
-            error = "Formato não suportado. Envie PDF, DOCX, TXT ou MD."
-        elif upload.size > settings.MAX_UPLOAD_MB * 1024 * 1024:
-            error = f"Arquivo maior que o limite de {settings.MAX_UPLOAD_MB} MB."
-
-        if error:
-            messages.error(request, error)
-        else:
-            dest = new_source_path(f"upload_{dept.code}", upload.name)
-            with open(dest, 'wb') as fh:
-                for chunk in upload.chunks():
-                    fh.write(chunk)
-
-            video = TrainingVideo.objects.create(
-                department=dept,
-                title=title or title_from_filename(upload.name),
-                file_name=safe_filename(upload.name),
-                source_path=str(dest),
-                status=Status.PENDING,
-                status_message='Documento enviado. Iniciando leitura...',
-                created_by=request.user,
-            )
-            start_pipeline_async(video.id)
-            messages.success(request, f"Documento '{video.file_name}' recebido! O vídeo está sendo gerado.")
-            return redirect('queue')
-
-    return render(request, 'treinamentos/upload.html', {
-        'departments': departments,
-        'max_upload_mb': settings.MAX_UPLOAD_MB,
-        'allowed_ext': ", ".join(settings.ALLOWED_DOC_EXTENSIONS),
     })
 
 

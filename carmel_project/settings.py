@@ -120,7 +120,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 TEMP_DOCS_DIR = BASE_DIR / "data" / "temp_docs"
 MOCK_DRIVE_DIR = BASE_DIR / "data" / "mock_drive"
 ALLOWED_DOC_EXTENSIONS = (".pdf", ".docx", ".txt", ".md")
-MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "20"))
 # True: o gestor revisa/aprova o roteiro antes de gastar crédito da HeyGen. False: envio automático.
 REQUIRE_SCRIPT_REVIEW = env_bool("REQUIRE_SCRIPT_REVIEW", True)
 # Como o vídeo é gerado depois da aprovação do roteiro:

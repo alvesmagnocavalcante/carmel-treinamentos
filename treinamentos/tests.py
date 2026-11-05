@@ -73,41 +73,13 @@ class AccessControlTests(BaseTestCase):
         self.assertEqual(self.titles(self.client.get(reverse("home"))), {"Vídeo RH", "Vídeo Gov"})
         self.assertEqual(self.titles(self.client.get(reverse("home") + "?setor=rh")), {"Vídeo RH"})
 
-    def test_colaborador_cannot_upload_or_sync(self):
+    def test_colaborador_cannot_sync(self):
         self.client.force_login(self.colab)
-        self.assertEqual(self.client.get(reverse("upload_document")).status_code, 403)
         self.assertEqual(self.client.post(reverse("sync_drive")).status_code, 403)
 
     def test_sync_requires_post(self):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(reverse("sync_drive")).status_code, 405)
-
-    @mock.patch("treinamentos.views.start_pipeline_async")
-    def test_gestor_cannot_upload_to_other_department(self, start):
-        self.client.force_login(self.gestor)
-        f = SimpleUploadedFile("pop.txt", b"Procedimento de teste.")
-        self.client.post(reverse("upload_document"), {"department_id": self.gov.id, "file": f})
-        self.assertFalse(TrainingVideo.objects.filter(file_name="pop.txt").exists())
-        start.assert_not_called()
-
-    @mock.patch("treinamentos.views.start_pipeline_async")
-    def test_gestor_upload_own_department(self, start):
-        self.client.force_login(self.gestor)
-        f = SimpleUploadedFile("../../evil name.txt", b"Procedimento de teste.")
-        resp = self.client.post(reverse("upload_document"), {"department_id": self.rh.id, "file": f})
-        self.assertRedirects(resp, reverse("queue"))
-        video = TrainingVideo.objects.get(department=self.rh, status="PENDING")
-        self.assertTrue(Path(video.source_path).is_file())
-        self.assertEqual(Path(video.source_path).parent, TMP / "temp_docs")
-        start.assert_called_once_with(video.id)
-
-    @mock.patch("treinamentos.views.start_pipeline_async")
-    def test_upload_rejects_unsupported_extension(self, start):
-        self.client.force_login(self.admin)
-        f = SimpleUploadedFile("virus.exe", b"MZ")
-        self.client.post(reverse("upload_document"), {"department_id": self.rh.id, "file": f})
-        self.assertFalse(TrainingVideo.objects.filter(file_name="virus.exe").exists())
-        start.assert_not_called()
 
     def test_register_view_only_for_visible_videos(self):
         self.client.force_login(self.colab)

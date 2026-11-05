@@ -161,7 +161,6 @@ Para uso real, e não só em teste:
 | `MCP_ALLOWED_VIDEO_HOSTS` | Domínios dos links de vídeo que o conector pode baixar | `heygen.ai,heygen.com` |
 | `MAX_VIDEO_MB` | Tamanho máximo do MP4 anexado em "Anexar vídeo" | `500` |
 | `REQUIRE_SCRIPT_REVIEW` | `true`: o gestor aprova o roteiro antes de gerar o vídeo | `true` (padrão, ver `.env.example`) |
-| `MAX_UPLOAD_MB` | Tamanho máximo de upload manual | `20` |
 | `HEYGEN_POLL_INTERVAL_SECONDS` / `HEYGEN_POLL_TIMEOUT_MINUTES` | Consulta da API antiga | `20` / `30` |
 | `LOG_LEVEL` | Nível dos logs do portal | `INFO` |
 | `DJANGO_DEBUG`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS` | Segurança do Django | Ver `.env.example` |
@@ -416,7 +415,7 @@ A Service Account só consegue mandar arquivos para a **lixeira**, não apagar d
 
 ## 8. Operação no dia a dia
 
-1. O responsável coloca o roteiro em `<Setor>/Roteiros` (ou o gestor usa **Enviar documento** no portal).
+1. O responsável coloca o roteiro em `<Setor>/Roteiros`.
 2. A varredura importa o arquivo e ele aparece na **Fila** como "Na Fila".
 3. O sistema extrai o texto e remove markdown, marcadores e numeração no início das linhas ("1.", "3.2", "a)"). O item passa a **Aguardando Revisão**.
 4. O gestor abre **Fila → Revisar roteiro**, ajusta o texto (contador de até 5.000 caracteres) e clica em **Aprovar e gerar vídeo**. Acima de 5.000 caracteres a aprovação é bloqueada.
@@ -530,46 +529,33 @@ Marque conforme concluir.
 
 ## 13. Conector MCP do portal (Claude pela web)
 
-Este conector deixa o Claude (Claude.ai do Teams, Claude Code ou outro cliente MCP) operar a geração de vídeos **sem acesso ao servidor nem ao banco**: ele conversa só com o portal, por quatro ferramentas. Foi pensado para este fluxo: o Claude lê os roteiros aprovados, gera o vídeo na HeyGen pelo MCP da HeyGen e pede ao portal que baixe o MP4, salve no Drive e publique.
+O conector deixa o Claude (Claude.ai do Teams) gerar os vídeos aprovados sem acesso ao servidor nem ao banco: ele lê os roteiros no portal, gera o vídeo pelo MCP da HeyGen e pede ao portal que baixe o MP4, salve no Drive e publique.
 
-### 13.1 Ligar o conector no portal
+### 13.1 Configurar (passo a passo)
 
-1. Gere uma chave longa e única:
+1. **Gerar a chave:**
    ```
    .venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
-2. Defina a chave na variável de ambiente `MCP_TOKEN` (no `.env` local ou nas variáveis do serviço, por exemplo na Render) e reinicie ou faça um novo deploy. **Sem `MCP_TOKEN`, o conector fica desligado** (o endereço responde 404).
-3. O endereço do conector é:
-   `https://SEU-DOMINIO/mcp/<chave>/`
-   Exemplo da instância de teste: `https://carmel-treinamentos.onrender.com/mcp/<chave>/`.
-4. Para conferir que está no ar, no PowerShell:
-   ```
-   Invoke-RestMethod -Method Post -Uri "https://SEU-DOMINIO/mcp/<chave>/" -ContentType "application/json" -Body '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-   ```
-   Esperado: uma lista com as quatro ferramentas. Com a chave errada, a resposta é 404.
+2. **Definir `MCP_TOKEN`** com essa chave: no `.env` (local) ou na Render, em **Environment** (sem espaços nem aspas). Faça o deploy. Sem `MCP_TOKEN`, o conector fica desligado.
+3. **Montar o endereço:** `https://SEU-DOMINIO/mcp/<chave>/` (termina em `/`).
+4. **Testar no navegador:** abrir o endereço. **405** = chave certa. **404** = chave diferente do `MCP_TOKEN`.
+5. **Cadastrar no Claude** (dono/administrador do Teams): Configurações, Conectores, **Adicionar conector personalizado**. Nome "Carmel Treinamentos", URL = o endereço acima. Não preencher OAuth.
+6. **Cadastrar a HeyGen:** conector `https://mcp.heygen.com/mcp/v1/`, entrando com a conta HeyGen do plano Creator.
+7. **Criar um Projeto** no Claude com as instruções da seção 13.3 e ativar os dois conectores nele.
 
-Outra forma de autenticar, para clientes que aceitam cabeçalhos (Claude Code): use `https://SEU-DOMINIO/mcp/` com o cabeçalho `Authorization: Bearer <chave>`. Confira a opção exata em `claude mcp add --help`.
-
-### 13.2 Cadastrar no Claude do Teams
-
-1. Um **dono ou administrador** do Teams abre as configurações de **Conectores** e adiciona um **conector personalizado**, informando o nome (por exemplo, "Carmel Treinamentos") e o endereço com a chave (seção 13.1). As telas mudam com o tempo; confira a documentação de conectores personalizados do Claude.
-2. Adicione também o conector da **HeyGen**: `https://mcp.heygen.com/mcp/v1/`, entrando com a conta HeyGen do plano Creator.
-3. Cada pessoa que for usar precisa ativar os dois conectores na própria conversa. O login da HeyGen é de pessoa: combine quem entra com a conta da empresa e confirme com a HeyGen se mais de uma pessoa pode usar o mesmo login.
-
-### 13.3 Ferramentas
+### 13.2 Ferramentas
 
 | Ferramenta | O que faz |
 |---|---|
-| `list_awaiting_videos` | Lista os itens aprovados que aguardam vídeo, com o roteiro exato, o avatar e a voz a usar. Aceita filtrar por setor (`setor`). |
-| `mark_video_rendering` | Registra que a geração começou na HeyGen (a fila mostra "HeyGen Renderizando"). |
-| `save_generated_video` | Com o vídeo pronto na HeyGen, o **portal** baixa o MP4, salva na pasta Vídeos do setor no Drive e, por padrão, publica no catálogo. Com `publish: false`, só salva e o vídeo entra na próxima sincronização. |
-| `get_video_status` | Consulta o status de um item no portal. |
+| `list_awaiting_videos` | Lista os roteiros aprovados, com texto exato, avatar e voz |
+| `mark_video_rendering` | Marca o item como "Renderizando" |
+| `save_generated_video` | O portal baixa o MP4, salva no Drive do setor e publica |
+| `get_video_status` | Consulta o status de um item |
 
-Regras de segurança embutidas: `save_generated_video` só baixa links **https** dos domínios `heygen.ai` e `heygen.com` (variável `MCP_ALLOWED_VIDEO_HOSTS`), recusa vídeos acima de `MAX_VIDEO_MB`, e só aceita itens que estão aguardando vídeo ou renderizando; um item já concluído não pode ser sobrescrito.
+Só são baixados links https de `heygen.ai` e `heygen.com` (`MCP_ALLOWED_VIDEO_HOSTS`).
 
-### 13.4 Instruções para o Projeto no Teams
-
-Crie um **Projeto** no Claude do Teams para a produção de vídeos e cole estas instruções, para que qualquer pessoa só precise escrever "gere os vídeos aprovados":
+### 13.3 Instruções do Projeto
 
 ```
 Você produz os vídeos de treinamento da Carmel Hotéis. Use os conectores "Carmel Treinamentos" e "HeyGen".
@@ -581,42 +567,25 @@ Quando eu pedir para gerar os vídeos:
    - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
    - aspectRatio 16:9 e resolução 720p.
 3. Chame mark_video_rendering com o video_id da HeyGen.
-4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento. Se a consulta falhar por rede, repita só a consulta.
+4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento.
 5. Quando estiver "completed", chame save_generated_video com o video_url, o ID da HeyGen e a duração (duration).
 6. Ao final, informe por item: título, duração e se foi publicado. Se alguma etapa falhar, diga qual e não tente de novo sem me avisar.
 
 Nunca gere o mesmo item duas vezes e nunca altere o texto do roteiro.
 ```
 
-### 13.5 Fluxo na prática
+### 13.4 Uso e requisitos
 
-1. O gestor aprova o roteiro no portal (o item fica "Aguardando Vídeo").
-2. Alguém do Teams abre uma conversa no Projeto e escreve: "gere os vídeos aprovados".
-3. O Claude executa os passos acima. Cada vídeo leva cerca de 3 minutos de renderização.
-4. Os vídeos aparecem no catálogo do setor, tocando a cópia guardada no Drive.
+- O gestor aprova o roteiro no portal; alguém abre o Projeto no Claude e escreve "gere os vídeos aprovados". Cada vídeo leva cerca de 3 minutos.
+- `save_generated_video` só funciona onde o portal alcança o Drive (Service Account e pasta do setor, seção 7). Sem isso, o item fica em "Renderizando".
+- Use banco que sobreviva a reinícios e instância que não durma (no plano gratuito da Render, a primeira resposta leva cerca de 1 minuto).
+- A chave aparece nos logs de acesso: trate como segredo e, se vazar, troque o `MCP_TOKEN` e o endereço no conector. OAuth e limite de chamadas não estão implementados.
 
-Continua sendo uma pessoa que pede: uma conversa na web não roda sozinha.
+### 13.5 Problemas comuns
 
-### 13.6 Segurança e limites
-
-- **A chave no endereço é um segredo.** Ela aparece nos registros de acesso do servidor (por exemplo, nos logs do gunicorn na Render) e no cadastro do conector. Não a cole em chats, e-mails ou documentos. Se vazar, troque o valor de `MCP_TOKEN` e atualize o conector.
-- O conector só expõe as quatro ferramentas; ele **não** lê usuários, senhas nem outros dados do banco.
-- Use sempre **HTTPS**.
-- Para produção, o ideal é substituir a chave no endereço por login OAuth (que é o que o Claude da web usa nativamente) e limitar a frequência de chamadas. Isso ainda não foi implementado.
-- Cada geração consome créditos da HeyGen (cerca de 0,7 por segundo, estimativa) e o uso do Claude do Teams.
-
-### 13.7 O que o ambiente precisa para o fluxo completo
-
-A ferramenta `save_generated_video` só funciona onde o portal alcança o Drive:
-
-- a Service Account disponível no servidor (na Render, como Secret File, com `GOOGLE_SERVICE_ACCOUNT_FILE` apontando para ele) e o ID da pasta do setor cadastrado;
-- um banco que sobreviva a reinícios, senão os itens aprovados somem a cada novo deploy;
-- uma instância que não durma, porque no plano gratuito a primeira chamada leva cerca de 1 minuto e pode estourar o tempo limite do conector.
-
-Na instância de teste atual da Render nada disso foi configurado: `list_awaiting_videos`, `mark_video_rendering` e `get_video_status` funcionam, mas `save_generated_video` devolve o erro de Drive não configurado.
-
-### 13.8 Como foi validado
-
-- Testes automáticos do protocolo, da autenticação e das quatro ferramentas, incluindo links fora da HeyGen, itens já concluídos e falha do Drive.
-- Conexão de um **cliente MCP real** (Claude Code) a um portal local: o conector apareceu como `Connected`, e o cliente chamou `list_awaiting_videos` e recebeu a resposta.
-- **Não testado:** o Claude da web/Teams conectado ao endereço da Render, e o comportamento com a instância dormindo.
+| Sintoma | O que fazer |
+|---|---|
+| "Não foi possível alcançar" no Claude | Testar o endereço no navegador (deve dar 405); acordar a instância; conferir deploy |
+| 404 no navegador | A chave do endereço não é igual ao `MCP_TOKEN` |
+| Item preso em "Renderizando" | Drive não configurado no servidor; configurar e pedir ao Claude para salvar de novo |
+| Link do vídeo recusado | Só https de `heygen.ai`/`heygen.com` |

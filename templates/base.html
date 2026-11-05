@@ -32,11 +32,6 @@
             <a href="{% url 'queue' %}" class="{% if current == 'queue' %}active{% endif %}">
                 {% include 'partials/icon.html' with name='cpu' %} Fila & Status
             </a>
-            {% if can_manage %}
-            <a href="{% url 'upload_document' %}" class="{% if current == 'upload_document' %}active{% endif %}">
-                {% include 'partials/icon.html' with name='upload-cloud' %} Enviar documento
-            </a>
-            {% endif %}
         </nav>
         {% endwith %}
 

@@ -5,7 +5,6 @@ from . import mcp_server, views
 urlpatterns = [
     path('', views.home_view, name='home'),
     path('fila/', views.queue_view, name='queue'),
-    path('enviar-documento/', views.upload_document_view, name='upload_document'),
     path('fila/<int:video_id>/revisar/', views.review_script_view, name='review_script'),
     path('fila/<int:video_id>/anexar-video/', views.attach_video_view, name='attach_video'),
     path('fila/<int:video_id>/reprocessar/', views.retry_video_view, name='retry_video'),
