@@ -14,6 +14,9 @@ urlpatterns = [
     path('api/video/<int:video_id>/view/', views.register_view, name='register_view'),
     path('mcp/', mcp_server.mcp_endpoint, name='mcp'),
     path('mcp/<str:token>/', mcp_server.mcp_endpoint, name='mcp_token'),
+    # sem a barra final (POST não pode ser redirecionado pelo APPEND_SLASH)
+    path('mcp', mcp_server.mcp_endpoint),
+    path('mcp/<str:token>', mcp_server.mcp_endpoint),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
 ]
