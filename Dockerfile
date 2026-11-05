@@ -35,4 +35,4 @@ USER app
 
 EXPOSE 10000
 
-CMD ["/bin/sh", "-c", "set -e; python manage.py migrate --noinput; python manage.py collectstatic --noinput; exec gunicorn render_wsgi:application --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+CMD ["/bin/sh", "-c", "set -e; python manage.py migrate --noinput; python manage.py seed_carmel; python manage.py collectstatic --noinput; exec gunicorn render_wsgi:application --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
