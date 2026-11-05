@@ -149,7 +149,6 @@ Para uso real, e não só em teste:
 
 | Variável | Para que serve | Valor / estado atual |
 |---|---|---|
-| `HEYGEN_MOCK_MODE` | `true` simula a HeyGen (só afeta o caminho antigo por API) | `true` |
 | `HEYGEN_API_KEY` | Chave da API da HeyGen | Preenchida, mas **não é usada** no fluxo atual (a API recusa a geração; seção 6.2) |
 | `HEYGEN_API_URL` | Endereço da API | `https://api.heygen.com` |
 | `DEFAULT_AVATAR_ID` | Avatar padrão | `Abigail_standing_office_front` |
@@ -490,7 +489,6 @@ Não foi avaliada, por nós, a qualidade visual dos vídeos de teste (voz em por
 - **Custo em créditos** medido só com vídeos de 3 a 6 segundos; falta um roteiro de 1 minuto ou mais para confirmar a proporção.
 - **Vídeos soltos na pasta Vídeos viram itens do catálogo.** Qualquer MP4 novo que alguém coloque em `<Setor>/Vídeos` é publicado na próxima sincronização, mesmo sem roteiro. Se isso não for desejado, é preciso restringir a pasta no Drive ou mudar o comportamento.
 - **Chave de API da HeyGen** está no `.env` sem uso no fluxo atual; avalie remover ou trocar.
-- **`HEYGEN_MOCK_MODE=true`** continua no `.env`; só afeta o caminho antigo por API.
 - **Produção:** `DJANGO_DEBUG=false`, `DJANGO_SECRET_KEY`, HTTPS, servidor com vários processos e senhas de teste trocadas.
 
 ## 12. Checklist de implantação

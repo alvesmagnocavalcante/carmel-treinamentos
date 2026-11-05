@@ -8,7 +8,7 @@ from treinamentos.services.pipeline import process_training_video
 
 
 class Command(BaseCommand):
-    help = "Varre as pastas de cada setor (Google Drive e data/mock_drive) e processa novos documentos."
+    help = "Varre as pastas de cada setor (Google Drive) e processa novos documentos."
 
     def add_arguments(self, parser):
         parser.add_argument(

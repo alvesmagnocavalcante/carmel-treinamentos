@@ -19,7 +19,6 @@ COPY --chown=app:app carmel_project/ ./carmel_project/
 COPY --chown=app:app treinamentos/ ./treinamentos/
 COPY --chown=app:app templates/ ./templates/
 COPY --chown=app:app static/ ./static/
-COPY --chown=app:app data/mock_drive/ ./data/mock_drive/
 
 RUN mkdir -p data/temp_docs data/staticfiles \
     && chown -R app:app data

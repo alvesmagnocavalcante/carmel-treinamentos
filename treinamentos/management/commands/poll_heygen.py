@@ -13,7 +13,7 @@ class Command(BaseCommand):
         ).exclude(heygen_video_id='')
 
         # Vídeos prontos que ainda não foram copiados para a pasta Vídeos do Drive (ex.: falha anterior).
-        to_archive = TrainingVideo.objects.filter(status=TrainingVideo.Status.COMPLETED, drive_video_id='')             .exclude(heygen_video_id='').exclude(heygen_video_id__startswith='mock-')             .exclude(department__drive_folder_id='').exclude(video_url='')
+        to_archive = TrainingVideo.objects.filter(status=TrainingVideo.Status.COMPLETED, drive_video_id='')             .exclude(heygen_video_id='')             .exclude(department__drive_folder_id='').exclude(video_url='')
         for video in to_archive:
             archive_video_to_drive(video)
             self.stdout.write(f"[{video.id}] {video.title}: Drive -> {'salvo' if video.drive_video_id else 'pendente'}")

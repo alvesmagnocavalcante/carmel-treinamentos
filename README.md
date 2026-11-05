@@ -26,7 +26,7 @@ Roteiros colocados em **Roteiros** (ou enviados manualmente pelo portal) passam 
 copy .env.example .env          # e preencha as chaves
 uv pip install -r requirements.txt
 uv run python manage.py migrate
-uv run python manage.py seed_carmel   # setores, usuários de teste e vídeos de exemplo
+uv run python manage.py seed_carmel   # setores, e usuários de teste
 uv run python manage.py runserver 8008
 ```
 
@@ -62,7 +62,6 @@ Tudo fica no `.env` (veja `.env.example`). Os pontos principais:
 
 | Variável | Para quê |
 | :--- | :--- |
-| `HEYGEN_MOCK_MODE` | `true` simula a HeyGen (sem gastar créditos). Use `false` para vídeos reais. |
 | `HEYGEN_API_KEY` | Chave da HeyGen. |
 | `MCP_TOKEN` | Chave do conector MCP do portal para o Claude. Vazio = desligado. |
 | `HEYGEN_GENERATION_MODE` | `manual` (padrão): o vídeo é gerado fora do portal e registrado/anexado. `api`: o portal chama a API da HeyGen. |
@@ -76,7 +75,6 @@ Valores em **Admin → Configurações do Sistema** têm prioridade sobre o `.en
 ### Pastas por setor
 - **Google Drive:** cadastre o ID da **pasta do setor** em **Admin → Setores → ID da Pasta do Setor no Google Drive**. As subpastas `Roteiros` e `Vídeos` são criadas automaticamente se não existirem (o nome tolera maiúsculas e acento). Google Docs nativos são exportados como `.docx`.
 - **Importante — Service Account e armazenamento:** uma Service Account **não tem cota de armazenamento** no "Meu Drive"; gravar vídeos ali falha com `storageQuotaExceeded`. Use uma **Unidade Compartilhada** (Shared Drive) da conta unificada, adicionando o e-mail da Service Account como membro com permissão de gerenciar conteúdo.
-- **Pastas locais (teste sem Drive):** `data/mock_drive/<código_do_setor>/Roteiros/` — ex.: `data/mock_drive/rh/Roteiros/Manual.txt`. Em modo simulação (HeyGen mock) os vídeos não são enviados ao Drive.
 
 ---
 

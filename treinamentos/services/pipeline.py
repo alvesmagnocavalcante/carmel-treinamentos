@@ -236,8 +236,6 @@ def _send_to_heygen(video: TrainingVideo) -> None:
         thumbnail_url="",
         completed_at=None,
     )
-    if result.get("mock"):
-        time.sleep(2)  # feedback visual na fila
     wait_for_heygen(video)
 
 
@@ -261,7 +259,7 @@ def refresh_heygen_status(video: TrainingVideo) -> str:
 
 def archive_video_to_drive(video: TrainingVideo) -> None:
     """Salva uma cópia do vídeo pronto em <setor>/Vídeos no Drive. Falha aqui não derruba o vídeo."""
-    if video.drive_video_id or not video.video_url or HeyGenService.is_mock_id(video.heygen_video_id):
+    if video.drive_video_id or not video.video_url:
         return
     try:
         file_id = GoogleDriveService.upload_video(video)

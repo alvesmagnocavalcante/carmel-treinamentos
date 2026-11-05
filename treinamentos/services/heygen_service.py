@@ -1,6 +1,5 @@
 import logging
 import os
-import uuid
 from typing import Any, Dict, Optional
 
 import httpx
@@ -13,16 +12,6 @@ logger = logging.getLogger(__name__)
 # Limite de caracteres aceito pela HeyGen em um único bloco de fala.
 MAX_SCRIPT_CHARS = 5000
 
-MOCK_PREFIX = "mock-"
-MOCK_RESULT = {
-    "status": "completed",
-    "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "thumbnail_url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop&q=80",
-    "duration": 95.0,
-    "error": None,
-}
-
-
 class HeyGenError(Exception):
     pass
 
@@ -31,17 +20,6 @@ class HeyGenService:
     @staticmethod
     def get_api_key() -> str:
         return SystemSetting.get_val("heygen_api_key", os.getenv("HEYGEN_API_KEY", ""))
-
-    @classmethod
-    def is_mock_mode(cls) -> bool:
-        mode = SystemSetting.get_val("heygen_mock_mode", os.getenv("HEYGEN_MOCK_MODE", "true"))
-        if mode.lower() in ("true", "1", "yes", "on"):
-            return True
-        return not cls.get_api_key()
-
-    @staticmethod
-    def is_mock_id(video_id: str) -> bool:
-        return (video_id or "").startswith(MOCK_PREFIX)
 
     @classmethod
     def _headers(cls) -> Dict[str, str]:
@@ -58,10 +36,6 @@ class HeyGenService:
         voice_id: Optional[str] = None,
         title: str = "Treinamento Carmel",
     ) -> Dict[str, Any]:
-        if cls.is_mock_mode():
-            logger.info("[HeyGen MOCK] Simulando renderização para: %s", title)
-            return {"video_id": f"{MOCK_PREFIX}{uuid.uuid4().hex[:12]}", "mock": True}
-
         avatar = avatar_id or os.getenv("DEFAULT_AVATAR_ID", "")
         voice = voice_id or os.getenv("DEFAULT_VOICE_ID", "")
         if not avatar or not voice:
@@ -96,7 +70,7 @@ class HeyGenService:
         video_id = (data.get("data") or {}).get("video_id")
         if not video_id:
             raise HeyGenError(f"Resposta inesperada da HeyGen: {str(data)[:500]}")
-        return {"video_id": video_id, "mock": False}
+        return {"video_id": video_id}
 
     @classmethod
     def check_video_status(cls, video_id: str) -> Dict[str, Any]:
@@ -104,9 +78,6 @@ class HeyGenService:
         Retorna {status, video_url, thumbnail_url, duration, error}.
         status ∈ {pending, waiting, processing, completed, failed}.
         """
-        if cls.is_mock_id(video_id):
-            return dict(MOCK_RESULT)
-
         with httpx.Client(timeout=30.0) as client:
             resp = client.get(
                 f"{settings.HEYGEN_API_URL}/v1/video_status.get",

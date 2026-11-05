@@ -118,7 +118,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Pipeline de treinamentos
 # ---------------------------------------------------------------------------
 TEMP_DOCS_DIR = BASE_DIR / "data" / "temp_docs"
-MOCK_DRIVE_DIR = BASE_DIR / "data" / "mock_drive"
 ALLOWED_DOC_EXTENSIONS = (".pdf", ".docx", ".txt", ".md")
 # True: o gestor revisa/aprova o roteiro antes de gastar crédito da HeyGen. False: envio automático.
 REQUIRE_SCRIPT_REVIEW = env_bool("REQUIRE_SCRIPT_REVIEW", True)

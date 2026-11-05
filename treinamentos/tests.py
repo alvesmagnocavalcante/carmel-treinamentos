@@ -25,7 +25,7 @@ def make_user(username, role, dept=None, superuser=False):
     return user
 
 
-@override_settings(TEMP_DOCS_DIR=TMP / "temp_docs", MOCK_DRIVE_DIR=TMP / "mock_drive")
+@override_settings(TEMP_DOCS_DIR=TMP / "temp_docs")
 class BaseTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -118,17 +118,6 @@ class PipelineTests(BaseTestCase):
         dest.write_bytes(content)
         return TrainingVideo.objects.create(department=self.rh, title="POP", file_name="job.txt", source_path=str(dest))
 
-    @override_settings(REQUIRE_SCRIPT_REVIEW=False, HEYGEN_GENERATION_MODE="api")
-    @mock.patch.dict("os.environ", {"HEYGEN_MOCK_MODE": "true"})
-    @mock.patch("treinamentos.services.pipeline.time.sleep")
-    def test_mock_pipeline_completes(self, _sleep):
-        job = self.make_job()
-        process_training_video(job.id)
-        job.refresh_from_db()
-        self.assertEqual(job.status, "COMPLETED", job.status_message)
-        self.assertTrue(job.video_url)
-        self.assertIn("Cumprimente", job.script_text)
-
     @mock.patch("treinamentos.services.pipeline.time.sleep")
     def test_missing_file_fails_gracefully(self, _sleep):
         job = TrainingVideo.objects.create(department=self.rh, title="X", file_name="nao_existe.pdf")
@@ -147,14 +136,13 @@ class PipelineTests(BaseTestCase):
         self.assertIn("limite da HeyGen", job.status_message)
         gen.assert_not_called()
 
-    @mock.patch.dict("os.environ", {"HEYGEN_MOCK_MODE": "false", "HEYGEN_API_KEY": "k",
-                                    "DEFAULT_AVATAR_ID": "av", "DEFAULT_VOICE_ID": "vo"})
+    @mock.patch.dict("os.environ", {"HEYGEN_API_KEY": "k", "DEFAULT_AVATAR_ID": "av", "DEFAULT_VOICE_ID": "vo"})
     @override_settings(REQUIRE_SCRIPT_REVIEW=False, HEYGEN_GENERATION_MODE="api")
     @mock.patch("treinamentos.services.pipeline.time.sleep")
     @mock.patch("treinamentos.services.heygen_service.HeyGenService.check_video_status")
     @mock.patch("treinamentos.services.heygen_service.HeyGenService.generate_video")
     def test_real_heygen_is_polled_until_completed(self, gen, check, _sleep):
-        gen.return_value = {"video_id": "real-123", "mock": False}
+        gen.return_value = {"video_id": "real-123"}
         check.side_effect = [
             {"status": "processing"},
             {"status": "completed", "video_url": "https://cdn/v.mp4", "thumbnail_url": "", "duration": 61.0},
@@ -169,19 +157,6 @@ class PipelineTests(BaseTestCase):
     def test_empty_db_setting_falls_back_to_env(self):
         SystemSetting.objects.create(key="heygen_api_key", value="")
         self.assertEqual(SystemSetting.get_val("heygen_api_key", "from-env"), "from-env")
-
-    def test_drive_scan_picks_up_local_files_once(self):
-        from .services.drive_service import GoogleDriveService
-        folder = TMP / "mock_drive" / "rh" / "Roteiros"
-        folder.mkdir(parents=True, exist_ok=True)
-        (folder / "Manual.txt").write_text("Conteudo do manual.", encoding="utf-8")
-        (folder / "foto.png").write_bytes(b"x")
-        with mock.patch.object(GoogleDriveService, "get_drive_client", return_value=None):
-            first = GoogleDriveService.scan_all_departments([self.rh])
-            second = GoogleDriveService.scan_all_departments([self.rh])
-        self.assertEqual(first["found"], 1)
-        self.assertEqual(second["found"], 0)
-
 
 class HelperTests(TestCase):
     def test_safe_filename(self):
@@ -262,8 +237,10 @@ class ScriptReviewTests(BaseTestCase):
         start.assert_not_called()
 
     @mock.patch("treinamentos.services.pipeline.time.sleep")
-    @mock.patch.dict("os.environ", {"HEYGEN_MOCK_MODE": "true"})
-    def test_approved_script_generates_video(self, _sleep):
+    @mock.patch("treinamentos.services.heygen_service.HeyGenService.check_video_status")
+    @mock.patch("treinamentos.services.heygen_service.HeyGenService.generate_video", return_value={"video_id": "hg-1"})
+    def test_approved_script_generates_video(self, _gen, check, _sleep):
+        check.return_value = {"status": "completed", "video_url": "https://cdn/v.mp4", "thumbnail_url": "", "duration": 5.0}
         job = self.make_waiting()
         approve_and_generate(job.id)
         job.refresh_from_db()
@@ -399,17 +376,6 @@ class DriveFolderStructureTests(BaseTestCase):
         self.assertEqual(video.status, "COMPLETED")
         self.assertEqual(video.drive_video_id, "")
         self.assertIn("não foi salvo no Drive", video.status_message)
-
-    @mock.patch("treinamentos.services.drive_service.GoogleDriveService.upload_video")
-    def test_mock_videos_are_not_uploaded(self, upload):
-        from .services.pipeline import archive_video_to_drive
-        video = TrainingVideo.objects.create(
-            department=self.rh, title="X", file_name="a.txt", status="COMPLETED",
-            heygen_video_id="mock-abc", video_url="https://x/bunny.mp4",
-        )
-        archive_video_to_drive(video)
-        upload.assert_not_called()
-
 
 class _FakeUpstream:
     """Resposta do Drive simulada (mesma interface usada do httpx)."""

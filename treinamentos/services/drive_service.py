@@ -1,5 +1,4 @@
 import logging
-import shutil
 import tempfile
 import unicodedata
 from pathlib import Path
@@ -104,15 +103,12 @@ class GoogleDriveService:
     @classmethod
     def scan_all_departments(cls, departments=None) -> Dict[str, Any]:
         """
-        Varre as pastas locais de simulação (data/mock_drive/<código_do_setor>/) e,
-        se houver Service Account configurada, as pastas reais do Google Drive.
+        Varre as pastas dos setores no Google Drive (Roteiros e Vídeos); sem Service Account, não faz nada.
         """
         departments = list(departments if departments is not None else Department.objects.all())
         new_videos: List[TrainingVideo] = []
         published: List[TrainingVideo] = []
         errors: List[str] = []
-
-        new_videos += cls._scan_mock_folders(departments)
 
         client = cls.get_drive_client()
         if client:
@@ -131,35 +127,6 @@ class GoogleDriveService:
             "published": len(published), "published_videos": published,
             "errors": errors, "drive_connected": bool(client),
         }
-
-    @staticmethod
-    def _scan_mock_folders(departments) -> List[TrainingVideo]:
-        mock_root = Path(settings.MOCK_DRIVE_DIR)
-        created = []
-        for dept in departments:
-            sector = mock_root / dept.code
-            folder = sector / SCRIPTS_FOLDER
-            folder.mkdir(parents=True, exist_ok=True)
-            (sector / VIDEOS_FOLDER).mkdir(exist_ok=True)
-            for file_path in sorted(folder.iterdir()):
-                if not file_path.is_file() or not is_allowed_extension(file_path.name):
-                    continue
-                # Formato do ID mantido igual ao das versões anteriores (evita reprocessar arquivos).
-                drive_id = f"local_{file_path.name}_{int(file_path.stat().st_mtime)}"
-                if TrainingVideo.objects.filter(department=dept, drive_file_id=drive_id).exists():
-                    continue
-                dest = new_source_path(f"local_{dept.code}", file_path.name)
-                shutil.copy2(file_path, dest)
-                created.append(TrainingVideo.objects.create(
-                    department=dept,
-                    title=title_from_filename(file_path.name),
-                    file_name=file_path.name,
-                    source_path=str(dest),
-                    drive_file_id=drive_id,
-                    status=TrainingVideo.Status.PENDING,
-                    status_message="Arquivo encontrado na pasta local do setor",
-                ))
-        return created
 
     @staticmethod
     def _list_folder(client, folder_id: str) -> List[dict]:
