@@ -19,9 +19,10 @@ COPY --chown=app:app carmel_project/ ./carmel_project/
 COPY --chown=app:app treinamentos/ ./treinamentos/
 COPY --chown=app:app templates/ ./templates/
 COPY --chown=app:app static/ ./static/
-COPY --chown=app:app data/db.sqlite3 ./data/db.sqlite3
 COPY --chown=app:app data/mock_drive/ ./data/mock_drive/
-COPY --chown=app:app data/temp_docs/ ./data/temp_docs/
+
+RUN mkdir -p data/temp_docs data/staticfiles \
+    && chown -R app:app data
 
 RUN printf '%s\n' \
     'from carmel_project.wsgi import application as django_application' \
