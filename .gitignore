@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/db.sqlite3
+data/*.bak-*
+data/temp_docs/
+data/media/
+data/staticfiles/
+data/service_account.json
+_legacy_fastapi/

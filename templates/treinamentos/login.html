@@ -1,0 +1,52 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar • Carmel Treinamentos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/carmel.css' %}">
+    {% include 'partials/theme_init.html' %}
+</head>
+<body>
+<main class="login-wrap">
+    <section class="card login-card">
+        <div class="login-head">
+            <span class="brand-mark">{% include 'partials/icon.html' with name='sparkles' %}</span>
+            <span class="brand-name">CARMEL</span>
+            <span class="brand-sub">Plataforma de Treinamentos</span>
+            <p class="muted" style="margin-top:8px">Entre com seu usuário corporativo.</p>
+        </div>
+
+        {% for message in messages %}
+        <div class="alert alert-error" role="alert">{% include 'partials/icon.html' with name='alert-circle' %} {{ message }}</div>
+        {% endfor %}
+
+        <form method="post" style="display:grid; gap:18px">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <div class="field">
+                <label for="username">Usuário</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='user' %}
+                    <input id="username" type="text" name="username" class="input" autocomplete="username" value="{{ request.POST.username|default:'' }}" required autofocus>
+                </div>
+            </div>
+            <div class="field">
+                <label for="password">Senha</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='lock' %}
+                    <input id="password" type="password" name="password" class="input" autocomplete="current-password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Acessar plataforma</button>
+        </form>
+        <p class="muted" style="text-align:center; font-size:12px">Carmel Hotéis & Resorts</p>
+    </section>
+</main>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogo • Carmel Treinamentos{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Catálogo de treinamentos</h1>
+        <p class="page-sub">Vídeos apresentados por avatar digital, criados a partir dos procedimentos oficiais de cada setor.</p>
+    </div>
+</div>
+
+<form method="get" action="{% url 'home' %}" class="toolbar">
+    {% if selected_dept != 'all' %}<input type="hidden" name="setor" value="{{ selected_dept }}">{% endif %}
+    <div class="search">
+        {% include 'partials/icon.html' with name='search' %}
+        <input type="search" name="q" value="{{ search_query }}" class="input" placeholder="Buscar por título ou assunto..." aria-label="Buscar treinamentos">
+        <button type="submit" class="btn btn-dark">Buscar</button>
+    </div>
+    {% if search_query %}<a href="?{% if selected_dept != 'all' %}setor={{ selected_dept|urlencode }}{% endif %}" class="btn btn-ghost">Limpar</a>{% endif %}
+</form>
+
+{% if show_dept_filter %}
+<nav class="chips" aria-label="Filtrar por setor">
+    <a href="?setor=all{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="chip {% if selected_dept == 'all' %}active{% endif %}">Todos os setores</a>
+    {% for dept in departments %}
+    <a href="?setor={{ dept.code|urlencode }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="chip {% if selected_dept == dept.code %}active{% endif %}">{{ dept.name }}</a>
+    {% endfor %}
+</nav>
+{% elif user_profile.department %}
+<div class="notice">
+    <span>Setor: <strong>{{ user_profile.department.name }}</strong></span>
+    <span>Você vê apenas os treinamentos do seu setor</span>
+</div>
+{% else %}
+<div class="notice notice-err">Seu usuário ainda não está vinculado a um setor. Peça ao administrador para definir o seu setor.</div>
+{% endif %}
+
+<div class="video-grid">
+    {% for video in videos %}
+    <button type="button" class="video-card" data-play-video
+            data-video-id="{{ video.id }}" data-video-url="{{ video.play_url }}"
+            data-title="{{ video.title }}" data-dept="{{ video.department.name }}"
+            data-script="{{ video.script_text }}"
+            data-watched="{% if video.id in watched_ids %}1{% else %}0{% endif %}">
+        <div class="thumb">
+            <img src="{{ video.thumbnail_url|default:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800' }}" alt="" loading="lazy">
+            <span class="play">{% include 'partials/icon.html' with name='play' %}</span>
+            <span class="thumb-dept">{{ video.department.name }}</span>
+            {% if video.duration_seconds %}<span class="thumb-time">{{ video.duration_formatted }}</span>{% endif %}
+            <span class="thumb-done" {% if video.id not in watched_ids %}hidden{% endif %}>✓ Concluído</span>
+        </div>
+        <div class="video-body">
+            <h3 class="video-title">{{ video.title }}</h3>
+            <p class="video-desc">{{ video.script_text|truncatechars:150 }}</p>
+            <div class="video-meta">
+                <span>{% include 'partials/icon.html' with name='calendar' %} {{ video.completed_at|date:"d/m/Y"|default:"—" }}</span>
+                <span>{% include 'partials/icon.html' with name='bot' %} Avatar HeyGen</span>
+            </div>
+        </div>
+    </button>
+    {% empty %}
+    <div class="empty">
+        <div class="empty-icon">{% include 'partials/icon.html' with name='video-off' %}</div>
+        <h3>Nenhum treinamento disponível</h3>
+        <p>
+            {% if search_query %}Nada encontrado para “{{ search_query }}”.
+            {% elif can_manage %}Coloque um roteiro na subpasta Roteiros do setor no Google Drive ou use “Enviar documento”.
+            {% else %}Assim que novos treinamentos forem publicados para o seu setor, eles aparecerão aqui.{% endif %}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

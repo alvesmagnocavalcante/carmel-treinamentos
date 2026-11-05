@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisar roteiro • Carmel Treinamentos{% endblock %}
+{% block container_class %}container-narrow{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Revisar roteiro</h1>
+        <p class="page-sub">
+            <strong>{{ video.title }}</strong> • {{ video.department.name }}<br>
+            O avatar vai narrar exatamente este texto. Corrija o que for preciso e aprove para gerar o vídeo
+            (cada vídeo consome créditos da HeyGen).
+        </p>
+    </div>
+</div>
+
+<div class="card form-card">
+    <form method="post" style="display:grid; gap:18px">
+        {% csrf_token %}
+        <div class="field">
+            <label for="script">Roteiro narrado</label>
+            <textarea id="script" name="script" class="input script-box" required>{{ script }}</textarea>
+            <span class="hint"><span id="char-count" class="counter">0</span> / {{ max_chars }} caracteres</span>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">{% include 'partials/icon.html' with name='check' %} Aprovar e gerar vídeo</button>
+            <a href="{% url 'queue' %}" class="btn btn-ghost btn-lg">Voltar à fila</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var box = document.getElementById('script'), out = document.getElementById('char-count'), max = {{ max_chars }};
+        function update() {
+            out.textContent = box.value.length;
+            out.classList.toggle('over', box.value.length > max);
+        }
+        box.addEventListener('input', update);
+        update();
+    })();
+</script>
+{% endblock %}

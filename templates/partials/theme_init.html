@@ -1,0 +1,9 @@
+<script>
+    // Aplica o tema salvo antes de renderizar (evita flash). Compartilhado com o Django Admin.
+    (function () {
+        var saved = localStorage.getItem('theme') || localStorage.getItem('carmel_theme');
+        var dark = saved === 'dark' || ((!saved || saved === 'auto') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    })();
+</script>

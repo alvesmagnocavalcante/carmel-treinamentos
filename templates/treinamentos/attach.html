@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Anexar vídeo • Carmel Treinamentos{% endblock %}
+{% block container_class %}container-narrow{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Anexar vídeo</h1>
+        <p class="page-sub">
+            <strong>{{ video.title }}</strong> • {{ video.department.name }}<br>
+            O roteiro foi aprovado. Gere o vídeo na HeyGen e anexe o MP4 aqui para publicá-lo no catálogo.
+        </p>
+    </div>
+</div>
+
+<div class="card form-card">
+    <ol class="steps">
+        <li>Copie o roteiro abaixo.</li>
+        <li>Gere o vídeo na HeyGen com o avatar <code>{{ params.avatar_id|default:"(definir)" }}</code> e a voz <code>{{ params.voice_id|default:"(definir)" }}</code>, ou peça ao Claude para gerar pelo MCP.</li>
+        <li>Baixe o MP4 e anexe abaixo (até {{ max_video_mb }} MB).</li>
+    </ol>
+
+    <div class="field" style="margin-top:20px">
+        <label for="script">Roteiro aprovado</label>
+        <textarea id="script" class="input script-box" readonly>{{ video.script_text }}</textarea>
+        <span class="hint"><button type="button" class="btn btn-ghost btn-sm" onclick="copyScript(this)">{% include 'partials/icon.html' with name='copy' %} <span>Copiar roteiro</span></button></span>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" style="display:grid; gap:18px; margin-top:20px">
+        {% csrf_token %}
+        <div class="field">
+            <label for="file">Vídeo (MP4)</label>
+            <input id="file" type="file" name="file" required class="input" accept=".mp4,video/mp4">
+            <span class="hint">O vídeo é guardado na pasta Vídeos do setor no Drive e passa a tocar no catálogo.</span>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">{% include 'partials/icon.html' with name='upload' %} Anexar e publicar</button>
+            <a href="{% url 'queue' %}" class="btn btn-ghost btn-lg">Voltar à fila</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyScript(btn) {
+        var box = document.getElementById('script');
+        box.select();
+        var done = function () { btn.querySelector('span').textContent = 'Copiado'; };
+        if (navigator.clipboard) { navigator.clipboard.writeText(box.value).then(done); }
+        else { document.execCommand('copy'); done(); }
+    }
+</script>
+{% endblock %}
