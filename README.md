@@ -14,7 +14,7 @@ Roteiros colocados em **Roteiros** (ou enviados manualmente pelo portal) passam 
 
 1. **Leitura** — extração do texto (`pypdf` / `python-docx`). O texto do documento **é** o roteiro: o responsável entrega o documento já escrito para ser falado, e o avatar narra exatamente o que está escrito. Marcações de lista, markdown e numeração no início das linhas ("1.", "3.2", "a)") são removidas e o limite é de 5.000 caracteres (acima disso não é possível aprovar: reduza o texto).
 2. **Revisão** — o gestor lê o roteiro na tela *Fila → Revisar roteiro*, corrige se necessário e aprova. Só então o vídeo é pedido à HeyGen (evita gastar crédito com texto errado). Desative com `REQUIRE_SCRIPT_REVIEW=false` para envio automático.
-3. **Vídeo** — no modo `manual` (padrão, plano Creator sem API), o item fica **Aguardando Vídeo**. O Claude gera o vídeo na HeyGen pelo MCP e o salva na subpasta **Vídeos** do setor no Drive (`manage.py upload_generated_video`). Ao clicar em **Sincronizar Drive**, o portal carrega o vídeo, liga ao roteiro certo e o publica no catálogo. Também é possível gerar no site da HeyGen e anexar o MP4 pela tela *Anexar vídeo*. No modo `api` (`HEYGEN_GENERATION_MODE=api`), o portal chama a API da HeyGen sozinho.
+3. **Vídeo** — no modo `manual` (padrão, plano Creator sem API), o item fica **Aguardando Vídeo**. O Claude gera o vídeo na HeyGen pelo MCP e o salva na subpasta **Vídeos** do setor no Drive (`manage.py upload_generated_video`). Ao clicar em **Sincronizar Drive**, o portal carrega o vídeo, liga ao roteiro certo e o publica no catálogo. Também é possível gerar no site da HeyGen e anexar o MP4 pela tela *Anexar vídeo*. No modo `api` (`HEYGEN_GENERATION_MODE=api`), o portal chama a API da HeyGen sozinho. Para o Claude operar isso pela web, o portal expõe um **conector MCP** (`/mcp/<chave>/`, ligado por `MCP_TOKEN`) com quatro ferramentas — ver `docs/CONFIGURACAO.md`, seção 13.
 4. **Drive** — o MP4 pronto é copiado para a subpasta **Vídeos** do setor (o ID do arquivo fica registrado no vídeo, no Admin). Se o Drive falhar, o vídeo continua disponível no portal e o `poll_heygen` tenta salvar de novo.
 5. **Portal** — o vídeo aparece no catálogo do setor e **toca a cópia guardada no Drive** (o portal busca o arquivo com a Service Account e o entrega ao colaborador logado, respeitando o acesso por setor e permitindo avançar/voltar). Enquanto não houver cópia no Drive, toca pelo link da HeyGen, que é temporário; o sistema registra quem assistiu e quem concluiu (assistiu até o fim).
 
@@ -64,6 +64,7 @@ Tudo fica no `.env` (veja `.env.example`). Os pontos principais:
 | :--- | :--- |
 | `HEYGEN_MOCK_MODE` | `true` simula a HeyGen (sem gastar créditos). Use `false` para vídeos reais. |
 | `HEYGEN_API_KEY` | Chave da HeyGen. |
+| `MCP_TOKEN` | Chave do conector MCP do portal para o Claude. Vazio = desligado. |
 | `HEYGEN_GENERATION_MODE` | `manual` (padrão): o vídeo é gerado fora do portal e registrado/anexado. `api`: o portal chama a API da HeyGen. |
 | `REQUIRE_SCRIPT_REVIEW` | `true` (padrão): o gestor aprova o roteiro antes de gerar o vídeo. `false`: envio automático. |
 | `DEFAULT_AVATAR_ID` / `DEFAULT_VOICE_ID` | Avatar e voz padrão. Cada setor pode ter os seus em **Admin → Setores**. |

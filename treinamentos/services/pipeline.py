@@ -160,6 +160,53 @@ def complete_video(
     archive_video_to_drive(video)
 
 
+def save_generated_video(
+    video: TrainingVideo, *, video_url: str, heygen_video_id: str = "", duration: float = 0.0,
+    thumbnail_url: str = "", publish: bool = False,
+) -> str:
+    """
+    Salva no Drive (<Setor>/Vídeos) um vídeo gerado na HeyGen fora do portal e devolve o ID do arquivo.
+    publish=False: o item continua aguardando e só entra no catálogo na próxima sincronização do Drive.
+    publish=True: o item já é concluído e publicado.
+    """
+    if video.status not in (Status.AWAITING_VIDEO, Status.GENERATING_HEYGEN):
+        raise ValueError(
+            f"O vídeo está em '{video.get_status_display()}'. Só aceita itens 'Aguardando Vídeo' ou 'HeyGen Renderizando'."
+        )
+    if video.drive_video_id:
+        raise ValueError("Este item já tem um vídeo salvo no Drive.")
+
+    video.video_url = video_url
+    video.thumbnail_url = thumbnail_url or ""
+    video.duration_seconds = duration or 0.0
+    if heygen_video_id:
+        video.heygen_video_id = heygen_video_id
+
+    file_id = GoogleDriveService.upload_video(video)
+    if not file_id:
+        raise RuntimeError(
+            f"Não foi possível salvar no Drive: o setor {video.department.name} não tem pasta cadastrada "
+            "ou a Service Account não está configurada."
+        )
+
+    common = {
+        "video_url": video.video_url, "thumbnail_url": video.thumbnail_url,
+        "duration_seconds": video.duration_seconds, "heygen_video_id": video.heygen_video_id,
+    }
+    if publish:
+        video.set_status(
+            Status.COMPLETED, "Vídeo salvo no Drive e disponível para o setor",
+            drive_video_id=file_id, completed_at=timezone.now(), **common,
+        )
+    else:
+        video.set_status(
+            video.status,
+            "Vídeo salvo na pasta Vídeos do Drive. Clique em 'Sincronizar Drive' para publicar no catálogo.",
+            **common,
+        )
+    return file_id
+
+
 def attach_uploaded_video(video: TrainingVideo, path: Path, duration: float = 0.0) -> None:
     """Registra um MP4 anexado no portal (gerado fora): guarda no Drive e publica no catálogo."""
     file_id = GoogleDriveService.upload_video_file(video, path)

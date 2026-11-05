@@ -129,6 +129,11 @@ REQUIRE_SCRIPT_REVIEW = env_bool("REQUIRE_SCRIPT_REVIEW", True)
 HEYGEN_GENERATION_MODE = os.getenv("HEYGEN_GENERATION_MODE", "manual").strip().lower()
 MAX_VIDEO_MB = int(os.getenv("MAX_VIDEO_MB", "500"))
 
+# Conector MCP do portal (para o Claude): vazio = conector desligado.
+MCP_TOKEN = os.getenv("MCP_TOKEN", "").strip()
+# Só links de vídeo destes domínios são baixados pelo conector (evita que o servidor busque URLs arbitrárias).
+MCP_ALLOWED_VIDEO_HOSTS = env_list("MCP_ALLOWED_VIDEO_HOSTS", "heygen.ai,heygen.com")
+
 HEYGEN_API_URL = os.getenv("HEYGEN_API_URL", "https://api.heygen.com").rstrip("/")
 HEYGEN_POLL_INTERVAL_SECONDS = int(os.getenv("HEYGEN_POLL_INTERVAL_SECONDS", "20"))
 HEYGEN_POLL_TIMEOUT_MINUTES = int(os.getenv("HEYGEN_POLL_TIMEOUT_MINUTES", "30"))

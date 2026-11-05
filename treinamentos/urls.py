@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import mcp_server, views
 
 urlpatterns = [
     path('', views.home_view, name='home'),
@@ -12,6 +12,8 @@ urlpatterns = [
     path('api/sync-drive/', views.sync_drive_ajax, name='sync_drive'),
     path('video/<int:video_id>/arquivo/', views.stream_video_view, name='stream_video'),
     path('api/video/<int:video_id>/view/', views.register_view, name='register_view'),
+    path('mcp/', mcp_server.mcp_endpoint, name='mcp'),
+    path('mcp/<str:token>/', mcp_server.mcp_endpoint, name='mcp_token'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
 ]

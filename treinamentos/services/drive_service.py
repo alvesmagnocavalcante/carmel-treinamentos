@@ -241,8 +241,13 @@ class GoogleDriveService:
             path = Path(tmp) / "video.mp4"
             with httpx.stream("GET", video.video_url, follow_redirects=True, timeout=120.0) as resp:
                 resp.raise_for_status()
+                limit = settings.MAX_VIDEO_MB * 1024 * 1024
+                size = 0
                 with open(path, "wb") as fh:
                     for chunk in resp.iter_bytes(1024 * 1024):
+                        size += len(chunk)
+                        if size > limit:
+                            raise ValueError(f"O vídeo passa do limite de {settings.MAX_VIDEO_MB} MB.")
                         fh.write(chunk)
             return cls._put_video_in_drive(
                 client, dept, cls._video_file_name(video), path, cls._video_properties(video)
