@@ -93,7 +93,12 @@ def queue_view(request):
 def sync_drive_ajax(request):
     """Varredura imediata das pastas dos setores (somente os setores do gestor)."""
     profile = _require_manager(request)
-    result = GoogleDriveService.scan_all_departments(profile.visible_departments())
+    try:
+        result = GoogleDriveService.scan_all_departments(profile.visible_departments())
+    except Exception as exc:  # noqa: BLE001 - sempre responde JSON, para a tela mostrar o motivo
+        logger.exception("Falha ao sincronizar o Drive")
+        return JsonResponse({'status': 'error', 'found': 0, 'published': 0,
+                             'message': f"Não foi possível sincronizar agora: {exc}"})
     for video in result['new_videos']:
         start_pipeline_async(video.id)
 
@@ -105,7 +110,7 @@ def sync_drive_ajax(request):
         parts.append(f"{published} vídeo(s) carregado(s) do Drive e publicado(s) no catálogo")
     message = ("; ".join(parts) + ".") if parts else "Nada novo encontrado nas pastas Roteiros e Vídeos."
     if not result['drive_connected']:
-        message += " (Google Drive não configurado — apenas pastas locais foram varridas.)"
+        message = "O Google Drive não está configurado neste ambiente, então não há o que sincronizar."
     if result['errors']:
         message += " Erros: " + "; ".join(result['errors'])
 

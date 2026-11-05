@@ -139,13 +139,13 @@
         const label = btn.querySelector('span');
         btn.disabled = true; label.textContent = 'Varrendo...';
         postForm('{% url "sync_drive" %}')
-            .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+            .then(r => r.json().catch(() => { throw new Error('o servidor não respondeu como esperado (código ' + r.status + ').'); }))
             .then(d => {
                 alert(d.message);
                 if (d.published) window.location.href = '{% url "home" %}';
                 else if (d.found) window.location.href = '{% url "queue" %}';
             })
-            .catch(err => alert('Erro ao sincronizar: ' + err.message))
+            .catch(err => alert('Não foi possível sincronizar: ' + err.message + ' Tente novamente em instantes.'))
             .finally(() => { btn.disabled = false; label.textContent = 'Sincronizar Drive'; });
     }
 
