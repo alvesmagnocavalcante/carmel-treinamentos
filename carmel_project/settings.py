@@ -6,6 +6,7 @@ Todas as configurações sensíveis vêm do arquivo .env (veja .env.example).
 
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 from dotenv import load_dotenv
 
@@ -86,14 +87,37 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "carmel_project.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "db.sqlite3",
-        # Pipeline roda em threads: aumenta a tolerância a locks do SQLite.
-        "OPTIONS": {"timeout": 20},
+def database_from_url(url: str) -> dict:
+    """Converte DATABASE_URL (postgres://usuario:senha@host:porta/banco?sslmode=require) em config do Django."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("postgres", "postgresql"):
+        raise RuntimeError("DATABASE_URL precisa começar com postgres:// (PostgreSQL).")
+    options = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": unquote(parsed.path.lstrip("/")),
+        "USER": unquote(parsed.username or ""),
+        "PASSWORD": unquote(parsed.password or ""),
+        "HOST": parsed.hostname or "",
+        "PORT": parsed.port or "",
+        "OPTIONS": options,
+        "CONN_MAX_AGE": 60,
     }
-}
+
+
+# DATABASE_URL definida: usa o PostgreSQL (ex.: Aiven). Vazia: SQLite local em data/db.sqlite3.
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if DATABASE_URL:
+    DATABASES = {"default": database_from_url(DATABASE_URL)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "data" / "db.sqlite3",
+            # Pipeline roda em threads: aumenta a tolerância a locks do SQLite.
+            "OPTIONS": {"timeout": 20},
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 6}},

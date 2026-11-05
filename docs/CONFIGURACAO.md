@@ -120,7 +120,28 @@ Observação: a Service Account só consegue mandar arquivos para a lixeira. Par
 
 **4.4 O que esperar.** Cada vídeo leva cerca de 3 minutos e consome por volta de 0,7 crédito por segundo de vídeo (estimativa de testes com vídeos curtos de 3 a 6 segundos; confirme com um roteiro de 1 minuto antes de planejar o volume). O roteiro pode ter no máximo 5.000 caracteres. O link do MP4 da HeyGen expira em cerca de 7 dias, por isso o portal guarda uma cópia no Drive.
 
-## Passo 5 — Publicar na internet (Render)
+## Passo 5 — Banco de dados (Aiven, PostgreSQL)
+
+Localmente o portal usa um arquivo SQLite (`data/db.sqlite3`). Em um servidor como a Render, esse arquivo se perde a cada deploy; por isso o banco fica no **Aiven** (PostgreSQL), que guarda usuários, roteiros e vídeos de forma permanente.
+
+1. No Aiven, crie um serviço **PostgreSQL** (o plano gratuito serve para começar) e espere ficar **Running**.
+2. Na página do serviço, copie a **Service URI**, no formato `postgres://avnadmin:SENHA@HOST:PORTA/defaultdb?sslmode=require`. Ela contém a senha: trate como segredo.
+3. Em **Allowed IP addresses** (ou equivalente) do serviço, libere o acesso do seu computador e da Render. Se a lista aceitar `0.0.0.0/0`, qualquer origem conecta, e a proteção fica só na senha.
+4. Coloque a URI na variável `DATABASE_URL`: no `.env` (para trabalhar no computador) e em **Environment** na Render. Sem `DATABASE_URL`, o portal volta a usar o SQLite local.
+5. Crie as tabelas no banco novo e o primeiro administrador (PowerShell, na pasta do projeto, com `DATABASE_URL` no `.env`):
+   ```
+   .venv\Scripts\python.exe manage.py migrate
+   .venv\Scripts\python.exe manage.py createsuperuser
+   ```
+   O `createsuperuser` pergunta nome de usuário, e-mail (pode deixar vazio) e senha.
+6. **Conferir:** `.venv\Scripts\python.exe manage.py showmigrations treinamentos` mostra todas as migrações com `[X]`, e você consegue entrar no portal com o usuário criado.
+
+Observações:
+- O banco do Aiven começa **vazio**: os dados que estavam no SQLite local não vão junto (setores, usuários e itens). O `seed_carmel` recria os setores e os usuários de teste; as pastas do Drive de cada setor precisam ser cadastradas de novo no Admin (passo 3.7).
+- O `seed_carmel` roda a cada início do serviço na Render e recria os usuários de teste (`admin`, `gestor.rh`, `colab.governanca`) com a senha padrão **se eles não existirem**. Com banco permanente, apague ou troque a senha desses usuários, senão contas conhecidas voltam a existir.
+- Para voltar ao SQLite local, deixe `DATABASE_URL` vazio.
+
+## Passo 6 — Publicar na internet (Render)
 
 O portal foi publicado na Render com Docker (arquivo `Dockerfile` do projeto), no endereço `https://carmel-treinamentos.onrender.com`.
 
@@ -134,15 +155,16 @@ O portal foi publicado na Render com Docker (arquivo `Dockerfile` do projeto), n
    | `DJANGO_ALLOWED_HOSTS` | O endereço do serviço (ex.: `carmel-treinamentos.onrender.com`) |
    | `DJANGO_CSRF_TRUSTED_ORIGINS` | O endereço com `https://` |
    | `DEFAULT_AVATAR_ID` e `DEFAULT_VOICE_ID` | Os do passo 4.3 |
+   | `DATABASE_URL` | A Service URI do banco do Aiven (passo 5) |
    | `GOOGLE_SERVICE_ACCOUNT_FILE` | Caminho do arquivo da Service Account (veja o item 3) |
-   | `MCP_TOKEN` | A chave do conector (passo 6) |
+   | `MCP_TOKEN` | A chave do conector (passo 7) |
 
 3. **Service Account na Render:** em **Secret Files**, crie o arquivo `service_account.json` com o conteúdo do JSON e use `GOOGLE_SERVICE_ACCOUNT_FILE=/etc/secrets/service_account.json`.
 4. **Conferir:** abra o endereço do serviço e entre no portal.
 
-Limitações do ambiente de **teste** atual na Render: o banco (SQLite) volta ao início a cada deploy, a instância gratuita dorme e a primeira resposta leva cerca de 1 minuto, o modo de depuração pode estar ligado e os usuários de teste são recriados com a senha padrão a cada início. Para uso real, resolva esses pontos (banco persistente, instância sempre ligada, debug desligado e senhas trocadas).
+Limitações do ambiente de **teste** na Render: sem `DATABASE_URL`, o banco (SQLite) volta ao início a cada deploy; a instância gratuita dorme e a primeira resposta leva cerca de 1 minuto, o modo de depuração pode estar ligado e os usuários de teste são recriados com a senha padrão a cada início. Para uso real, resolva esses pontos (instância sempre ligada, debug desligado e senhas trocadas).
 
-## Passo 6 — Conectar o Claude ao portal (conector MCP)
+## Passo 7 — Conectar o Claude ao portal (conector MCP)
 
 O portal tem um conector que deixa o Claude (no site claude.ai, conta Teams) listar os roteiros aprovados e entregar os vídeos prontos, sem acesso ao servidor nem ao banco.
 
@@ -219,7 +241,7 @@ Comandos úteis (PowerShell, na pasta do projeto):
 
 - **Geração ainda depende de alguém pedir:** o Claude na web só trabalha quando uma pessoa abre a conversa; não roda sozinho.
 - **Só o RH tem pasta cadastrada:** faltam os outros cinco setores (passos 3.5 a 3.7).
-- **Ambiente de produção:** ver as limitações do passo 5 (banco persistente, instância ligada, debug desligado, senhas trocadas).
+- **Ambiente de produção:** ver as limitações do passo 6 (instância ligada, debug desligado, senhas trocadas).
 - **Chave do conector no endereço:** o ideal para produção é OAuth e limite de chamadas.
 - **Não testado:** o ciclo completo (gerar na HeyGen e salvar no Drive) a partir do Claude na web, com o Drive configurado na Render.
 - **Qualidade dos vídeos:** não foi avaliada a voz em português nem a sincronia da boca nos vídeos de teste.
@@ -232,7 +254,8 @@ Comandos úteis (PowerShell, na pasta do projeto):
 - [ ] Pasta de cada setor com `Roteiros` e `Vídeos`, e o ID cadastrado no Admin (3.5 a 3.7)
 - [ ] Roteiro de teste sincronizado e visível na Fila (3.8)
 - [ ] HeyGen conectada ao Claude e avatar e voz definidos (passo 4)
-- [ ] Portal publicado com as variáveis e a Service Account (passo 5)
-- [ ] `MCP_TOKEN` definido, endereço do conector dando 405 e conectores cadastrados no Claude (passo 6)
+- [ ] Banco no Aiven criado, `DATABASE_URL` definida, migrações aplicadas e administrador criado (passo 5)
+- [ ] Portal publicado com as variáveis e a Service Account (passo 6)
+- [ ] `MCP_TOKEN` definido, endereço do conector dando 405 e conectores cadastrados no Claude (passo 7)
 - [ ] Teste de ponta a ponta: roteiro aprovado, vídeo gerado, MP4 em `<Setor>/Vídeos`, vídeo no catálogo
 - [ ] Um colaborador do setor assiste ao vídeo, e um de outro setor não o vê
