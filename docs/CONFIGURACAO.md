@@ -94,7 +94,7 @@ Unidade Compartilhada
 **3.8 Conferir.** Coloque um roteiro de teste (um Google Doc com uma ou duas frases) em `Roteiros`. No portal, entre como gestor e clique em **Sincronizar Drive**. O item deve aparecer na **Fila**.
 
 O que a sincronização faz:
-- **Roteiros:** importa cada arquivo uma única vez (Google Docs, DOCX, PDF, TXT e MD).
+- **Roteiros:** importa cada arquivo (Google Docs, DOCX, PDF, TXT e MD). Se você editar o roteiro no Drive **antes de aprová-lo**, clique em **Sincronizar Drive** de novo: o portal lê o texto atualizado. Depois da aprovação, o texto aprovado vale e edições no Drive são ignoradas (para mudar, é preciso criar um novo documento).
 - **Vídeos:** publica cada MP4 novo. Se o arquivo corresponde a um item que aguarda o vídeo, conclui esse item; senão, entra como item novo.
 
 Observação: a Service Account só consegue mandar arquivos para a lixeira. Para apagar de vez, esvazie a lixeira da Unidade Compartilhada com uma conta de pessoa.

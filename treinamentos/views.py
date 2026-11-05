@@ -104,7 +104,7 @@ def sync_drive_ajax(request):
     found, published = result['found'], result['published']
     parts = []
     if found:
-        parts.append(f"{found} novo(s) roteiro(s) encontrado(s) e enviado(s) para a fila")
+        parts.append(f"{found} roteiro(s) novo(s) ou atualizado(s) enviado(s) para a fila")
     if published:
         parts.append(f"{published} vídeo(s) carregado(s) do Drive e publicado(s) no catálogo")
     message = ("; ".join(parts) + ".") if parts else "Nada novo encontrado nas pastas Roteiros e Vídeos."

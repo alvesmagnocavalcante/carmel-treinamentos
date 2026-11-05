@@ -32,11 +32,42 @@ class DriveFolderStructureTests(BaseTestCase):
         roteiros = self.drive.add("Roteiros", "root", FakeDrive.FOLDER)
         self.drive.add("Roteiro_Valido.txt", roteiros)
         self.drive.add("solto_na_raiz.txt", "root")
-        with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive),                 mock.patch("googleapiclient.http.MediaIoBaseDownload", FakeDownloader):
+        with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive), \
+                mock.patch("googleapiclient.http.MediaIoBaseDownload", FakeDownloader):
             first = self.svc.scan_all_departments([self.rh])
             again = self.svc.scan_all_departments([self.rh])
         self.assertEqual([v.title for v in first["new_videos"]], ["Roteiro Valido"])
         self.assertEqual(again["found"], 0)
+
+    def test_script_edited_in_drive_is_reimported_while_awaiting_review(self):
+        roteiros = self.drive.add("Roteiros", "root", FakeDrive.FOLDER)
+        script = self.drive.add("Boas Vindas.txt", roteiros, modified="2026-01-01T00:00:00Z")
+        with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive), \
+                mock.patch("googleapiclient.http.MediaIoBaseDownload", FakeDownloader):
+            first = self.svc.scan_all_departments([self.rh])
+            video = first["new_videos"][0]
+            video.set_status("AWAITING_REVIEW", "Roteiro pronto")
+            self.assertEqual(self.svc.scan_all_departments([self.rh])["found"], 0)  # sem edição: nada novo
+
+            self.drive.items[script]["modifiedTime"] = "2026-02-02T10:00:00Z"  # alguém editou no Drive
+            edited = self.svc.scan_all_departments([self.rh])
+        self.assertEqual([v.id for v in edited["new_videos"]], [video.id])
+        video.refresh_from_db()
+        self.assertEqual((video.status, video.drive_modified_at), ("PENDING", "2026-02-02T10:00:00Z"))
+        self.assertEqual(TrainingVideo.objects.filter(drive_file_id=script).count(), 1)
+
+    def test_script_edited_in_drive_is_ignored_after_approval(self):
+        roteiros = self.drive.add("Roteiros", "root", FakeDrive.FOLDER)
+        script = self.drive.add("Boas Vindas.txt", roteiros)
+        with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive), \
+                mock.patch("googleapiclient.http.MediaIoBaseDownload", FakeDownloader):
+            video = self.svc.scan_all_departments([self.rh])["new_videos"][0]
+            video.set_status("AWAITING_VIDEO", "Roteiro aprovado", script_text="Texto aprovado.")
+            self.drive.items[script]["modifiedTime"] = "2026-02-02T10:00:00Z"
+            result = self.svc.scan_all_departments([self.rh])
+        self.assertEqual(result["found"], 0)
+        video.refresh_from_db()
+        self.assertEqual((video.status, video.script_text), ("AWAITING_VIDEO", "Texto aprovado."))
 
     def test_video_is_uploaded_to_videos_subfolder(self):
         videos = self.drive.add("Vídeos", "root", FakeDrive.FOLDER)
@@ -44,7 +75,9 @@ class DriveFolderStructureTests(BaseTestCase):
             department=self.rh, title="Check-in VIP", file_name="a.txt", status="COMPLETED",
             heygen_video_id="hg-1", video_url="https://heygen.example/v.mp4",
         )
-        with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive),                 mock.patch("treinamentos.services.drive_service.httpx.stream", return_value=FakeStream()),                 mock.patch("googleapiclient.http.MediaIoBaseUpload"):
+        with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive), \
+                mock.patch("treinamentos.services.drive_service.httpx.stream", return_value=FakeStream()), \
+                mock.patch("googleapiclient.http.MediaIoBaseUpload"):
             file_id = self.svc.upload_video(video)
         self.assertEqual(self.drive.items[file_id]["name"], "Check-in_VIP.mp4")
         self.assertEqual(self.drive.items[file_id]["parents"], [videos])

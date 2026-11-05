@@ -38,7 +38,7 @@ class Command(BaseCommand):
         for err in result['errors']:
             self.stderr.write(self.style.ERROR(err))
 
-        self.stdout.write(self.style.SUCCESS(f"{result['found']} novo(s) roteiro(s) encontrado(s)."))
+        self.stdout.write(self.style.SUCCESS(f"{result['found']} roteiro(s) novo(s) ou atualizado(s)."))
         self.stdout.write(self.style.SUCCESS(f"{result['published']} vídeo(s) publicado(s) a partir da pasta Vídeos."))
         for video in result['published_videos']:
             self.stdout.write(f"  publicado: [{video.department.name}] {video.title}")

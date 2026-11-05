@@ -50,7 +50,7 @@ class TrainingVideoAdmin(admin.ModelAdmin):
     list_display = ('title', 'department', 'status', 'duration', 'created_by', 'created_at')
     list_filter = ('department', 'status', 'created_at')
     search_fields = ('title', 'file_name', 'script_text')
-    readonly_fields = ('created_at', 'completed_at', 'heygen_video_id', 'source_path', 'drive_file_id', 'drive_video_id')
+    readonly_fields = ('created_at', 'completed_at', 'heygen_video_id', 'source_path', 'drive_file_id', 'drive_modified_at', 'drive_video_id')
     list_select_related = ('department', 'created_by')
     actions = ['reprocess_videos']
 

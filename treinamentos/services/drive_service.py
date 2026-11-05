@@ -303,43 +303,65 @@ class GoogleDriveService:
             published.append(video)
         return published
 
-    @classmethod
-    def _scan_drive_folder(cls, client, dept: Department) -> List[TrainingVideo]:
+    @staticmethod
+    def _download_script(client, dept: Department, f: dict, ext: str):
+        """Baixa um roteiro do Drive (Google Docs vira .docx) e devolve (nome do arquivo local, caminho)."""
         from googleapiclient.http import MediaIoBaseDownload
 
+        file_id, name, mime = f["id"], f["name"], f.get("mimeType", "")
+        local_name = name if Path(name).suffix.lower() == ext else f"{name}{ext}"
+        dest = new_source_path(f"drive_{dept.code}", local_name)
+        if mime == GOOGLE_DOC_MIME:
+            request = client.files().export_media(fileId=file_id, mimeType=DOCX_MIME)
+        else:
+            request = client.files().get_media(fileId=file_id, supportsAllDrives=True)
+
+        with open(dest, 'wb') as fh:
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+        return local_name, dest
+
+    @classmethod
+    def _scan_drive_folder(cls, client, dept: Department) -> List[TrainingVideo]:
+        """
+        Importa os roteiros novos da subpasta Roteiros. Um roteiro já importado só é lido de novo se foi
+        alterado no Drive enquanto o item ainda aguarda revisão (depois da aprovação, o texto aprovado vale).
+        """
         scripts_folder = cls._get_or_create_subfolder(client, dept.drive_folder_id, SCRIPTS_FOLDER)
         cls._get_or_create_subfolder(client, dept.drive_folder_id, VIDEOS_FOLDER)  # garante a estrutura
 
-        created = []
+        Status = TrainingVideo.Status
+        found = []
         for f in cls._list_folder(client, scripts_folder):
             file_id, name, mime = f["id"], f["name"], f.get("mimeType", "")
             ext = SUPPORTED_MIMES.get(mime) or (Path(name).suffix.lower() if is_allowed_extension(name) else None)
             if not ext:
                 logger.info("Ignorando arquivo não suportado no Drive: %s (%s)", name, mime)
                 continue
-            if TrainingVideo.objects.filter(drive_file_id=file_id).exists():
+            modified = f.get("modifiedTime", "")
+
+            existing = TrainingVideo.objects.filter(drive_file_id=file_id).first()
+            if existing:
+                if existing.status == Status.AWAITING_REVIEW and modified and modified != existing.drive_modified_at:
+                    local_name, dest = cls._download_script(client, dept, f, ext)
+                    existing.set_status(
+                        Status.PENDING, "Roteiro atualizado no Drive. Lendo novamente...",
+                        file_name=local_name, source_path=str(dest), drive_modified_at=modified,
+                    )
+                    found.append(existing)
                 continue
 
-            local_name = name if Path(name).suffix.lower() == ext else f"{name}{ext}"
-            dest = new_source_path(f"drive_{dept.code}", local_name)
-            if mime == GOOGLE_DOC_MIME:
-                request = client.files().export_media(fileId=file_id, mimeType=DOCX_MIME)
-            else:
-                request = client.files().get_media(fileId=file_id, supportsAllDrives=True)
-
-            with open(dest, 'wb') as fh:
-                downloader = MediaIoBaseDownload(fh, request)
-                done = False
-                while not done:
-                    _, done = downloader.next_chunk()
-
-            created.append(TrainingVideo.objects.create(
+            local_name, dest = cls._download_script(client, dept, f, ext)
+            found.append(TrainingVideo.objects.create(
                 department=dept,
                 title=title_from_filename(name),
                 file_name=local_name,
                 source_path=str(dest),
                 drive_file_id=file_id,
-                status=TrainingVideo.Status.PENDING,
+                drive_modified_at=modified,
+                status=Status.PENDING,
                 status_message="Roteiro recebido",
             ))
-        return created
+        return found

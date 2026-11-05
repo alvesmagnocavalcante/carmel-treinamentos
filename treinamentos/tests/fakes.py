@@ -1,8 +1,6 @@
 """Google Drive e respostas HTTP simulados, para testar sem rede."""
 
 
-
-
 class Exec:
     def __init__(self, value):
         self.value = value
@@ -18,10 +16,12 @@ class FakeDrive:
     def __init__(self):
         self.items, self.n = {}, 0
 
-    def add(self, name, parent, mime="text/plain", props=None):
+    def add(self, name, parent, mime="text/plain", props=None, modified="2026-01-01T00:00:00Z"):
         self.n += 1
         item_id = f"id{self.n}"
-        self.items[item_id] = {"name": name, "mimeType": mime, "parents": [parent], "appProperties": props or {}}
+        self.items[item_id] = {
+            "name": name, "mimeType": mime, "parents": [parent], "appProperties": props or {}, "modifiedTime": modified,
+        }
         return item_id
 
     def files(self):
@@ -31,7 +31,7 @@ class FakeDrive:
         parent = q.split("'")[1]
         want_folders = "mimeType = '" in q and "!=" not in q
         found = [
-            {**v, "id": k, "modifiedTime": "2026-01-01T00:00:00Z"} for k, v in self.items.items()
+            {**v, "id": k} for k, v in self.items.items()
             if parent in v["parents"] and (v["mimeType"] == self.FOLDER) == want_folders
         ]
         return Exec({"files": found})

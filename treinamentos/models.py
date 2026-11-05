@@ -99,6 +99,7 @@ class TrainingVideo(models.Model):
     file_name = models.CharField("Nome do Arquivo Original", max_length=250)
     source_path = models.CharField("Caminho do Arquivo no Servidor", max_length=500, blank=True)
     drive_file_id = models.CharField("ID do Roteiro no Google Drive", max_length=200, blank=True, db_index=True)
+    drive_modified_at = models.CharField("Última alteração do roteiro no Drive", max_length=40, blank=True)
     drive_video_id = models.CharField("ID do Vídeo no Google Drive", max_length=200, blank=True)
     status = models.CharField("Status do Pipeline", max_length=30, choices=Status.choices, default=Status.PENDING)
     status_message = models.TextField("Mensagem de Status", blank=True)
