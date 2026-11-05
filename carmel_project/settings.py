@@ -32,7 +32,7 @@ if not SECRET_KEY:
         raise RuntimeError("Defina DJANGO_SECRET_KEY no .env para rodar com DJANGO_DEBUG=false.")
     SECRET_KEY = "dev-only-insecure-key-carmel-treinamentos"
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1", "https://carmel-treinamentos.onrender.com/")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1", "carmel-treinamentos.onrender.com")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 
 if not DEBUG:
