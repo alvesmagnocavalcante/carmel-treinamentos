@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.urls import reverse
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls import reverse
 
 
 class Department(models.Model):
@@ -40,8 +40,8 @@ class UserProfile(models.Model):
     ROLE_ADMIN = 'admin'
     ROLE_CHOICES = [
         (ROLE_COLABORADOR, 'Colaborador (Visualiza apenas treinamentos do seu setor)'),
-        (ROLE_GESTOR, 'Gestor de Setor (Pode enviar documentos e gerenciar seu setor)'),
-        (ROLE_ADMIN, 'Administrador Geral (Acesso total a todos os setores e HeyGen)'),
+        (ROLE_GESTOR, 'Gestor de Setor (Aprova roteiros e gerencia os vídeos do seu setor)'),
+        (ROLE_ADMIN, 'Administrador Geral (Acesso total a todos os setores)'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Usuário")
@@ -62,7 +62,7 @@ class UserProfile(models.Model):
 
     @property
     def can_manage(self) -> bool:
-        """Pode enviar documentos, sincronizar o Drive e reprocessar vídeos."""
+        """Pode revisar roteiros, sincronizar o Drive e reprocessar vídeos."""
         return self.is_global or (self.role == self.ROLE_GESTOR and self.department_id is not None)
 
     def visible_departments(self):
@@ -167,10 +167,10 @@ class VideoProgress(models.Model):
 
 class SystemSetting(models.Model):
     """
-    Configurações gerais do sistema (HeyGen, Drive, IA).
+    Configurações gerais do sistema (Drive).
     Um valor vazio aqui NÃO sobrescreve o .env: o valor do .env é usado como fallback.
     """
-    SECRET_KEYS = ('heygen_api_key',)
+    SECRET_KEYS = ()
 
     key = models.CharField("Chave", max_length=100, primary_key=True)
     value = models.TextField("Valor", blank=True)

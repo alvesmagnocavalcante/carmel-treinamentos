@@ -47,22 +47,30 @@ class GoogleDriveService:
             p = settings.BASE_DIR / p
         return p if p.is_file() else None
 
-    _credentials = {}
+    _credentials = {}  # cache por caminho do JSON: o token é renovado sozinho quando expira
 
     @classmethod
-    def _access_token(cls) -> Optional[str]:
-        """Token OAuth da Service Account (renovado automaticamente quando expira)."""
+    def _load_credentials(cls):
         sa_path = cls.get_service_account_path()
         if not sa_path:
             return None
-        from google.auth.transport.requests import Request
         from google.oauth2 import service_account
 
         creds = cls._credentials.get(sa_path)
         if creds is None:
             creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=SCOPES)
             cls._credentials[sa_path] = creds
+        return creds
+
+    @classmethod
+    def _access_token(cls) -> Optional[str]:
+        """Token OAuth da Service Account, usado para ler o arquivo do vídeo direto da API do Drive."""
+        creds = cls._load_credentials()
+        if not creds:
+            return None
         if not creds.valid:
+            from google.auth.transport.requests import Request
+
             creds.refresh(Request())
         return creds.token
 
@@ -91,13 +99,12 @@ class GoogleDriveService:
 
     @classmethod
     def get_drive_client(cls):
-        sa_path = cls.get_service_account_path()
-        if not sa_path:
+        """Cliente da API do Drive, ou None quando a Service Account não está configurada."""
+        creds = cls._load_credentials()
+        if not creds:
             return None
-        from google.oauth2 import service_account
         from googleapiclient.discovery import build
 
-        creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=SCOPES)
         return build('drive', 'v3', credentials=creds, cache_discovery=False)
 
     @classmethod

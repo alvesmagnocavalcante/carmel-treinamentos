@@ -58,16 +58,16 @@ class TrainingVideoAdmin(admin.ModelAdmin):
     def duration(self, obj):
         return obj.duration_formatted
 
-    @admin.action(description="Reprocessar vídeos selecionados no HeyGen")
+    @admin.action(description="Reprocessar vídeos selecionados")
     def reprocess_videos(self, request, queryset):
         from treinamentos.services.pipeline import start_pipeline_async
 
         count = 0
         for video in queryset:
-            video.set_status(TrainingVideo.Status.PENDING, 'Reiniciando pipeline...')
+            video.set_status(TrainingVideo.Status.PENDING, 'Reiniciando o processamento...')
             if start_pipeline_async(video.id):
                 count += 1
-        self.message_user(request, f"{count} vídeo(s) reenviado(s) para o pipeline de geração.")
+        self.message_user(request, f"{count} vídeo(s) reenviado(s) para processamento.")
 
 
 @admin.register(VideoProgress)

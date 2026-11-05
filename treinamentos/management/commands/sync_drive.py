@@ -34,7 +34,7 @@ class Command(BaseCommand):
         self.stdout.write("Varrendo as pastas dos setores...")
         result = GoogleDriveService.scan_all_departments()
         if not result['drive_connected']:
-            self.stdout.write(self.style.WARNING("Google Drive não configurado: apenas pastas locais foram varridas."))
+            self.stdout.write(self.style.WARNING("Google Drive não configurado: nada foi sincronizado."))
         for err in result['errors']:
             self.stderr.write(self.style.ERROR(err))
 

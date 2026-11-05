@@ -16,12 +16,11 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .context_processors import get_profile
-from .models import Department, TrainingVideo, VideoProgress
+from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
 from .services.document_parser import clean_script
-from .services.heygen_service import MAX_SCRIPT_CHARS
 from .services.pipeline import (
-    approve_and_generate, attach_uploaded_video, generation_params, mark_awaiting_video,
+    MAX_SCRIPT_CHARS, attach_uploaded_video, generation_params, mark_awaiting_video,
     start_pipeline_async, validate_script,
 )
 
@@ -129,7 +128,7 @@ def retry_video_view(request, video_id):
     if video.is_in_progress and video.status != Status.PENDING:
         messages.error(request, "Este vídeo já está em processamento.")
     else:
-        video.set_status(Status.PENDING, "Reiniciando pipeline...")
+        video.set_status(Status.PENDING, "Reiniciando o processamento...")
         start_pipeline_async(video.id)
         messages.success(request, f"'{video.title}' reenviado para processamento.")
     return redirect('queue')
@@ -154,15 +153,10 @@ def review_script_view(request, video_id):
         else:
             video.script_text = script
             video.save(update_fields=['script_text'])
-            if settings.HEYGEN_GENERATION_MODE == 'api':
-                video.set_status(Status.PENDING, "Roteiro aprovado. Gerando o vídeo...")
-                start_pipeline_async(video.id, approve_and_generate)
-                messages.success(request, f"Roteiro de '{video.title}' aprovado! O vídeo está sendo gerado.")
-            else:
-                mark_awaiting_video(video)
-                messages.success(
-                    request, f"Roteiro de '{video.title}' aprovado! Agora o vídeo precisa ser gerado na HeyGen e registrado."
-                )
+            mark_awaiting_video(video)
+            messages.success(
+                request, f"Roteiro de '{video.title}' aprovado! Agora o vídeo precisa ser gerado e registrado."
+            )
             return redirect('queue')
 
     return render(request, 'treinamentos/review.html', {

@@ -121,20 +121,12 @@ TEMP_DOCS_DIR = BASE_DIR / "data" / "temp_docs"
 ALLOWED_DOC_EXTENSIONS = (".pdf", ".docx", ".txt", ".md")
 # True: o gestor revisa/aprova o roteiro antes de gastar crédito da HeyGen. False: envio automático.
 REQUIRE_SCRIPT_REVIEW = env_bool("REQUIRE_SCRIPT_REVIEW", True)
-# Como o vídeo é gerado depois da aprovação do roteiro:
-#   "manual": o portal espera ("Aguardando Vídeo"); o vídeo é gerado fora (MCP da HeyGen ou site) e registrado depois.
-#   "api":    o portal chama a API da HeyGen sozinho (exige saldo de API).
-HEYGEN_GENERATION_MODE = os.getenv("HEYGEN_GENERATION_MODE", "manual").strip().lower()
 MAX_VIDEO_MB = int(os.getenv("MAX_VIDEO_MB", "500"))
 
 # Conector MCP do portal (para o Claude): vazio = conector desligado.
 MCP_TOKEN = os.getenv("MCP_TOKEN", "").strip()
 # Só links de vídeo destes domínios são baixados pelo conector (evita que o servidor busque URLs arbitrárias).
 MCP_ALLOWED_VIDEO_HOSTS = env_list("MCP_ALLOWED_VIDEO_HOSTS", "heygen.ai,heygen.com")
-
-HEYGEN_API_URL = os.getenv("HEYGEN_API_URL", "https://api.heygen.com").rstrip("/")
-HEYGEN_POLL_INTERVAL_SECONDS = int(os.getenv("HEYGEN_POLL_INTERVAL_SECONDS", "20"))
-HEYGEN_POLL_TIMEOUT_MINUTES = int(os.getenv("HEYGEN_POLL_TIMEOUT_MINUTES", "30"))
 
 GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "data/service_account.json")
 DRIVE_SYNC_INTERVAL_MINUTES = int(os.getenv("DRIVE_SYNC_INTERVAL_MINUTES", "5"))

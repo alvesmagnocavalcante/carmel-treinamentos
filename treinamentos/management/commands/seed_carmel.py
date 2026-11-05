@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from treinamentos.models import Department, SystemSetting, UserProfile
+from treinamentos.models import Department, UserProfile
 
 DEFAULT_PASSWORD = "carmel2026"
 
@@ -45,9 +45,4 @@ class Command(BaseCommand):
             profile.save()
             self.stdout.write(self.style.SUCCESS(f"[OK] Usuário criado: {username} / {DEFAULT_PASSWORD}"))
 
-        # Só cria as configurações se ainda não existirem — nunca sobrescreve chaves já salvas.
-        SystemSetting.objects.get_or_create(
-            key="heygen_api_key",
-            defaults={'value': '', 'description': "Chave da HeyGen. Vazio = usa HEYGEN_API_KEY do .env"},
-        )
         self.stdout.write(self.style.SUCCESS("[OK] Seed concluído."))
