@@ -93,7 +93,7 @@ def tool_mark_video_rendering(args: dict) -> dict:
     if video.status not in WAITING:
         raise ToolError(f"O item está em '{video.get_status_display()}'; só itens aguardando vídeo podem ser marcados.")
     video.set_status(
-        Status.GENERATING_HEYGEN, "Renderizando vídeo com Avatar Digital na HeyGen...", heygen_video_id=heygen_id
+        Status.GENERATING_HEYGEN, "Gerando o vídeo com o avatar digital...", heygen_video_id=heygen_id
     )
     return {"video_id": video.id, "status": video.get_status_display()}
 

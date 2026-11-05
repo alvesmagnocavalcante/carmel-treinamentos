@@ -275,7 +275,7 @@ class GoogleDriveService:
             if video:
                 video.set_status(
                     TrainingVideo.Status.COMPLETED,
-                    "Vídeo carregado da pasta Vídeos do Drive e disponível para o setor",
+                    "Vídeo concluído e disponível para o setor",
                     drive_video_id=file_id,
                     duration_seconds=duration or video.duration_seconds,
                     heygen_video_id=heygen_id or video.heygen_video_id,
@@ -287,7 +287,7 @@ class GoogleDriveService:
                     title=title_from_filename(name),
                     file_name=name,
                     status=TrainingVideo.Status.COMPLETED,
-                    status_message="Vídeo importado da pasta Vídeos do Drive",
+                    status_message="Vídeo disponível para o setor",
                     drive_video_id=file_id,
                     duration_seconds=duration,
                     heygen_video_id=heygen_id,
@@ -333,6 +333,6 @@ class GoogleDriveService:
                 source_path=str(dest),
                 drive_file_id=file_id,
                 status=TrainingVideo.Status.PENDING,
-                status_message="Baixado do Google Drive",
+                status_message="Roteiro recebido",
             ))
         return created

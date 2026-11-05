@@ -55,7 +55,7 @@
             <p class="video-desc">{{ video.script_text|truncatechars:150 }}</p>
             <div class="video-meta">
                 <span>{% include 'partials/icon.html' with name='calendar' %} {{ video.completed_at|date:"d/m/Y"|default:"—" }}</span>
-                <span>{% include 'partials/icon.html' with name='bot' %} Avatar HeyGen</span>
+                <span>{% include 'partials/icon.html' with name='bot' %} Avatar digital</span>
             </div>
         </div>
     </button>
@@ -65,7 +65,7 @@
         <h3>Nenhum treinamento disponível</h3>
         <p>
             {% if search_query %}Nada encontrado para “{{ search_query }}”.
-            {% elif can_manage %}Coloque um roteiro na subpasta Roteiros do setor no Google Drive e clique em “Sincronizar Drive”.
+            {% elif can_manage %}Coloque um roteiro na pasta do setor e clique em “Sincronizar Drive”.
             {% else %}Assim que novos treinamentos forem publicados para o seu setor, eles aparecerão aqui.{% endif %}
         </p>
     </div>

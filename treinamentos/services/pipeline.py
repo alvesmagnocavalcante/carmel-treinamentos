@@ -96,7 +96,7 @@ def process_training_video(video_id: int) -> None:
         if settings.REQUIRE_SCRIPT_REVIEW:
             video.set_status(
                 Status.AWAITING_REVIEW,
-                f"Roteiro pronto ({len(video.script_text)} caracteres). Revise e aprove para gerar o vídeo.",
+                "Roteiro pronto. Revise e aprove para gerar o vídeo.",
             )
             return
         _generate_or_wait(video)
@@ -129,12 +129,7 @@ def generation_params(video: TrainingVideo) -> dict:
 def mark_awaiting_video(video: TrainingVideo) -> None:
     """Roteiro aprovado, mas o vídeo é gerado fora do portal (MCP/site da HeyGen): fica esperando o registro."""
     validate_script(video.script_text)
-    params = generation_params(video)
-    video.set_status(
-        Status.AWAITING_VIDEO,
-        f"Roteiro aprovado ({len(video.script_text)} caracteres). Aguardando a geração do vídeo na HeyGen "
-        f"(avatar {params['avatar_id'] or '?'}, voz {params['voice_id'] or '?'}).",
-    )
+    video.set_status(Status.AWAITING_VIDEO, "Roteiro aprovado. Aguardando a geração do vídeo.")
 
 
 def _generate_or_wait(video: TrainingVideo) -> None:
@@ -195,7 +190,7 @@ def save_generated_video(
     }
     if publish:
         video.set_status(
-            Status.COMPLETED, "Vídeo salvo no Drive e disponível para o setor",
+            Status.COMPLETED, "Vídeo concluído e disponível para o setor",
             drive_video_id=file_id, completed_at=timezone.now(), **common,
         )
     else:
@@ -221,7 +216,7 @@ def attach_uploaded_video(video: TrainingVideo, path: Path, duration: float = 0.
 
 def _send_to_heygen(video: TrainingVideo) -> None:
     validate_script(video.script_text)
-    video.set_status(Status.GENERATING_HEYGEN, "Enviando roteiro para o Avatar Digital da HeyGen...")
+    video.set_status(Status.GENERATING_HEYGEN, "Enviando o roteiro para gerar o vídeo...")
     result = HeyGenService.generate_video(
         script_text=video.script_text,
         avatar_id=video.department.avatar_id,
@@ -230,7 +225,7 @@ def _send_to_heygen(video: TrainingVideo) -> None:
     )
     video.set_status(
         Status.GENERATING_HEYGEN,
-        "Renderizando vídeo com Avatar Digital no HeyGen...",
+        "Gerando o vídeo com o avatar digital...",
         heygen_video_id=result["video_id"],
         video_url="",
         thumbnail_url="",
@@ -271,7 +266,7 @@ def archive_video_to_drive(video: TrainingVideo) -> None:
         )
         return
     if file_id:
-        video.set_status(Status.COMPLETED, "Vídeo concluído e salvo na pasta Vídeos do setor no Drive", drive_video_id=file_id)
+        video.set_status(Status.COMPLETED, "Vídeo concluído e disponível para o setor", drive_video_id=file_id)
 
 
 def wait_for_heygen(video: TrainingVideo) -> None:

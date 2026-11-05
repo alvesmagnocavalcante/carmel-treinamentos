@@ -150,7 +150,7 @@ def review_script_view(request, video_id):
             video.script_text = script
             video.save(update_fields=['script_text'])
             if settings.HEYGEN_GENERATION_MODE == 'api':
-                video.set_status(Status.PENDING, "Roteiro aprovado. Enviando para a HeyGen...")
+                video.set_status(Status.PENDING, "Roteiro aprovado. Gerando o vídeo...")
                 start_pipeline_async(video.id, approve_and_generate)
                 messages.success(request, f"Roteiro de '{video.title}' aprovado! O vídeo está sendo gerado.")
             else:
