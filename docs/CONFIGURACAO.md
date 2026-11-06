@@ -206,6 +206,19 @@ Nunca gere o mesmo item duas vezes e nunca altere o texto do roteiro.
 
 **6.5 Segurança.** A chave no endereço é um segredo: ela aparece nos registros de acesso do servidor. Se vazar, troque o `MCP_TOKEN` e atualize o conector. Só são baixados links https de `heygen.ai` e `heygen.com`. Login por OAuth e limite de chamadas ainda não foram implementados.
 
+## Identidade visual
+
+O portal e o Admin seguem o guia de marca da Rede Carmel Hotéis.
+
+| Elemento | O que foi usado |
+|---|---|
+| Cores | Café `#4C3427` (botões e logotipo), terracota `#B14D1D` (destaques), areia `#E7D0A7` e neutros `#E8E7E1`, `#DBD4CA`, `#9F9385`, `#1D1D1B` |
+| Tipografia | Cormorant nos títulos, Plus Jakarta Sans no texto e Oooh Baby no detalhe da tela de login |
+| Logotipo | Versão da rede (café no tema claro, areia no escuro) e ícone no favicon |
+| Textura | Papel areia no fundo da tela de login |
+
+Onde ficam os arquivos: cores e componentes em `static/css/carmel.css` (portal) e `static/css/carmel_admin.css` (Admin); fontes em `static/fonts/`; logotipo, ícone e textura em `static/img/`. Para trocar uma cor, altere as variáveis no início de `carmel.css` (as do tema escuro ficam logo abaixo, em `html.dark`).
+
 ## Uso no dia a dia
 
 1. **Roteiro:** a equipe coloca o documento em `<Setor>/Roteiros` no Drive. O gestor clica em **Sincronizar Drive**.

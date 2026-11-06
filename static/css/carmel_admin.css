@@ -1,119 +1,150 @@
 /* ==========================================================================
-   CARMEL — tema do Django Admin
+   CARMEL — tema do Django Admin (identidade visual da marca)
    Usa as variáveis nativas do admin (sem !important) para claro e escuro.
    Carregado depois de base.css e dark_mode.css.
    ========================================================================== */
 
 :root,
 html[data-theme="light"] {
-    --primary: #B08A4A;
-    --secondary: #8F6E36;
-    --accent: #E9D6AE;
+    --primary: #4C3427;
+    --secondary: #8F3E16;
+    --accent: #E7D0A7;
     --primary-fg: #FFFFFF;
 
-    --body-fg: #231D18;
-    --body-bg: #F7F4EF;
-    --body-quiet-color: #6F6458;
-    --body-medium-color: #4A4037;
-    --body-loud-color: #1B1815;
+    --body-fg: #1D1D1B;
+    --body-bg: #F7F6F2;
+    --body-quiet-color: #6E6358;
+    --body-medium-color: #4C3427;
+    --body-loud-color: #1D1D1B;
 
-    --header-color: #231D18;
-    --header-branding-color: #231D18;
+    --header-color: #1D1D1B;
+    --header-branding-color: #1D1D1B;
     --header-bg: #FFFFFF;
-    --header-link-color: #5E5348;
+    --header-link-color: #4C3427;
 
-    --breadcrumbs-fg: #8A7E71;
-    --breadcrumbs-link-fg: #8F6E36;
-    --breadcrumbs-bg: #FBF9F5;
+    --breadcrumbs-fg: #7B6F62;
+    --breadcrumbs-link-fg: #8F3E16;
+    --breadcrumbs-bg: #ECEAE3;
 
-    --link-fg: #8F6E36;
-    --link-hover-color: #5E4720;
-    --link-selected-fg: #8F6E36;
+    --link-fg: #8F3E16;
+    --link-hover-color: #B14D1D;
+    --link-selected-fg: #8F3E16;
 
-    --hairline-color: #EEE8DD;
-    --border-color: #E0D8CA;
-    --darkened-bg: #FBF9F5;
-    --selected-bg: #F3EBDD;
-    --selected-row: #FBF1DC;
+    --hairline-color: #E6E2D9;
+    --border-color: #DBD4CA;
+    --darkened-bg: #ECEAE3;
+    --selected-bg: #F4EAD8;
+    --selected-row: #F8F0E1;
 
     --button-fg: #FFFFFF;
-    --button-bg: #8F6E36;
-    --button-hover-bg: #6F5426;
-    --default-button-bg: #231D18;
-    --default-button-hover-bg: #3A322A;
-    --close-button-bg: #8A7E71;
-    --close-button-hover-bg: #5E5348;
+    --button-bg: #4C3427;
+    --button-hover-bg: #3A271D;
+    --default-button-bg: #4C3427;
+    --default-button-hover-bg: #3A271D;
+    --close-button-bg: #7B6F62;
+    --close-button-hover-bg: #4C3427;
 
     --object-tools-fg: #FFFFFF;
-    --object-tools-bg: #8A7E71;
-    --object-tools-hover-bg: #5E5348;
+    --object-tools-bg: #7B6F62;
+    --object-tools-hover-bg: #4C3427;
 
-    --font-family-primary: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-family-primary: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 html[data-theme="dark"] {
-    --primary: #CDA660;
-    --secondary: #E2C48C;
-    --accent: #CDA660;
-    --primary-fg: #1B1815;
+    --primary: #E7D0A7;
+    --secondary: #F0A67B;
+    --accent: #E7D0A7;
+    --primary-fg: #1D1D1B;
 
-    --body-fg: #F4EFE8;
-    --body-bg: #12100E;
-    --body-quiet-color: #B3A798;
-    --body-medium-color: #D6CCBF;
+    --body-fg: #E8E7E1;
+    --body-bg: #1D1D1B;
+    --body-quiet-color: #9F9385;
+    --body-medium-color: #DBD4CA;
     --body-loud-color: #FFFFFF;
 
-    --header-color: #F4EFE8;
-    --header-branding-color: #F4EFE8;
-    --header-bg: #1B1815;
-    --header-link-color: #C9BFB2;
+    --header-color: #E8E7E1;
+    --header-branding-color: #E8E7E1;
+    --header-bg: #262320;
+    --header-link-color: #DBD4CA;
 
-    --breadcrumbs-fg: #9A8E80;
-    --breadcrumbs-link-fg: #E2C48C;
-    --breadcrumbs-bg: #17140F;
+    --breadcrumbs-fg: #9F9385;
+    --breadcrumbs-link-fg: #E7D0A7;
+    --breadcrumbs-bg: #211F1C;
 
-    --link-fg: #E2C48C;
-    --link-hover-color: #F3DDB0;
-    --link-selected-fg: #E2C48C;
+    --link-fg: #E7D0A7;
+    --link-hover-color: #F0DDBA;
+    --link-selected-fg: #E7D0A7;
 
-    --hairline-color: #2A2520;
-    --border-color: #3A332C;
-    --darkened-bg: #1B1815;
-    --selected-bg: #2A2218;
-    --selected-row: #2B2214;
+    --hairline-color: #2E2A26;
+    --border-color: #3A322C;
+    --darkened-bg: #262320;
+    --selected-bg: #33281F;
+    --selected-row: #2E2519;
 
-    --button-fg: #1B1815;
-    --button-bg: #CDA660;
-    --button-hover-bg: #E2C48C;
-    --default-button-bg: #CDA660;
-    --default-button-hover-bg: #E2C48C;
-    --close-button-bg: #4A4037;
-    --close-button-hover-bg: #5E5348;
+    --button-fg: #1D1D1B;
+    --button-bg: #E7D0A7;
+    --button-hover-bg: #F0DDBA;
+    --default-button-bg: #E7D0A7;
+    --default-button-hover-bg: #F0DDBA;
+    --close-button-bg: #4C3427;
+    --close-button-hover-bg: #5F4333;
 
-    --object-tools-fg: #F4EFE8;
-    --object-tools-bg: #3A332C;
-    --object-tools-hover-bg: #4A4037;
+    --object-tools-fg: #E8E7E1;
+    --object-tools-bg: #3A322C;
+    --object-tools-hover-bg: #4C3427;
 }
 
 @media (prefers-color-scheme: dark) {
     html[data-theme="auto"] {
-        --primary: #CDA660; --secondary: #E2C48C; --accent: #CDA660; --primary-fg: #1B1815;
-        --body-fg: #F4EFE8; --body-bg: #12100E; --body-quiet-color: #B3A798; --body-medium-color: #D6CCBF; --body-loud-color: #FFFFFF;
-        --header-color: #F4EFE8; --header-branding-color: #F4EFE8; --header-bg: #1B1815; --header-link-color: #C9BFB2;
-        --breadcrumbs-fg: #9A8E80; --breadcrumbs-link-fg: #E2C48C; --breadcrumbs-bg: #17140F;
-        --link-fg: #E2C48C; --link-hover-color: #F3DDB0; --link-selected-fg: #E2C48C;
-        --hairline-color: #2A2520; --border-color: #3A332C; --darkened-bg: #1B1815; --selected-bg: #2A2218; --selected-row: #2B2214;
-        --button-fg: #1B1815; --button-bg: #CDA660; --button-hover-bg: #E2C48C;
-        --default-button-bg: #CDA660; --default-button-hover-bg: #E2C48C;
-        --close-button-bg: #4A4037; --close-button-hover-bg: #5E5348;
-        --object-tools-fg: #F4EFE8; --object-tools-bg: #3A332C; --object-tools-hover-bg: #4A4037;
+        --primary: #E7D0A7;
+        --secondary: #F0A67B;
+        --accent: #E7D0A7;
+        --primary-fg: #1D1D1B;
+
+        --body-fg: #E8E7E1;
+        --body-bg: #1D1D1B;
+        --body-quiet-color: #9F9385;
+        --body-medium-color: #DBD4CA;
+        --body-loud-color: #FFFFFF;
+
+        --header-color: #E8E7E1;
+        --header-branding-color: #E8E7E1;
+        --header-bg: #262320;
+        --header-link-color: #DBD4CA;
+
+        --breadcrumbs-fg: #9F9385;
+        --breadcrumbs-link-fg: #E7D0A7;
+        --breadcrumbs-bg: #211F1C;
+
+        --link-fg: #E7D0A7;
+        --link-hover-color: #F0DDBA;
+        --link-selected-fg: #E7D0A7;
+
+        --hairline-color: #2E2A26;
+        --border-color: #3A322C;
+        --darkened-bg: #262320;
+        --selected-bg: #33281F;
+        --selected-row: #2E2519;
+
+        --button-fg: #1D1D1B;
+        --button-bg: #E7D0A7;
+        --button-hover-bg: #F0DDBA;
+        --default-button-bg: #E7D0A7;
+        --default-button-hover-bg: #F0DDBA;
+        --close-button-bg: #4C3427;
+        --close-button-hover-bg: #5F4333;
+
+        --object-tools-fg: #E8E7E1;
+        --object-tools-bg: #3A322C;
+        --object-tools-hover-bg: #4C3427;
     }
 }
 
 /* ---- Tipografia / base --------------------------------------------------- */
 body { font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
-h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; }
-#content h1 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; color: var(--body-loud-color); margin-bottom: 20px; }
+h1, h2, h3 { font-family: 'Cormorant', Georgia, serif; }
+#content h1 { font-size: 34px; font-weight: 700; letter-spacing: -.01em; color: var(--body-loud-color); margin-bottom: 20px; }
 #content > h2 { font-size: 16px; color: var(--body-quiet-color); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: 2px solid var(--primary); outline-offset: 2px;
@@ -126,18 +157,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     align-items: center;
 }
 #site-name { margin: 0; }
-#site-name a {
-    display: inline-flex; align-items: center; gap: 10px; color: var(--header-color);
-    font: 700 20px/1 'Playfair Display', Georgia, serif; letter-spacing: .04em;
-}
+#site-name a { display: inline-flex; align-items: center; gap: 14px; color: var(--header-color); }
 #site-name a:hover { text-decoration: none; color: var(--header-color); }
 #site-name small {
-    font: 600 10.5px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--secondary); padding: 4px 9px; border: 1px solid var(--border-color); border-radius: 999px;
+    font: 600 10.5px/1 'Plus Jakarta Sans', sans-serif; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--secondary); padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 999px;
 }
-.carmel-mark {
-    display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
-    background: var(--primary); color: var(--primary-fg); font-size: 16px;
+.carmel-logo {
+    display: block; width: 112px; height: 40px; background-color: var(--primary);
+    -webkit-mask: url('../img/carmel-logo.png') center / contain no-repeat;
+    mask: url('../img/carmel-logo.png') center / contain no-repeat;
 }
 #user-tools { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; font-size: 12.5px; text-transform: none; letter-spacing: 0; }
 #user-tools a, #user-tools button { color: var(--header-link-color); border-bottom: 0; }
@@ -161,7 +190,7 @@ div.breadcrumbs a { font-weight: 600; }
 .module { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: var(--body-bg); box-shadow: 0 1px 2px rgba(35, 29, 24, .05); }
 .module h2, .module caption, .inline-group h2 {
     background: var(--darkened-bg); color: var(--body-loud-color);
-    font: 700 15px/1.3 'Playfair Display', Georgia, serif; letter-spacing: 0; text-transform: none;
+    font: 700 19px/1.25 'Cormorant', Georgia, serif; letter-spacing: 0; text-transform: none;
     padding: 14px 18px; border-bottom: 1px solid var(--border-color);
 }
 .module h2 a, .module caption a { color: inherit; }
@@ -194,8 +223,8 @@ div.breadcrumbs a { font-weight: 600; }
     background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden;
     min-width: 230px; padding-bottom: 8px;
 }
-#changelist-filter h2 { background: var(--darkened-bg); border-bottom: 1px solid var(--border-color); font: 700 13px 'Playfair Display', serif; text-transform: none; letter-spacing: 0; padding: 13px 16px; color: var(--body-loud-color); }
-#changelist-filter h3 { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--body-quiet-color); font-family: 'Inter', sans-serif; padding: 0 16px; margin-top: 14px; }
+#changelist-filter h2 { background: var(--darkened-bg); border-bottom: 1px solid var(--border-color); font: 700 17px 'Cormorant', serif; text-transform: none; letter-spacing: 0; padding: 13px 16px; color: var(--body-loud-color); }
+#changelist-filter h3 { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--body-quiet-color); font-family: 'Plus Jakarta Sans', sans-serif; padding: 0 16px; margin-top: 14px; }
 #changelist-filter ul { padding: 0 8px; }
 #changelist-filter li a { display: block; padding: 5px 10px; border-radius: 8px; color: var(--body-medium-color); }
 #changelist-filter li a:hover { background: var(--darkened-bg); color: var(--link-hover-color); }

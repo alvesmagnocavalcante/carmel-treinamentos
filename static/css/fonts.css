@@ -1,0 +1,13 @@
+/* Tipografia da marca Carmel (guia de marca): Plus Jakarta Sans (texto), Cormorant (títulos) e Oooh Baby (detalhes). */
+@font-face {
+    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 200 800; font-display: swap;
+    src: url('../fonts/plus-jakarta-sans.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Cormorant'; font-style: normal; font-weight: 300 700; font-display: swap;
+    src: url('../fonts/cormorant.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Oooh Baby'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('../fonts/oooh-baby.woff2') format('woff2');
+}

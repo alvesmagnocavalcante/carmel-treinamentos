@@ -105,7 +105,7 @@ treinamentos/
   management/commands/ sync_drive, seed_carmel
   tests/               testes por assunto (acesso, pipeline, drive, streaming, mcp)
 templates/             portal e tema do Django Admin
-static/                CSS e JavaScript (js/portal.js)
+static/                CSS, JavaScript, fontes e imagens da marca (css/, js/, fonts/, img/)
 docs/CONFIGURACAO.md   manual de configuração passo a passo
 data/                  banco SQLite, documentos baixados e Service Account (fora do Git)
 ```

@@ -8,7 +8,7 @@
         <h1 class="page-title">Fila de processamento</h1>
         <p class="page-sub">
             Acompanhe cada documento até virar vídeo.
-            {% if has_active_jobs %}<strong style="color: var(--gold-strong)">Atualizando automaticamente…</strong>{% endif %}
+            {% if has_active_jobs %}<strong style="color: var(--accent-strong)">Atualizando automaticamente…</strong>{% endif %}
         </p>
     </div>
     <a href="{% url 'queue' %}" class="btn btn-ghost">{% include 'partials/icon.html' with name='rotate-cw' %} Atualizar</a>

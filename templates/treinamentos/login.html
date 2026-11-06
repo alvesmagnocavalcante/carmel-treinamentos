@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrar • Carmel Treinamentos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
     <link rel="stylesheet" href="{% static 'css/carmel.css' %}">
     {% include 'partials/theme_init.html' %}
 </head>
@@ -14,10 +13,10 @@
 <main class="login-wrap">
     <section class="card login-card">
         <div class="login-head">
-            <span class="brand-mark">{% include 'partials/icon.html' with name='sparkles' %}</span>
-            <span class="brand-name">CARMEL</span>
-            <span class="brand-sub">Plataforma de Treinamentos</span>
-            <p class="muted" style="margin-top:8px">Entre com seu usuário corporativo.</p>
+            <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
+            <span class="login-tagline">a arte de saber viver</span>
+            <span class="login-sub">Plataforma de Treinamentos</span>
+            <p class="muted" style="margin-top:10px">Olá! Entre com o seu usuário corporativo.</p>
         </div>
 
         {% for message in messages %}

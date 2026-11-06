@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Carmel Treinamentos{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
     <link rel="stylesheet" href="{% static 'css/carmel.css' %}">
     {% include 'partials/theme_init.html' %}
 </head>
@@ -16,11 +15,8 @@
 <header class="topbar">
     <div class="topbar-inner">
         <a href="{% url 'home' %}" class="brand">
-            <span class="brand-mark">{% include 'partials/icon.html' with name='sparkles' %}</span>
-            <span>
-                <span class="brand-name">CARMEL</span>
-                <span class="brand-sub">Treinamentos</span>
-            </span>
+            <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
+            <span class="brand-sub">Treinamentos</span>
         </a>
 
         {% if user.is_authenticated %}
