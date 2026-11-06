@@ -584,8 +584,10 @@ fieldset.collapse > h2 { cursor: pointer; }
     #user-tools { display: none; }
     .portal-link { display: none; }
     .header-theme { display: inline-flex; margin-left: auto; }
+    .header-theme, .header-theme .theme-toggle, .header-theme .theme-toggle:hover, .header-theme .theme-toggle:focus { background-color: transparent; box-shadow: none; }
+    .header-theme .theme-toggle svg { background: transparent; }
     .header-theme .theme-toggle {
-        width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--darkened-bg);
+        width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border-color); background: transparent;
         display: inline-grid; place-items: center; cursor: pointer; color: var(--header-color); padding: 0;
     }
     .nav-account { display: block; }
