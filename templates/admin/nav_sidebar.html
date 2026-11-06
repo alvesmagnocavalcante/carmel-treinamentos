@@ -18,5 +18,13 @@
         <a href="{% url 'home' %}" class="nav-link"><i data-lucide="arrow-left-circle" class="nav-ico"></i> Voltar ao portal</a>
         <a href="{% url 'queue' %}" class="nav-link"><i data-lucide="list-checks" class="nav-ico"></i> Fila de vídeos</a>
     </div>
+    <div class="nav-group nav-account">
+        <h3>Minha conta</h3>
+        <div class="nav-user">{{ user.get_full_name|default:user.get_username }}</div>
+        <a href="{% url 'admin:password_change' %}" class="nav-link"><i data-lucide="key-round" class="nav-ico"></i> Alterar senha</a>
+        <form method="post" action="{% url 'admin:logout' %}">{% csrf_token %}
+            <button type="submit" class="nav-link nav-logout"><i data-lucide="log-out" class="nav-ico"></i> Encerrar sessão</button>
+        </form>
+    </div>
 </nav>
 <div id="carmel-nav-backdrop" hidden></div>

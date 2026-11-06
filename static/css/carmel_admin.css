@@ -523,8 +523,6 @@ fieldset .description { color: var(--body-quiet-color); font-size: 13px; padding
 }
 @media (max-width: 767px) {
     .portal-link { display: none; }
-    .column-duration, .column-created_at, .column-avatar_id, .column-voice_id, .column-watched_at { display: none; }
-    #changelist .results table { min-width: 0; }
     .module h2, .module caption, .inline-group h2 { padding: 12px 14px; }
     .form-row { padding: 12px 14px; }
 }
@@ -568,4 +566,139 @@ fieldset.collapse > h2 { cursor: pointer; }
 @media (max-width: 1024px) {
     #changelist .changelist-form-container #changelist-filter { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; }
     #header { gap: 12px; padding-bottom: 12px; }
+}
+
+/* ==========================================================================
+   Celular e tablet: cabeçalho de uma linha, conta no menu, listas em cartões
+   ========================================================================== */
+.header-theme { display: none; }
+.nav-account { display: none; }
+#carmel-nav form { margin: 0; }
+#carmel-nav .nav-logout { width: 100%; background: transparent; border-top: 0; border-right: 0; border-bottom: 0; font: inherit; cursor: pointer; text-align: left; }
+#carmel-nav .nav-user { padding: 0 12px 8px; font-weight: 700; font-size: 13.5px; color: var(--body-loud-color); }
+
+@media (max-width: 1024px) {
+    /* Cabeçalho: menu + logotipo + tema, numa linha só. O usuário, "Alterar senha" e "Sair" ficam no menu. */
+    #header { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; padding: 10px 14px; min-height: 64px; flex-shrink: 0; }
+    #branding { flex: 1 1 auto; min-width: 0; align-items: center; gap: 12px; }
+    #user-tools { display: none; }
+    .portal-link { display: none; }
+    .header-theme { display: inline-flex; margin-left: auto; }
+    .header-theme .theme-toggle {
+        width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--darkened-bg);
+        display: inline-grid; place-items: center; cursor: pointer; color: var(--header-color); padding: 0;
+    }
+    .nav-account { display: block; }
+    .menu-btn { width: 44px; height: 44px; }
+    #carmel-nav .nav-link { padding: 13px 12px; font-size: 14.5px; }
+    div.breadcrumbs { padding: 10px 14px; }
+}
+
+@media (max-width: 767px) {
+    .carmel-logo { width: 104px; height: 36px; }
+
+    /* Listas: cada linha vira um cartão (o nome de cada coluna vem do cabeçalho da tabela) */
+    #changelist .results { overflow: visible; border: 0; background: transparent; box-shadow: none; border-radius: 0; }
+    #result_list, #result_list tbody { display: block; width: 100%; border: 0; }
+    #result_list thead { display: none; }
+    #result_list tbody tr {
+        display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 6px 10px; align-items: start;
+        padding: 14px; margin: 0 0 12px; background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 16px;
+        box-shadow: 0 1px 2px rgba(76, 52, 39, .06);
+    }
+    #changelist #result_list tbody tr:hover td, #changelist #result_list tbody tr:hover th,
+    #changelist #result_list tbody tr.selected td, #changelist #result_list tbody tr.selected th { background: transparent; }
+    #result_list tbody tr.selected { background: var(--selected-row); border-color: var(--link-hover-color); }
+    #changelist #result_list tbody td, #changelist #result_list tbody th { display: block; padding: 0; border: 0; grid-column: 2; min-width: 0; font-size: 14px; }
+    #changelist #result_list tbody td.action-checkbox { grid-column: 1; grid-row: 1 / span 6; padding-top: 2px; }
+    #changelist #result_list tbody th { font-size: 16px; font-weight: 700; }
+    #result_list tbody td[data-label]::before {
+        content: attr(data-label); display: block; margin-bottom: 2px; font-size: 10.5px; font-weight: 700;
+        letter-spacing: .1em; text-transform: uppercase; color: var(--body-quiet-color);
+    }
+    #result_list tbody td:empty, #result_list tbody td.field-drive_ok:empty { display: none; }
+    #changelist .paginator { padding: 12px 2px; }
+
+    /* Barra de salvar: botões em coluna, o principal primeiro, e sem ficar presa na tela */
+    .submit-row { position: static; box-shadow: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px; margin-top: 18px; }
+    .submit-row > * { margin: 0 !important; float: none !important; width: 100%; box-sizing: border-box; text-align: center; }
+    .submit-row input.default { order: -2; padding: 13px; font-size: 15px; }
+    .submit-row input[type=submit]:not(.default), .submit-row input[type=button]:not(.default) {
+        order: -1; background: transparent; color: var(--body-medium-color); border: 1px solid var(--border-color); padding: 12px;
+    }
+    .submit-row p.deletelink-box, .submit-row .deletelink-box { order: 5; display: block; }
+    .submit-row a.deletelink { display: block; padding: 12px; background: transparent; color: var(--tone-err); border: 1px solid var(--tone-err-border); border-radius: 10px; }
+    .object-tools { float: none; margin: 0 0 14px; }
+
+    /* Formulários */
+    .form-row { padding: 12px 14px; }
+    .aligned label { margin-bottom: 4px; }
+    .aligned .help, .aligned form .help { margin-left: 0; padding-left: 0; }
+    .aligned input[type=text], .aligned input[type=password], .aligned input[type=email], .aligned input[type=url], .aligned input[type=number], .aligned select, .aligned textarea { width: 100%; max-width: 100%; box-sizing: border-box; }
+    .aligned .vLargeTextField, .aligned textarea { min-height: 120px; }
+    .inline-group .tabular { overflow-x: auto; }
+    .related-widget-wrapper { width: 100%; }
+    .related-widget-wrapper select { flex: 1 1 auto; min-width: 0; }
+
+    /* Excluir / histórico / outras páginas de texto */
+    #content > p, .delete-confirmation #content form > div { word-break: break-word; }
+    .delete-confirmation .submit-row, .delete-confirmation form > div { text-align: left; }
+}
+
+/* Login do Admin: cartão compacto e centralizado */
+body.login #container { min-width: 0; min-height: 0; height: auto; width: calc(100% - 28px); max-width: 420px; margin: 6vh auto; box-sizing: border-box; }
+.login .submit-row { position: static; box-shadow: none; }
+.login #header { padding: 16px 20px; justify-content: space-between; }
+.login #content { padding: 20px 20px 24px; }
+.login .form-row { padding: 0 0 14px; border: 0; }
+.login .form-row label { display: block; margin-bottom: 6px; }
+.login .form-row input { width: 100%; box-sizing: border-box; }
+.login .submit-row input { width: 100%; padding: 13px; }
+
+/* O CSS responsivo do Django coloca o cabeçalho em coluna; aqui ele volta a ser uma linha só */
+@media (max-width: 1024px) {
+    #header { flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; height: auto !important; padding: 10px 14px !important; gap: 10px; }
+    #header #branding { flex: 1 1 auto; width: auto; }
+}
+
+/* O contêiner do Admin tem altura fixa: cabeçalho, trilha e rodapé nunca podem encolher */
+#header, div.breadcrumbs, #footer { flex-shrink: 0; }
+
+/* Login do Admin */
+body.login #container { height: auto !important; min-height: 0 !important; display: block; }
+.login #content-main { width: 100%; }
+.login .submit-row { padding: 6px 0 0; border: 0; background: transparent; }
+.login .submit-row input[type=submit] { background: var(--default-button-bg); color: var(--primary-fg); border: 0; order: 0; }
+
+/* Acabamento do celular: espaçamento dos campos e login sem esticar */
+.login .main { min-height: 0; display: block; background: none; }
+.login .main::before { display: none; }
+@media (max-width: 767px) {
+    body fieldset.module .form-row, body .aligned .form-row, body .inline-related .form-row { padding: 14px 16px; }
+    body fieldset.module .form-row > div, body .aligned .form-row > div { padding: 0; margin: 0; }
+    body fieldset.module .form-row input[type=text], body fieldset.module .form-row input[type=password], body fieldset.module .form-row input[type=email],
+    body fieldset.module .form-row input[type=url], body fieldset.module .form-row input[type=number], body fieldset.module .form-row select,
+    body fieldset.module .form-row textarea { width: 100%; max-width: 100%; box-sizing: border-box; }
+    body fieldset.module .form-row .help, body fieldset.module .form-row .help-tooltip { margin: 6px 0 8px; padding: 0; }
+    body fieldset.module .description { padding: 12px 16px 0; }
+}
+
+@media (max-width: 767px) {
+    body .form-row .flex-container { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; flex-wrap: wrap; }
+    body .form-row .flex-container > input, body .form-row .flex-container > select, body .form-row .flex-container > textarea { flex: 1 1 100%; min-width: 0; width: 100%; }
+    body .form-row .vTextField, body .form-row .vURLField, body .form-row .vLargeTextField, body .form-row .vIntegerField { min-width: 0; max-width: 100%; }
+}
+
+@media (max-width: 767px) {
+    body .form-row .flex-container { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+    body .form-row .flex-container > input, body .form-row .flex-container > select, body .form-row .flex-container > textarea {
+        flex: 0 0 auto; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;
+    }
+    body .form-row .vTextField, body .form-row .vUUIDField { width: 100%; }
+}
+
+/* O Django fixa a largura dos campos em calc(100vw - 30px), sem contar o cartão; aqui vale a largura do próprio cartão */
+@media (max-width: 767px) {
+    body .aligned .form-row > div, body fieldset.module .form-row > div { width: 100% !important; max-width: 100% !important; }
+    body .aligned .form-row, body .aligned .form-row.field-box { max-width: 100%; }
 }

@@ -15,7 +15,8 @@
 <div id="site-name">
     <a href="{% url 'admin:index' %}"><span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span> <small>Administração</small></a>
 </div>
-{% if user.is_authenticated %}<a class="portal-link" href="{% url 'home' %}">← Voltar ao portal</a>{% endif %}
+{% if user.is_authenticated %}<a class="portal-link" href="{% url 'home' %}">← Voltar ao portal</a>
+<span class="header-theme">{% include "admin/color_theme_toggle.html" %}</span>{% endif %}
 {% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
 {% endblock %}
 
@@ -34,6 +35,18 @@
         if (btn) btn.addEventListener('click', function () { setMenu(!document.body.classList.contains('menu-open')); });
         if (backdrop) backdrop.addEventListener('click', function () { setMenu(false); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+
+        // Listas: cada célula ganha o nome da coluna (usado no formato de cartões do celular).
+        var table = document.getElementById('result_list');
+        if (table) {
+            var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+                var t = th.querySelector('.text');
+                return (t ? t.textContent : th.textContent).trim();
+            });
+            table.querySelectorAll('tbody tr').forEach(function (tr) {
+                Array.prototype.forEach.call(tr.children, function (cell, i) { if (heads[i]) cell.setAttribute('data-label', heads[i]); });
+            });
+        }
 
         // Filtro das listas: recolhido em telas pequenas; toque em "Filtro" para abrir.
         var filter = document.getElementById('changelist-filter');
