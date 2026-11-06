@@ -9,15 +9,44 @@
 {% endblock %}
 
 {% block branding %}
+{% if user.is_authenticated and not is_popup %}
+<button type="button" class="menu-btn" id="carmel-menu-btn" aria-label="Abrir menu" aria-controls="carmel-nav" aria-expanded="false"><i data-lucide="menu"></i></button>
+{% endif %}
 <div id="site-name">
     <a href="{% url 'admin:index' %}"><span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span> <small>Administração</small></a>
 </div>
+{% if user.is_authenticated %}<a class="portal-link" href="{% url 'home' %}">← Voltar ao portal</a>{% endif %}
 {% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
 {% endblock %}
 
-{% block usertools %}
-<div id="user-tools">
-    <a class="portal-link" href="{% url 'home' %}">← Voltar ao portal</a>
-    {{ block.super }}
-</div>
+{% block footer %}
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script>
+    (function () {
+        if (window.lucide) lucide.createIcons();
+        var btn = document.getElementById('carmel-menu-btn');
+        var backdrop = document.getElementById('carmel-nav-backdrop');
+        function setMenu(open) {
+            document.body.classList.toggle('menu-open', open);
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (backdrop) backdrop.hidden = !open;
+        }
+        if (btn) btn.addEventListener('click', function () { setMenu(!document.body.classList.contains('menu-open')); });
+        if (backdrop) backdrop.addEventListener('click', function () { setMenu(false); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+
+        // Filtro das listas: recolhido em telas pequenas; toque em "Filtro" para abrir.
+        var filter = document.getElementById('changelist-filter');
+        if (filter) {
+            var title = filter.querySelector('h2');
+            if (title) {
+                title.setAttribute('role', 'button');
+                title.tabIndex = 0;
+                var toggle = function () { filter.classList.toggle('open'); };
+                title.addEventListener('click', toggle);
+                title.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+            }
+        }
+    })();
+</script>
 {% endblock %}

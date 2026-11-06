@@ -48,7 +48,7 @@ if not DEBUG:
 # Aplicação
 # ---------------------------------------------------------------------------
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "treinamentos.apps.CarmelAdminConfig",  # Admin do Django com o painel da Carmel
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

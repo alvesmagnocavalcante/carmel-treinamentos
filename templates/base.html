@@ -39,12 +39,12 @@
 
             {% if can_manage %}
             <button id="btn-sync-drive" type="button" class="btn btn-dark btn-sm" onclick="syncDriveNow()">
-                {% include 'partials/icon.html' with name='refresh-cw' %} <span>Sincronizar Drive</span>
+                {% include 'partials/icon.html' with name='refresh-cw' %} <span class="btn-label">Sincronizar Drive</span>
             </button>
             {% endif %}
 
             {% if user.is_staff %}
-            <a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm">{% include 'partials/icon.html' with name='shield-check' %} Admin</a>
+            <a href="{% url 'admin:index' %}" class="btn btn-ghost btn-sm" title="Administração" aria-label="Administração">{% include 'partials/icon.html' with name='shield-check' %} <span class="btn-label">Admin</span></a>
             {% endif %}
 
             <button type="button" class="btn btn-ghost btn-icon" onclick="toggleDarkMode()" title="Alternar tema" aria-label="Alternar tema">

@@ -95,7 +95,8 @@ treinamentos/
   models.py            Department, UserProfile, TrainingVideo, VideoProgress, SystemSetting
   views.py             catálogo, fila, revisão do roteiro, anexo de vídeo, player, sync, login
   mcp_server.py        conector MCP do portal (ferramentas usadas pelo Claude)
-  admin.py             Django Admin
+  admin.py             Django Admin (listas e formulários)
+  admin_site.py        painel inicial e menu do Admin
   context_processors   perfil e permissões disponíveis em todos os templates
   services/
     pipeline.py        leitura do documento, roteiro e registro do vídeo

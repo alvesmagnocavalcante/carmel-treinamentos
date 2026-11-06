@@ -171,11 +171,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 #user-tools { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; font-size: 12.5px; text-transform: none; letter-spacing: 0; }
 #user-tools a, #user-tools button { color: var(--header-link-color); border-bottom: 0; }
 #user-tools a:hover, #user-tools button:hover { color: var(--link-hover-color); text-decoration: none; }
-#user-tools .portal-link {
+.portal-link {
     padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 10px; font-weight: 600;
     background: var(--darkened-bg); color: var(--body-medium-color);
 }
-#user-tools .portal-link:hover { border-color: var(--primary); }
+.portal-link:hover { border-color: var(--primary); }
 
 div.breadcrumbs { padding: 12px 28px; font-size: 12.5px; border-bottom: 1px solid var(--hairline-color); }
 div.breadcrumbs a { font-weight: 600; }
@@ -183,8 +183,6 @@ div.breadcrumbs a { font-weight: 600; }
 /* ---- Conteúdo ------------------------------------------------------------ */
 #content { padding: 28px 32px; }
 .colMS, .colSM { max-width: 1440px; }
-#nav-sidebar { background: var(--darkened-bg); border-right: 1px solid var(--hairline-color); }
-#nav-sidebar .current-app .section:link, #nav-sidebar .current-model { color: var(--link-fg); font-weight: 600; }
 
 /* Módulos (cards) */
 .module { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: var(--body-bg); box-shadow: 0 1px 2px rgba(35, 29, 24, .05); }
@@ -289,3 +287,285 @@ a:hover { text-decoration: underline; }
 /* Marca sempre legível (o Django usa --accent amarelo por padrão) */
 #header #site-name a:link, #header #site-name a:visited { color: var(--body-loud-color); }
 #content-related { background: transparent; }
+
+/* ==========================================================================
+   Painel moderno: menu lateral próprio, painel inicial e etiquetas de situação
+   ========================================================================== */
+
+/* Cores de situação (mesmas do portal) */
+:root, html[data-theme="light"] {
+    --tone-ok: #1F6864;      --tone-ok-bg: #E3F0EE;      --tone-ok-border: #B7D8D4;
+    --tone-warn: #7A5A1E;    --tone-warn-bg: #F6ECD6;    --tone-warn-border: #E7D0A7;
+    --tone-info: #2C4A4D;    --tone-info-bg: #E6EEEE;    --tone-info-border: #BFD0D1;
+    --tone-err: #A62B2B;     --tone-err-bg: #FBE9E9;     --tone-err-border: #EBC1C1;
+    --tone-neutral: #4C3427; --tone-neutral-bg: #F1EFE9; --tone-neutral-border: #DBD4CA;
+}
+html[data-theme="dark"] {
+    --tone-ok: #6FC3BD;      --tone-ok-bg: #16292A;      --tone-ok-border: #24474A;
+    --tone-warn: #E7D0A7;    --tone-warn-bg: #2E2616;    --tone-warn-border: #4F3F1E;
+    --tone-info: #8FB6B9;    --tone-info-bg: #1A2829;    --tone-info-border: #2C4A4D;
+    --tone-err: #EE8A8A;     --tone-err-bg: #2D1A1A;     --tone-err-border: #502828;
+    --tone-neutral: #DBD4CA; --tone-neutral-bg: #2C2824; --tone-neutral-border: #3A322C;
+}
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] {
+        --tone-ok: #6FC3BD;      --tone-ok-bg: #16292A;      --tone-ok-border: #24474A;
+        --tone-warn: #E7D0A7;    --tone-warn-bg: #2E2616;    --tone-warn-border: #4F3F1E;
+        --tone-info: #8FB6B9;    --tone-info-bg: #1A2829;    --tone-info-border: #2C4A4D;
+        --tone-err: #EE8A8A;     --tone-err-bg: #2D1A1A;     --tone-err-border: #502828;
+        --tone-neutral: #DBD4CA; --tone-neutral-bg: #2C2824; --tone-neutral-border: #3A322C;
+    }
+}
+
+.pill {
+    display: inline-flex; align-items: center; padding: 3px 11px; border-radius: 999px; border: 1px solid;
+    font-size: 11.5px; font-weight: 600; white-space: nowrap; line-height: 1.5;
+}
+.pill-ok      { color: var(--tone-ok);      background: var(--tone-ok-bg);      border-color: var(--tone-ok-border); }
+.pill-warn    { color: var(--tone-warn);    background: var(--tone-warn-bg);    border-color: var(--tone-warn-border); }
+.pill-info    { color: var(--tone-info);    background: var(--tone-info-bg);    border-color: var(--tone-info-border); }
+.pill-err     { color: var(--tone-err);     background: var(--tone-err-bg);     border-color: var(--tone-err-border); }
+.pill-neutral { color: var(--tone-neutral); background: var(--tone-neutral-bg); border-color: var(--tone-neutral-border); }
+
+/* ---- Layout: menu lateral + conteúdo ------------------------------------ */
+.main { display: flex; align-items: flex-start; min-height: calc(100vh - 66px); }
+.main > .content { flex: 1 1 auto; min-width: 0; }
+.menu-btn {
+    display: none; align-items: center; justify-content: center; width: 42px; height: 42px; flex: none;
+    border: 1px solid var(--border-color); border-radius: 12px; background: var(--darkened-bg); color: var(--header-color); cursor: pointer;
+}
+.menu-btn svg { width: 20px; height: 20px; }
+
+#carmel-nav {
+    flex: 0 0 256px; width: 256px; position: sticky; top: 0; align-self: flex-start;
+    max-height: 100vh; overflow-y: auto; padding: 18px 14px 28px;
+    background: var(--darkened-bg); border-right: 1px solid var(--hairline-color);
+}
+#carmel-nav .nav-group { margin-top: 22px; }
+#carmel-nav h3 {
+    margin: 0 0 6px; padding: 0 12px; font: 700 10.5px/1.4 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--body-quiet-color);
+}
+#carmel-nav .nav-link {
+    display: flex; align-items: center; gap: 11px; padding: 10px 12px; margin-bottom: 2px; border-radius: 11px;
+    color: var(--body-medium-color); font-weight: 500; font-size: 13.5px; text-decoration: none;
+    border-left: 3px solid transparent;
+}
+#carmel-nav .nav-link:hover { background: var(--selected-bg); color: var(--body-loud-color); text-decoration: none; }
+#carmel-nav .nav-link.active { background: var(--selected-bg); color: var(--body-loud-color); font-weight: 700; border-left-color: var(--link-hover-color); }
+#carmel-nav .nav-ico { width: 18px; height: 18px; flex: none; opacity: .85; }
+#carmel-nav-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 14, 10, .5); }
+#carmel-nav-backdrop[hidden] { display: none; }
+
+/* Links do painel: sem sublinhado e com as cores próprias (o CSS do Django é mais específico que classes soltas) */
+body #content .dash a, body #carmel-nav a { text-decoration: none; border-bottom: 0; }
+body #content .dash a:hover, body #carmel-nav a:hover { text-decoration: none; }
+.dash .dash-btn { color: var(--body-medium-color); }
+.dash .dash-btn-primary, .dash .dash-btn-primary:hover { color: var(--primary-fg); }
+.dash .kpi { color: inherit; }
+.dash .sector { color: inherit; }
+.dash .shortcut-main { color: inherit; }
+.dash .shortcut-add { color: var(--link-fg); }
+.dash .shortcut-add:hover { color: var(--primary-fg); }
+.dash .activity a { color: var(--link-fg); }
+
+/* ---- Painel inicial ------------------------------------------------------ */
+.dash { max-width: 1180px; }
+.dash-hello h1 { font-size: 42px; line-height: 1.05; margin: 0 0 6px; }
+.dash-hello p { margin: 0; color: var(--body-quiet-color); font-size: 15px; }
+.dash-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 6px; }
+.dash-btn {
+    display: inline-flex; align-items: center; gap: 9px; padding: 10px 17px; border-radius: 12px; font-weight: 600; font-size: 13.5px;
+    background: var(--body-bg); color: var(--body-medium-color); border: 1px solid var(--border-color); text-decoration: none;
+    transition: border-color .15s, transform .1s, box-shadow .15s;
+}
+.dash-btn svg { width: 16px; height: 16px; }
+.dash-btn:hover { border-color: var(--link-hover-color); text-decoration: none; box-shadow: 0 6px 16px -10px rgba(76, 52, 39, .5); }
+.dash-btn-primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+.dash-btn-primary:hover { color: var(--primary-fg); opacity: .9; }
+
+.dash-alert {
+    display: flex; gap: 12px; align-items: flex-start; margin: 20px 0 0; padding: 14px 16px; border-radius: 14px; font-size: 13.5px;
+    color: var(--tone-warn); background: var(--tone-warn-bg); border: 1px solid var(--tone-warn-border);
+}
+.dash-alert svg { width: 20px; height: 20px; flex: none; margin-top: 1px; }
+
+.dash-section h2 { font: 700 26px/1.2 'Cormorant', Georgia, serif; margin: 34px 0 14px; color: var(--body-loud-color); }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.kpi {
+    display: grid; gap: 3px; padding: 18px; border-radius: 18px; background: var(--body-bg); border: 1px solid var(--border-color);
+    text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.kpi:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -14px rgba(76, 52, 39, .5); text-decoration: none; border-color: var(--link-hover-color); }
+.kpi-ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 8px; }
+.kpi-ico svg { width: 19px; height: 19px; }
+.kpi-value { font: 700 42px/1 'Cormorant', Georgia, serif; font-variant-numeric: lining-nums; color: var(--body-loud-color); }
+.kpi-label { font-weight: 700; font-size: 13.5px; color: var(--body-fg); }
+.kpi-hint { font-size: 12px; color: var(--body-quiet-color); }
+.kpi-ok .kpi-ico      { color: var(--tone-ok);      background: var(--tone-ok-bg); }
+.kpi-warn .kpi-ico    { color: var(--tone-warn);    background: var(--tone-warn-bg); }
+.kpi-info .kpi-ico    { color: var(--tone-info);    background: var(--tone-info-bg); }
+.kpi-err .kpi-ico     { color: var(--tone-err);     background: var(--tone-err-bg); }
+.kpi-neutral .kpi-ico { color: var(--tone-neutral); background: var(--tone-neutral-bg); }
+
+.sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.sector {
+    display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--body-bg); border: 1px solid var(--border-color);
+    text-decoration: none; color: inherit; justify-items: start; transition: border-color .15s, box-shadow .15s;
+}
+.sector:hover { border-color: var(--link-hover-color); text-decoration: none; box-shadow: 0 10px 22px -14px rgba(76, 52, 39, .5); }
+.sector-name { font-weight: 700; font-size: 14.5px; color: var(--body-loud-color); }
+.sector-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--body-quiet-color); }
+.sector-stats strong { color: var(--body-fg); }
+
+.groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.group h3 { margin: 0 0 8px; font: 700 11px/1.4 'Plus Jakarta Sans', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--body-quiet-color); }
+.shortcut { display: flex; align-items: stretch; gap: 8px; margin-bottom: 8px; }
+.shortcut-main {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: 14px;
+    background: var(--body-bg); border: 1px solid var(--border-color); text-decoration: none; color: inherit;
+    transition: border-color .15s, box-shadow .15s;
+}
+.shortcut-main:hover { border-color: var(--link-hover-color); text-decoration: none; box-shadow: 0 8px 20px -14px rgba(76, 52, 39, .5); }
+.shortcut-ico { width: 38px; height: 38px; border-radius: 11px; flex: none; display: grid; place-items: center; background: var(--selected-bg); color: var(--link-fg); }
+.shortcut-ico svg { width: 18px; height: 18px; }
+.shortcut-main strong { display: block; font-size: 13.5px; color: var(--body-loud-color); }
+.shortcut-main small { display: block; font-size: 12px; color: var(--body-quiet-color); line-height: 1.4; }
+.shortcut-add {
+    flex: none; width: 46px; display: grid; place-items: center; border-radius: 14px; border: 1px solid var(--border-color);
+    background: var(--body-bg); color: var(--link-fg); text-decoration: none;
+}
+.shortcut-add:hover { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); text-decoration: none; }
+.shortcut-add svg { width: 18px; height: 18px; }
+
+.activity { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.activity li { display: flex; align-items: baseline; gap: 12px; padding: 10px 14px; border-radius: 12px; background: var(--body-bg); border: 1px solid var(--hairline-color); font-size: 13.5px; }
+.activity small { margin-left: 8px; color: var(--body-quiet-color); }
+.activity-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--tone-info); transform: translateY(-1px); }
+.activity-dot.add { background: var(--tone-ok); }
+.activity-dot.del { background: var(--tone-err); }
+.carmel-dashboard #content { padding-top: 26px; }
+
+/* ---- Listas e formulários mais claros ------------------------------------ */
+#changelist .results { box-shadow: 0 1px 2px rgba(76, 52, 39, .06); }
+#changelist tbody tr:hover td, #changelist tbody tr:hover th { background: var(--selected-bg); }
+#changelist-form .actions select { min-width: 200px; }
+.module.aligned fieldset > h2 { background: var(--darkened-bg); }
+fieldset.collapsed h2 { cursor: pointer; }
+fieldset .description { color: var(--body-quiet-color); font-size: 13px; padding: 12px 18px 0; margin: 0; }
+.field-boolean img, td.field-drive_ok img { vertical-align: middle; }
+.submit-row { position: sticky; bottom: 0; z-index: 5; box-shadow: 0 -8px 20px -14px rgba(76, 52, 39, .45); }
+
+/* ---- Responsivo: tablet e celular ----------------------------------------- */
+@media (max-width: 1024px) {
+    .menu-btn { display: inline-flex; }
+    #carmel-nav {
+        position: fixed; top: 0; left: 0; bottom: 0; z-index: 1001; width: min(300px, 86vw); max-height: none;
+        transform: translateX(-104%); transition: transform .22s ease; box-shadow: 12px 0 32px -12px rgba(0, 0, 0, .4);
+    }
+    body.menu-open #carmel-nav { transform: none; }
+    body.menu-open { overflow: hidden; }
+    #header { gap: 10px 12px; }
+    #site-name { flex: 1 1 auto; }
+    #user-tools { width: 100%; justify-content: flex-end; }
+    .dash-hello h1 { font-size: 36px; }
+}
+@media (max-width: 767px) {
+    #header { padding: 10px 14px; }
+    .carmel-logo { width: 96px; height: 34px; }
+    #site-name small { display: none; }
+    #user-tools { justify-content: flex-start; font-size: 12px; flex: 1 1 100%; width: auto; max-width: 100%; min-width: 0; box-sizing: border-box; gap: 4px 10px; }
+    #user-tools > * { min-width: 0; }
+    .portal-link { padding: 5px 10px; }
+    #content { padding: 18px 14px 28px; }
+    #content h1 { font-size: 28px; }
+    .dash-hello h1 { font-size: 32px; }
+    .dash-actions .dash-btn { flex: 1 1 calc(50% - 10px); justify-content: center; }
+    .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi { padding: 14px; }
+    .kpi-value { font-size: 36px; }
+    .kpi-hint { display: none; }
+    .groups { grid-template-columns: 1fr; }
+    .dash-section h2 { font-size: 24px; margin-top: 28px; }
+    .submit-row { padding: 12px; }
+    .submit-row input, .submit-row a.deletelink { width: 100%; margin: 4px 0; text-align: center; }
+    #changelist .results { border-radius: 12px; }
+    #changelist thead th, #changelist tbody td, #changelist tbody th { padding: 11px 12px; }
+    input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], input[type=search], textarea, select { font-size: 16px; }
+}
+@media (max-width: 380px) {
+    .kpis { grid-template-columns: 1fr; }
+    .dash-actions .dash-btn { flex: 1 1 100%; }
+}
+
+/* ---- Cabeçalho e listas em telas pequenas (ajustes finais) --------------- */
+@media (max-width: 1024px) {
+    #header { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 8px; }
+    #branding { min-width: 0; align-items: center; gap: 12px; }
+    #site-name { margin-inline-end: 0; }
+    #user-tools {
+        float: none; margin: 0; text-align: left; display: flex; align-items: center; justify-content: flex-start;
+        gap: 4px 14px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; min-width: 0; padding-bottom: 2px;
+    }
+    #user-tools::-webkit-scrollbar { display: none; }
+
+    /* Filtro das listas: fica acima da tabela e recolhido até o usuário tocar em "Filtro" */
+    #changelist .changelist-form-container { flex-direction: column; }
+    #changelist-filter {
+        order: -1; width: 100%; min-width: 0; margin: 0 0 14px; float: none; position: static; padding-bottom: 0;
+    }
+    #changelist-filter h2 { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; margin: 0; }
+    #changelist-filter h2::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s; }
+    #changelist-filter.open h2::after { transform: rotate(-135deg); }
+    #changelist-filter:not(.open) > *:not(h2) { display: none; }
+    #changelist-filter.open { padding-bottom: 8px; }
+}
+@media (max-width: 767px) {
+    .portal-link { display: none; }
+    .column-duration, .column-created_at, .column-avatar_id, .column-voice_id, .column-watched_at { display: none; }
+    #changelist .results table { min-width: 0; }
+    .module h2, .module caption, .inline-group h2 { padding: 12px 14px; }
+    .form-row { padding: 12px 14px; }
+}
+
+/* ---- Acabamento ------------------------------------------------------------ */
+
+/* Sem sublinhado fixo nos links do Admin (o Django 6 sublinha quase todos); só aparece ao passar o mouse em textos corridos */
+#container a:not(#x) { text-decoration: none; }
+#container .help a:not(#x), #container .description a:not(#x), #container p a:not(#x) { text-decoration: underline; }
+#container .breadcrumbs a:not(#x):hover, #container #changelist-filter a:not(#x):hover, #container .results a:not(#x):hover { text-decoration: underline; }
+
+/* Cabeçalho */
+#branding { align-items: center; }
+.portal-link { align-self: center; margin-left: 14px; padding: 6px 13px; font-size: 12.5px; line-height: 1.3; height: auto; white-space: nowrap; }
+
+/* A coluna do menu cobre a altura toda da página (o menu em si continua fixo ao rolar) */
+@media (min-width: 1025px) {
+    .main { background: linear-gradient(to right, var(--darkened-bg) 256px, transparent 256px); position: relative; }
+    .main::before { content: ""; position: absolute; top: 0; bottom: 0; left: 256px; width: 1px; background: var(--hairline-color); }
+    #carmel-nav { background: transparent; border-right: 0; }
+}
+body #carmel-nav a.nav-link { text-decoration: none; border-bottom: 0; }
+body #carmel-nav a.nav-link:hover { text-decoration: none; }
+
+/* Campos de seleção sem texto cortado */
+select { height: auto; min-height: 40px; line-height: 1.3; padding-top: 8px; padding-bottom: 8px; }
+.related-widget-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.related-widget-wrapper a img { width: 18px; height: 18px; }
+
+/* Títulos dos grupos de campos nos formulários */
+fieldset.module > h2.fieldset-heading, fieldset.module > h2 {
+    font: 700 20px/1.25 'Cormorant', Georgia, serif; color: var(--body-loud-color); background: var(--darkened-bg);
+    padding: 14px 18px; margin: 0; border-bottom: 1px solid var(--border-color);
+}
+fieldset.collapse > h2 { cursor: pointer; }
+
+/* Filtro das listas em telas pequenas: acima da tabela e recolhido */
+@media (max-width: 1024px) {
+    #changelist .changelist-form-container #changelist-filter { order: -1 !important; width: 100%; margin: 0 0 14px; }
+}
+@media (max-width: 1024px) {
+    #changelist .changelist-form-container #changelist-filter { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; }
+    #header { gap: 12px; padding-bottom: 12px; }
+}

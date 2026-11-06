@@ -1,0 +1,22 @@
+{% load i18n %}
+<nav id="carmel-nav" aria-label="Menu principal">
+    <a href="{% url 'admin:index' %}" class="nav-link{% if request.path == '/admin/' %} active{% endif %}">
+        <i data-lucide="layout-dashboard" class="nav-ico"></i> Painel inicial
+    </a>
+    {% for group in carmel_nav %}
+    <div class="nav-group">
+        <h3>{{ group.title }}</h3>
+        {% for item in group.items %}
+        <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}"{% if item.active %} aria-current="page"{% endif %}>
+            <i data-lucide="{{ item.icon }}" class="nav-ico"></i> {{ item.name }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="nav-group">
+        <h3>Portal</h3>
+        <a href="{% url 'home' %}" class="nav-link"><i data-lucide="arrow-left-circle" class="nav-ico"></i> Voltar ao portal</a>
+        <a href="{% url 'queue' %}" class="nav-link"><i data-lucide="list-checks" class="nav-ico"></i> Fila de vídeos</a>
+    </div>
+</nav>
+<div id="carmel-nav-backdrop" hidden></div>
