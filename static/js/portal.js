@@ -24,6 +24,7 @@
     // ---- Tema ----
     window.toggleDarkMode = function () {
         const dark = document.documentElement.classList.toggle('dark');
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
         localStorage.setItem('carmel_theme', dark ? 'dark' : 'light');
         localStorage.setItem('theme', dark ? 'dark' : 'light'); // mesmo tema no Django Admin
         setThemeIcon(dark);

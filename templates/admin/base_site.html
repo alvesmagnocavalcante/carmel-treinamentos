@@ -25,6 +25,27 @@
 <script>
     (function () {
         if (window.lucide) lucide.createIcons();
+
+        // Tema: só claro e escuro. O Django alternava também "automático", e esse clique parecia não fazer nada.
+        // O estado é o mesmo do portal (localStorage.theme), então a escolha vale nas duas áreas.
+        var root = document.documentElement;
+        function isDark() {
+            var cur = root.dataset.theme;
+            return cur === 'dark' || ((!cur || cur === 'auto') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+        function applyTheme(dark) {
+            root.dataset.theme = dark ? 'dark' : 'light';
+            root.classList.toggle('dark', dark);
+        }
+        applyTheme(isDark());  // mostra já o ícone do tema real, e não o de "automático"
+        document.querySelectorAll('.theme-toggle').forEach(function (toggle) {
+            toggle.addEventListener('click', function (e) {
+                e.stopImmediatePropagation();  // impede o ciclo de três estados do Django
+                var dark = !isDark();
+                applyTheme(dark);
+                try { localStorage.setItem('theme', dark ? 'dark' : 'light'); localStorage.setItem('carmel_theme', dark ? 'dark' : 'light'); } catch (err) {}
+            }, true);
+        });
         var btn = document.getElementById('carmel-menu-btn');
         var backdrop = document.getElementById('carmel-nav-backdrop');
         function setMenu(open) {

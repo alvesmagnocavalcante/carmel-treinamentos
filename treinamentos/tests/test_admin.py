@@ -36,6 +36,7 @@ class AdminPanelTests(BaseTestCase):
         self.assertContains(resp, 'id="carmel-nav"')
         self.assertContains(resp, "Encerrar sessão")  # conta no menu (no celular o cabeçalho não mostra o usuário)
         self.assertContains(resp, "header-theme")
+        self.assertContains(resp, "stopImmediatePropagation")  # tema só claro/escuro, sem o ciclo "automático" do Django
         # a página de uma lista marca o item ativo do menu
         resp = self.client.get(reverse("admin:treinamentos_trainingvideo_changelist"))
         active = [i["name"] for g in resp.context["carmel_nav"] for i in g["items"] if i["active"]]
