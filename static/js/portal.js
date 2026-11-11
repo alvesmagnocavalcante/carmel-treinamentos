@@ -64,7 +64,6 @@
         document.getElementById('vm-download').href = d.videoUrl;
         document.getElementById('vm-title').textContent = d.title;
         document.getElementById('vm-dept').textContent = d.dept;
-        document.getElementById('vm-script').textContent = d.script || 'Roteiro não disponível.';
         document.getElementById('vm-done').hidden = d.watched !== '1';
         modal.classList.add('open');
         player.play().catch(() => {});
