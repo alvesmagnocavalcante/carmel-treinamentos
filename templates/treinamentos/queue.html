@@ -36,7 +36,7 @@
                 <span class="badge badge-ok">{% include 'partials/icon.html' with name='check-circle' %} Concluído</span>
                 <button type="button" class="btn btn-primary btn-sm" data-play-video
                         data-video-id="{{ job.id }}" data-video-url="{{ job.play_url }}" data-title="{{ job.title }}"
-                        data-dept="{{ job.department.name }}" data-script="{{ job.script_text }}" data-watched="0">
+                        data-dept="{{ job.department.name }}" data-watched="0">
                     {% include 'partials/icon.html' with name='play' %} Assistir
                 </button>
             {% elif job.status == 'FAILED' %}

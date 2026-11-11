@@ -6,7 +6,7 @@
 <div class="page-head">
     <div>
         <h1 class="page-title">Catálogo de treinamentos</h1>
-        <p class="page-sub">Vídeos apresentados por avatar digital, criados a partir dos procedimentos oficiais de cada setor.</p>
+        <p class="page-sub">Vídeos de treinamento para você aprender e se aprimorar no seu dia a dia.</p>
     </div>
 </div>
 
@@ -41,7 +41,6 @@
     <button type="button" class="video-card" data-play-video
             data-video-id="{{ video.id }}" data-video-url="{{ video.play_url }}"
             data-title="{{ video.title }}" data-dept="{{ video.department.name }}"
-            data-script="{{ video.script_text }}"
             data-watched="{% if video.id in watched_ids %}1{% else %}0{% endif %}">
         <div class="thumb">
             <img src="{{ video.thumbnail_url|default:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800' }}" alt="" loading="lazy">
@@ -52,10 +51,8 @@
         </div>
         <div class="video-body">
             <h3 class="video-title">{{ video.title }}</h3>
-            <p class="video-desc">{{ video.script_text|truncatechars:150 }}</p>
             <div class="video-meta">
                 <span>{% include 'partials/icon.html' with name='calendar' %} {{ video.completed_at|date:"d/m/Y"|default:"—" }}</span>
-                <span>{% include 'partials/icon.html' with name='bot' %} Avatar digital</span>
             </div>
         </div>
     </button>

@@ -25,9 +25,11 @@
             <a href="{% url 'home' %}" class="{% if current == 'home' %}active{% endif %}">
                 {% include 'partials/icon.html' with name='clapperboard' %} Catálogo
             </a>
+            {% if can_manage %}
             <a href="{% url 'queue' %}" class="{% if current == 'queue' %}active{% endif %}">
                 {% include 'partials/icon.html' with name='cpu' %} Fila & Status
             </a>
+            {% endif %}
         </nav>
         {% endwith %}
 

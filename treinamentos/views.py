@@ -54,7 +54,6 @@ def home_view(request):
         videos = videos.filter(
             Q(title__icontains=search_query)
             | Q(script_text__icontains=search_query)
-            | Q(file_name__icontains=search_query)
         )
 
     watched_ids = set(
@@ -74,7 +73,7 @@ def home_view(request):
 @login_required
 def queue_view(request):
     """Fila de processamento (documentos lidos, roteirizados e enviados à HeyGen)."""
-    profile = get_profile(request.user)
+    profile = _require_manager(request)
     jobs = (
         TrainingVideo.objects.filter(department__in=profile.visible_departments())
         .select_related('department', 'created_by')
