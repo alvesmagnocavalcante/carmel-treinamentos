@@ -1,3 +1,4 @@
+import json
 import logging
 import tempfile
 import unicodedata
@@ -51,15 +52,29 @@ class GoogleDriveService:
 
     @classmethod
     def _load_credentials(cls):
-        sa_path = cls.get_service_account_path()
-        if not sa_path:
-            return None
         from google.oauth2 import service_account
 
-        creds = cls._credentials.get(sa_path)
+        sa_path = cls.get_service_account_path()
+        if sa_path:
+            creds = cls._credentials.get(sa_path)
+            if creds is None:
+                creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=SCOPES)
+                cls._credentials[sa_path] = creds
+            return creds
+
+        # Sem arquivo (ex.: Cloud Run): usa o conteúdo do JSON vindo de GOOGLE_SERVICE_ACCOUNT_JSON.
+        raw_json = getattr(settings, "GOOGLE_SERVICE_ACCOUNT_JSON", "")
+        if not raw_json:
+            return None
+        creds = cls._credentials.get("env-json")
         if creds is None:
-            creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=SCOPES)
-            cls._credentials[sa_path] = creds
+            try:
+                info = json.loads(raw_json)
+            except ValueError:
+                logger.error("GOOGLE_SERVICE_ACCOUNT_JSON não é um JSON válido.")
+                return None
+            creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+            cls._credentials["env-json"] = creds
         return creds
 
     @classmethod

@@ -153,7 +153,9 @@ MCP_TOKEN = os.getenv("MCP_TOKEN", "").strip()
 MCP_ALLOWED_VIDEO_HOSTS = env_list("MCP_ALLOWED_VIDEO_HOSTS", "heygen.ai,heygen.com")
 
 GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "data/service_account.json")
-DRIVE_SYNC_INTERVAL_MINUTES = int(os.getenv("DRIVE_SYNC_INTERVAL_MINUTES", "5"))
+# Alternativa ao arquivo: conteúdo do JSON da conta de serviço (útil no Cloud Run, via Secret Manager).
+GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
+DRIVE_SYNC_INTERVAL_MINUTES =int(os.getenv("DRIVE_SYNC_INTERVAL_MINUTES", "5"))
 
 LOGGING = {
     "version": 1,
