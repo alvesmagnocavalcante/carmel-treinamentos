@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -34,7 +36,13 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f"[OK] Setor criado: {name}")
 
-        for username, email, first, last, role, dept_code, superuser in USERS:
+        if os.getenv("SEED_DEMO_USERS", "").lower() not in ("1", "true", "yes"):
+            self.stdout.write("Usuários de teste não criados (defina SEED_DEMO_USERS=true apenas em ambiente de teste).")
+            USERS_TO_CREATE = []
+        else:
+            USERS_TO_CREATE = USERS
+
+        for username, email, first, last, role, dept_code, superuser in USERS_TO_CREATE:
             if User.objects.filter(username=username).exists():
                 continue
             create = User.objects.create_superuser if superuser else User.objects.create_user
