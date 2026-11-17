@@ -58,7 +58,8 @@ body {
     content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px; border-radius: 2px;
     background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .35s var(--ease-out);
 }
-.nav a:hover::after { transform: scaleX(.45); }
+.nav a:hover::after { transform: scaleX(1); opacity: .45; }
+.nav a.active::after { opacity: 1; }
 .nav a.active::after { transform: scaleX(1); }
 .nav a .icon { transition: transform .3s var(--ease-spring); }
 .nav a:hover .icon { transform: translateY(-2px) scale(1.12); }
@@ -111,6 +112,8 @@ body {
 .video-card:hover .video-title { color: var(--accent-strong); }
 
 /* ---- Chips, campos, badges -------------------------------------------------- */
+/* folga em volta dos chips: a barra rola na horizontal e cortaria o levantar e a sombra */
+.chips { padding: 6px 4px 12px; margin: -6px -4px 16px; }
 .chip { transition: background-color .25s, border-color .25s, color .25s, transform .25s var(--ease-spring), box-shadow .25s; }
 .chip:hover { transform: translateY(-2px); }
 .chip.active { box-shadow: 0 8px 16px -10px rgba(76, 52, 39, .7); }
