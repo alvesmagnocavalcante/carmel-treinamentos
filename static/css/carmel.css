@@ -348,8 +348,8 @@ textarea.script-box { width: 100%; max-width: 100%; }
     .login-aside {
         position: relative; display: flex; align-items: flex-end; padding: 64px; overflow: hidden; color: #F4EAD8;
         background:
-            linear-gradient(165deg, rgba(29, 29, 27, .50) 0%, rgba(58, 39, 29, .88) 100%),
-            url('../img/textura-areia.jpg') center / cover no-repeat;
+            linear-gradient(180deg, rgba(40, 27, 19, .55) 0%, rgba(40, 27, 19, .62) 45%, rgba(29, 20, 15, .92) 100%),
+            url('../img/login-hotel.jpg') center / cover no-repeat;
     }
     .login-aside::before {  /* brilho terracota discreto no canto */
         content: ""; position: absolute; right: -120px; top: -120px; width: 420px; height: 420px; border-radius: 50%;
