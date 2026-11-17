@@ -160,8 +160,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 #site-name a { display: inline-flex; align-items: center; gap: 14px; color: var(--header-color); }
 #site-name a:hover { text-decoration: none; color: var(--header-color); }
 #site-name small {
-    font: 600 10.5px/1 'Inter', system-ui, sans-serif; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--secondary); padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 999px;
+    font: 600 12px/1 'Inter', system-ui, sans-serif; letter-spacing: .01em; text-transform: none;
+    color: var(--link-fg); padding: 6px 12px; background: var(--selected-bg); border: 0; border-radius: 999px;
 }
 .carmel-logo {
     display: block; width: 112px; height: 40px; background-color: var(--primary);
@@ -172,9 +172,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 #user-tools a, #user-tools button { color: var(--header-link-color); border-bottom: 0; }
 #user-tools a:hover, #user-tools button:hover { color: var(--link-hover-color); text-decoration: none; }
 .portal-link {
-    padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 10px; font-weight: 600;
-    background: var(--darkened-bg); color: var(--body-medium-color);
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 14px; border: 1px solid var(--border-color); border-radius: 999px; font: 600 12.5px/1 'Inter', system-ui, sans-serif;
+    background: transparent; color: var(--body-medium-color);
 }
+.portal-link svg { width: 15px; height: 15px; }
 .portal-link:hover { border-color: var(--primary); }
 
 div.breadcrumbs { padding: 12px 28px; font-size: 12.5px; border-bottom: 1px solid var(--hairline-color); }
