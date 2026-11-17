@@ -30,6 +30,9 @@
 #carmel-nav-backdrop { animation: fade .2s ease both; }
 @media (max-width: 1024px) { #carmel-nav { transition: transform .3s var(--ease-out), box-shadow .3s; } }
 
+/* No desktop o link "Voltar ao portal" já está no cabeçalho; no menu ele só aparece em tablet e celular */
+@media (min-width: 1025px) { #carmel-nav .nav-portal { display: none; } }
+
 /* ---- Painel inicial --------------------------------------------------------- */
 .dash-hello, .dash-actions, .dash-alert { animation: soft-rise .5s var(--ease-out) both; }
 .dash-actions { animation-delay: .05s; }

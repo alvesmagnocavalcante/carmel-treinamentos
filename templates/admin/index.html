@@ -17,9 +17,7 @@
     <div class="dash-actions">
         {% if perms.auth.add_user %}<a class="dash-btn" href="{% url 'admin:auth_user_add' %}"><i data-lucide="user-plus"></i> Novo usuário</a>{% endif %}
         {% if perms.treinamentos.add_department %}<a class="dash-btn" href="{% url 'admin:treinamentos_department_add' %}"><i data-lucide="building-2"></i> Novo setor</a>{% endif %}
-        <a class="dash-btn" href="{% url 'queue' %}"><i data-lucide="list-checks"></i> Fila de vídeos</a>
-        <a class="dash-btn dash-btn-primary" href="{% url 'home' %}"><i data-lucide="arrow-left-circle"></i> Abrir o portal</a>
-    </div>
+        <a class="dash-btn" href="{% url 'queue' %}"><i data-lucide="list-checks"></i> Fila de vídeos</a>    </div>
 
     {% if sectors_without_drive %}
     <div class="dash-alert" role="status">

@@ -537,8 +537,12 @@ fieldset .description { color: var(--body-quiet-color); font-size: 13px; padding
 #container .breadcrumbs a:not(#x):hover, #container #changelist-filter a:not(#x):hover, #container .results a:not(#x):hover { text-decoration: underline; }
 
 /* Cabeçalho */
-#branding { align-items: center; }
-.portal-link { align-self: center; margin-left: 14px; padding: 6px 13px; font-size: 12.5px; line-height: 1.3; height: auto; white-space: nowrap; }
+/* Desktop: logotipo e "Administração" à esquerda; "Voltar ao portal" encostado na direita, junto da conta */
+#header { gap: 20px; padding-left: 32px; padding-right: 32px; }  /* mesma margem lateral do conteúdo */
+#branding { display: flex; flex: 1 1 auto; align-items: center; min-width: 0; }
+#site-name { flex: none; }
+.portal-link { align-self: center; margin-left: auto; padding: 7px 14px; line-height: 1; height: auto; white-space: nowrap; }
+#user-tools { flex: none; padding-left: 20px; border-left: 1px solid var(--border-color); }
 
 /* A coluna do menu cobre a altura toda da página (o menu em si continua fixo ao rolar) */
 @media (min-width: 1025px) {
