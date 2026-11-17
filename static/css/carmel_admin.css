@@ -48,7 +48,7 @@ html[data-theme="light"] {
     --object-tools-bg: #7B6F62;
     --object-tools-hover-bg: #4C3427;
 
-    --font-family-primary: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-family-primary: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 html[data-theme="dark"] {
@@ -143,8 +143,8 @@ html[data-theme="dark"] {
 
 /* ---- Tipografia / base --------------------------------------------------- */
 body { font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
-h1, h2, h3 { font-family: 'Cormorant', Georgia, serif; }
-#content h1 { font-size: 34px; font-weight: 700; letter-spacing: -.01em; color: var(--body-loud-color); margin-bottom: 20px; }
+h1, h2, h3 { font-family: 'Inter', system-ui, sans-serif; letter-spacing: -.015em; }
+#content h1 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: var(--body-loud-color); margin-bottom: 20px; }
 #content > h2 { font-size: 16px; color: var(--body-quiet-color); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: 2px solid var(--primary); outline-offset: 2px;
@@ -160,7 +160,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 #site-name a { display: inline-flex; align-items: center; gap: 14px; color: var(--header-color); }
 #site-name a:hover { text-decoration: none; color: var(--header-color); }
 #site-name small {
-    font: 600 10.5px/1 'Plus Jakarta Sans', sans-serif; letter-spacing: .22em; text-transform: uppercase;
+    font: 600 10.5px/1 'Inter', system-ui, sans-serif; letter-spacing: .22em; text-transform: uppercase;
     color: var(--secondary); padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 999px;
 }
 .carmel-logo {
@@ -188,7 +188,7 @@ div.breadcrumbs a { font-weight: 600; }
 .module { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: var(--body-bg); box-shadow: 0 1px 2px rgba(35, 29, 24, .05); }
 .module h2, .module caption, .inline-group h2 {
     background: var(--darkened-bg); color: var(--body-loud-color);
-    font: 700 19px/1.25 'Cormorant', Georgia, serif; letter-spacing: 0; text-transform: none;
+    font: 650 15px/1.3 'Inter', system-ui, sans-serif; letter-spacing: 0; text-transform: none;
     padding: 14px 18px; border-bottom: 1px solid var(--border-color);
 }
 .module h2 a, .module caption a { color: inherit; }
@@ -221,8 +221,8 @@ div.breadcrumbs a { font-weight: 600; }
     background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden;
     min-width: 230px; padding-bottom: 8px;
 }
-#changelist-filter h2 { background: var(--darkened-bg); border-bottom: 1px solid var(--border-color); font: 700 17px 'Cormorant', serif; text-transform: none; letter-spacing: 0; padding: 13px 16px; color: var(--body-loud-color); }
-#changelist-filter h3 { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--body-quiet-color); font-family: 'Plus Jakarta Sans', sans-serif; padding: 0 16px; margin-top: 14px; }
+#changelist-filter h2 { background: var(--darkened-bg); border-bottom: 1px solid var(--border-color); font: 650 14.5px 'Inter', system-ui, sans-serif; text-transform: none; letter-spacing: 0; padding: 13px 16px; color: var(--body-loud-color); }
+#changelist-filter h3 { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--body-quiet-color); font-family: 'Inter', system-ui, sans-serif; padding: 0 16px; margin-top: 14px; }
 #changelist-filter ul { padding: 0 8px; }
 #changelist-filter li a { display: block; padding: 5px 10px; border-radius: 8px; color: var(--body-medium-color); }
 #changelist-filter li a:hover { background: var(--darkened-bg); color: var(--link-hover-color); }
@@ -343,7 +343,7 @@ html[data-theme="dark"] {
 }
 #carmel-nav .nav-group { margin-top: 22px; }
 #carmel-nav h3 {
-    margin: 0 0 6px; padding: 0 12px; font: 700 10.5px/1.4 'Plus Jakarta Sans', sans-serif;
+    margin: 0 0 6px; padding: 0 12px; font: 700 10.5px/1.4 'Inter', system-ui, sans-serif;
     letter-spacing: .16em; text-transform: uppercase; color: var(--body-quiet-color);
 }
 #carmel-nav .nav-link {
@@ -371,7 +371,7 @@ body #content .dash a:hover, body #carmel-nav a:hover { text-decoration: none; }
 
 /* ---- Painel inicial ------------------------------------------------------ */
 .dash { max-width: 1180px; }
-.dash-hello h1 { font-size: 42px; line-height: 1.05; margin: 0 0 6px; }
+.dash-hello h1 { font-size: 32px; line-height: 1.05; margin: 0 0 6px; }
 .dash-hello p { margin: 0; color: var(--body-quiet-color); font-size: 15px; }
 .dash-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 6px; }
 .dash-btn {
@@ -390,7 +390,7 @@ body #content .dash a:hover, body #carmel-nav a:hover { text-decoration: none; }
 }
 .dash-alert svg { width: 20px; height: 20px; flex: none; margin-top: 1px; }
 
-.dash-section h2 { font: 700 26px/1.2 'Cormorant', Georgia, serif; margin: 34px 0 14px; color: var(--body-loud-color); }
+.dash-section h2 { font: 650 16px/1.3 'Inter', system-ui, sans-serif; margin: 34px 0 14px; color: var(--body-loud-color); }
 
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
 .kpi {
@@ -400,7 +400,7 @@ body #content .dash a:hover, body #carmel-nav a:hover { text-decoration: none; }
 .kpi:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -14px rgba(76, 52, 39, .5); text-decoration: none; border-color: var(--link-hover-color); }
 .kpi-ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 8px; }
 .kpi-ico svg { width: 19px; height: 19px; }
-.kpi-value { font: 700 42px/1 'Cormorant', Georgia, serif; font-variant-numeric: lining-nums; color: var(--body-loud-color); }
+.kpi-value { font: 700 34px/1 'Inter', system-ui, sans-serif; font-variant-numeric: lining-nums; color: var(--body-loud-color); }
 .kpi-label { font-weight: 700; font-size: 13.5px; color: var(--body-fg); }
 .kpi-hint { font-size: 12px; color: var(--body-quiet-color); }
 .kpi-ok .kpi-ico      { color: var(--tone-ok);      background: var(--tone-ok-bg); }
@@ -420,7 +420,7 @@ body #content .dash a:hover, body #carmel-nav a:hover { text-decoration: none; }
 .sector-stats strong { color: var(--body-fg); }
 
 .groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
-.group h3 { margin: 0 0 8px; font: 700 11px/1.4 'Plus Jakarta Sans', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--body-quiet-color); }
+.group h3 { margin: 0 0 8px; font: 700 11px/1.4 'Inter', system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--body-quiet-color); }
 .shortcut { display: flex; align-items: stretch; gap: 8px; margin-bottom: 8px; }
 .shortcut-main {
     flex: 1; min-width: 0; display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: 14px;
@@ -469,7 +469,7 @@ fieldset .description { color: var(--body-quiet-color); font-size: 13px; padding
     #header { gap: 10px 12px; }
     #site-name { flex: 1 1 auto; }
     #user-tools { width: 100%; justify-content: flex-end; }
-    .dash-hello h1 { font-size: 36px; }
+    .dash-hello h1 { font-size: 28px; }
 }
 @media (max-width: 767px) {
     #header { padding: 10px 14px; }
@@ -479,15 +479,15 @@ fieldset .description { color: var(--body-quiet-color); font-size: 13px; padding
     #user-tools > * { min-width: 0; }
     .portal-link { padding: 5px 10px; }
     #content { padding: 18px 14px 28px; }
-    #content h1 { font-size: 28px; }
-    .dash-hello h1 { font-size: 32px; }
+    #content h1 { font-size: 24px; }
+    .dash-hello h1 { font-size: 26px; }
     .dash-actions .dash-btn { flex: 1 1 calc(50% - 10px); justify-content: center; }
     .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .kpi { padding: 14px; }
     .kpi-value { font-size: 36px; }
     .kpi-hint { display: none; }
     .groups { grid-template-columns: 1fr; }
-    .dash-section h2 { font-size: 24px; margin-top: 28px; }
+    .dash-section h2 { font-size: 19px; margin-top: 28px; }
     .submit-row { padding: 12px; }
     .submit-row input, .submit-row a.deletelink { width: 100%; margin: 4px 0; text-align: center; }
     #changelist .results { border-radius: 12px; }
@@ -554,7 +554,7 @@ select { height: auto; min-height: 40px; line-height: 1.3; padding-top: 8px; pad
 
 /* Títulos dos grupos de campos nos formulários */
 fieldset.module > h2.fieldset-heading, fieldset.module > h2 {
-    font: 700 20px/1.25 'Cormorant', Georgia, serif; color: var(--body-loud-color); background: var(--darkened-bg);
+    font: 650 16px/1.3 'Inter', system-ui, sans-serif; color: var(--body-loud-color); background: var(--darkened-bg);
     padding: 14px 18px; margin: 0; border-bottom: 1px solid var(--border-color);
 }
 fieldset.collapse > h2 { cursor: pointer; }
