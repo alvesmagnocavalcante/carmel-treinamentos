@@ -12,6 +12,17 @@
 </head>
 <body>
 <main class="login-wrap">
+    <aside class="login-aside" aria-hidden="false">
+        <div class="login-aside-inner">
+            <span class="login-aside-eyebrow">Plataforma de Treinamentos</span>
+            <ul class="login-points">
+                <li>{% include 'partials/icon.html' with name='clapperboard' %}<div><strong>Vídeos do seu setor</strong><span>Treinamentos organizados por área, sempre à mão.</span></div></li>
+                <li>{% include 'partials/icon.html' with name='circle-check' %}<div><strong>Seu progresso registrado</strong><span>Acompanhe o que você já assistiu e concluiu.</span></div></li>
+                <li>{% include 'partials/icon.html' with name='smartphone' %}<div><strong>Em qualquer tela</strong><span>Acesse pelo computador, tablet ou celular.</span></div></li>
+            </ul>
+        </div>
+    </aside>
+    <div class="login-main">
     <section class="card login-card">
         <div class="login-head">
             <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
@@ -45,6 +56,7 @@
         </form>
         <p class="muted" style="text-align:center; font-size:12px">Carmel Hotéis & Resorts</p>
     </section>
+    </div>
 </main>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
