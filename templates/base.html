@@ -93,13 +93,11 @@
         <button type="button" class="modal-close" onclick="closeVideoModal()" aria-label="Fechar">{% include 'partials/icon.html' with name='x' %}</button>
         <div class="modal-grid">
             <div>
-                <div class="player"><video id="vm-video" controls playsinline></video></div>
+                <div class="player"><video id="vm-video" controls playsinline controlslist="nodownload noplaybackrate noremoteplayback" disablepictureinpicture disableremoteplayback oncontextmenu="return false"></video></div>
                 <div class="modal-meta">
                     <span id="vm-dept" class="badge badge-neutral"></span>
                     <span id="vm-done" class="badge badge-ok" hidden>✓ Treinamento concluído</span>
-                    <a id="vm-download" href="#" target="_blank" rel="noopener" download class="btn btn-ghost btn-sm">
-                        {% include 'partials/icon.html' with name='download' %} Baixar vídeo
-                    </a>
+                    <span class="muted" style="font-size:12px">Assista até o final para concluir o treinamento.</span>
                 </div>
                 <h2 id="vm-title" class="modal-title"></h2>
             </div>

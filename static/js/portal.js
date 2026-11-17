@@ -84,13 +84,24 @@
     const player = document.getElementById('vm-video');
     let currentVideoId = null;
 
+    // ---- Sem pular: a pessoa pode voltar, mas não avançar além do que já assistiu ----
+    let maxTime = 0;
+    player.addEventListener('timeupdate', () => {
+        if (!player.seeking && player.currentTime > maxTime) maxTime = player.currentTime;
+    });
+    player.addEventListener('seeking', () => {
+        if (player.currentTime > maxTime + 0.75) player.currentTime = maxTime;
+    });
+    player.addEventListener('ratechange', () => { if (player.playbackRate !== 1) player.playbackRate = 1; });
+    player.addEventListener('contextmenu', e => e.preventDefault());
+
     const viewUrl = id => CFG.viewUrl.replace('/0/', '/' + id + '/');
 
     function openVideo(el) {
         const d = el.dataset;
         currentVideoId = d.videoId;
         player.src = d.videoUrl;
-        document.getElementById('vm-download').href = d.videoUrl;
+        maxTime = 0;
         document.getElementById('vm-title').textContent = d.title;
         document.getElementById('vm-dept').textContent = d.dept;
         document.getElementById('vm-done').hidden = d.watched !== '1';
