@@ -19,8 +19,19 @@
 /* ---- Entrada: um único fade suave no conteúdo ------------------------------ */
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes soft-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.container, .login-card { animation: soft-rise .4s var(--ease-out) both; }
+.login-card { animation: soft-rise .5s var(--ease-out) both; }
 .alerts .alert { animation: fade .3s ease both; }
+.page-head { animation: soft-rise .5s var(--ease-out) both; }
+.toolbar { animation: soft-rise .5s .05s var(--ease-out) both; }
+.chips, .notice { animation: soft-rise .5s .1s var(--ease-out) both; }
+.video-grid > *, .jobs > * { animation: soft-rise .5s var(--ease-out) both; }
+.video-grid > :nth-child(1), .jobs > :nth-child(1) { animation-delay: .10s; }
+.video-grid > :nth-child(2), .jobs > :nth-child(2) { animation-delay: .14s; }
+.video-grid > :nth-child(3), .jobs > :nth-child(3) { animation-delay: .18s; }
+.video-grid > :nth-child(4), .jobs > :nth-child(4) { animation-delay: .22s; }
+.video-grid > :nth-child(5), .jobs > :nth-child(5) { animation-delay: .26s; }
+.video-grid > :nth-child(6), .jobs > :nth-child(6) { animation-delay: .30s; }
+.video-grid > :nth-child(n+7), .jobs > :nth-child(n+7) { animation-delay: .34s; }
 
 /* ---- Topo ------------------------------------------------------------------ */
 .topbar { transition: box-shadow .25s; }
@@ -29,41 +40,47 @@
 .nav a { position: relative; border-bottom: 0; transition: color .2s; }
 .nav a::after {
     content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px; border-radius: 2px;
-    background: var(--accent); opacity: 0; transition: opacity .2s;
+    background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .35s var(--ease-out), opacity .2s;
 }
-.nav a:hover::after { opacity: .4; }
-.nav a.active::after { opacity: 1; }
+.nav a:hover::after { transform: scaleX(1); opacity: .45; }
+.nav a.active::after { transform: scaleX(1); opacity: 1; }
 
 /* ---- Botões ---------------------------------------------------------------- */
-.btn { transition: background-color .2s, border-color .2s, color .2s, box-shadow .2s, opacity .2s; }
+.btn { transition: background-color .2s, border-color .2s, color .2s, box-shadow .25s, opacity .2s, transform .2s var(--ease-out); }
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 14px -10px rgba(76, 52, 39, .55); }
 #btn-sync-drive:disabled .icon { animation: spin 1s linear infinite; }  /* indica que está trabalhando */
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- Cartões de vídeo ------------------------------------------------------ */
 .video-card { transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s; }
-.video-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgba(76, 52, 39, .4); }
+.video-card:hover { transform: translateY(-4px); box-shadow: 0 18px 34px -18px rgba(76, 52, 39, .45); }
 .thumb img { opacity: 0; transition: opacity .35s ease, transform .6s var(--ease); }
 .thumb img.loaded { opacity: 1; }
-.video-card:hover .thumb img { transform: scale(1.03); }
+.video-card:hover .thumb img { transform: scale(1.05); }
 .play { transition: transform .25s var(--ease), background-color .2s; }
-.video-card:hover .play { transform: scale(1.06); }
+.play { position: absolute; }
+.play::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; }
+.video-card:hover .play { transform: scale(1.1); }
+.video-card:hover .play::before { animation: ring 1.5s var(--ease-out) infinite; }
+@keyframes ring { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(1.8); } }
 .video-title { transition: color .2s; }
 .video-card:hover .video-title { color: var(--accent-strong); }
 
 /* ---- Chips e campos -------------------------------------------------------- */
-.chip { transition: background-color .2s, border-color .2s, color .2s; }
+.chip { transition: background-color .2s, border-color .2s, color .2s, transform .2s var(--ease-out); }
+.chip:hover { transform: translateY(-1px); }
 .input { transition: border-color .2s, box-shadow .2s; }
 .search .icon, .input-icon .icon { transition: color .2s; }
 .search:focus-within .icon, .input-icon:focus-within .icon { color: var(--accent); }
 
 /* ---- Fila ------------------------------------------------------------------ */
-.job { transition: box-shadow .25s, border-color .25s; }
-.job:hover { box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.job { transition: box-shadow .25s, border-color .25s, transform .25s var(--ease-out); }
+.job:hover { transform: translateX(3px); box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
 
 /* ---- Modal do vídeo -------------------------------------------------------- */
-@keyframes modal-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes modal-in { from { opacity: 0; transform: scale(.95) translateY(8px); } to { opacity: 1; transform: none; } }
 .modal.open { animation: fade .2s ease both; }
-.modal.open .modal-box { animation: modal-in .25s var(--ease-out) both; }
+.modal.open .modal-box { animation: modal-in .35s var(--ease-out) both; }
 .modal-close { transition: border-color .2s, background-color .2s; }
 
 /* ---- Avisos e notificações (toast) ----------------------------------------- */

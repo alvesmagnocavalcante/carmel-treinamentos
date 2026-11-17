@@ -31,20 +31,36 @@
 @media (max-width: 1024px) { #carmel-nav { transition: transform .3s var(--ease-out), box-shadow .3s; } }
 
 /* ---- Painel inicial --------------------------------------------------------- */
+.dash-hello, .dash-actions, .dash-alert { animation: soft-rise .5s var(--ease-out) both; }
+.dash-actions { animation-delay: .05s; }
+.dash-section { animation: soft-rise .5s .1s var(--ease-out) both; }
+.kpis > *, .sectors > *, .shortcut { animation: soft-rise .5s var(--ease-out) both; }
+.kpis > :nth-child(1), .sectors > :nth-child(1) { animation-delay: .10s; }
+.kpis > :nth-child(2), .sectors > :nth-child(2) { animation-delay: .14s; }
+.kpis > :nth-child(3), .sectors > :nth-child(3) { animation-delay: .18s; }
+.kpis > :nth-child(4), .sectors > :nth-child(4) { animation-delay: .22s; }
+.kpis > :nth-child(5), .sectors > :nth-child(5) { animation-delay: .26s; }
+.kpis > :nth-child(n+6), .sectors > :nth-child(n+6) { animation-delay: .30s; }
+.kpi-ico, .shortcut-ico { transition: transform .3s var(--ease-out); }
+.kpi:hover .kpi-ico, .shortcut-main:hover .shortcut-ico { transform: scale(1.1); }
+#carmel-nav .nav-ico { transition: transform .3s var(--ease-out); }
+#carmel-nav .nav-link:hover .nav-ico { transform: scale(1.12); }
 .kpi, .sector, .shortcut-main, .shortcut-add, .dash-btn { transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s, background-color .2s, color .2s, opacity .2s; }
-.kpi:hover, .sector:hover, .shortcut-main:hover { transform: translateY(-2px); }
+.kpi:hover, .sector:hover, .shortcut-main:hover { transform: translateY(-3px); }
+.dash-btn:hover { transform: translateY(-1px); }
 
 /* ---- Listas e formulários --------------------------------------------------- */
 .module { transition: box-shadow .25s; }
-#result_list tbody tr { transition: background-color .15s; }
+#result_list tbody tr { transition: background-color .15s; animation: fade .4s ease both; }
 
 .button, input[type=submit], input[type=button], a.button, .object-tools a, .submit-row a.deletelink {
-    transition: background-color .2s, border-color .2s, color .2s, box-shadow .2s, opacity .2s;
+    transition: background-color .2s, border-color .2s, color .2s, box-shadow .25s, opacity .2s, transform .2s var(--ease-out);
 }
 input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], input[type=search],
 input[type=date], input[type=time], textarea, select {
     transition: border-color .2s, box-shadow .2s;
 }
+.button:hover, input[type=submit]:hover, input[type=button]:hover, a.button:hover, .object-tools a:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -10px rgba(76, 52, 39, .55); }
 input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--link-hover-color, #B14D1D) 22%, transparent); }
 #changelist-filter li a { transition: background-color .2s, color .2s; }
 .paginator a { transition: background-color .2s, color .2s; }
