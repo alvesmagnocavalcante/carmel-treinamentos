@@ -23,6 +23,20 @@
             <textarea id="script" name="script" class="input script-box" required>{{ script }}</textarea>
             <span class="hint"><span id="char-count" class="counter">0</span> / {{ max_chars }} caracteres</span>
         </div>
+        {% if resort_choices %}
+        <div class="field">
+            <label>Resorts que podem ver este vídeo</label>
+            <div class="resort-picks">
+                {% for resort in resort_choices %}
+                <label class="resort-pick">
+                    <input type="checkbox" name="resorts" value="{{ resort.id }}" {% if resort.id in selected_resort_ids %}checked{% endif %}>
+                    <span>{{ resort.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <span class="hint">Nenhum marcado = o vídeo vale para todos os resorts.</span>
+        </div>
+        {% endif %}
         <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-lg">{% include 'partials/icon.html' with name='check' %} Aprovar e gerar vídeo</button>
             <a href="{% url 'queue' %}" class="btn btn-ghost btn-lg">Voltar à fila</a>

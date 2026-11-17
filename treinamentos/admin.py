@@ -3,7 +3,9 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 
-from .models import Department, TrainingVideo, UserProfile, VideoProgress
+from django.contrib.auth.models import Group
+
+from .models import Department, Resort, TrainingVideo, UserProfile, VideoProgress
 
 Status = TrainingVideo.Status
 
@@ -22,7 +24,8 @@ STATUS_TONE = {
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
-    verbose_name_plural = 'Perfil de acesso e setor'
+    verbose_name_plural = 'Perfil de acesso, setor e resorts'
+    filter_horizontal = ('resorts',)
 
 
 @admin.display(description='Setor')
@@ -37,16 +40,44 @@ def user_role(obj):
     return profile.get_role_display().split(' (')[0] if profile else '-'
 
 
+@admin.display(description='Resorts')
+def user_resorts(obj):
+    profile = getattr(obj, 'profile', None)
+    names = [r.name for r in profile.resorts.all()] if profile else []
+    return ', '.join(names) or '—'
+
+
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
-    list_display = ('username', 'first_name', 'last_name', 'email', user_department, user_role, 'is_active')
-    list_filter = ('profile__department', 'profile__role', 'is_active', 'is_staff')
+    list_display = ('username', 'first_name', 'last_name', 'email', user_department, user_role, user_resorts, 'is_active')
+    list_filter = ('profile__department', 'profile__role', 'profile__resorts', 'is_active', 'is_staff')
     list_select_related = ('profile__department',)
     list_per_page = 25
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('profile__resorts')
 
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+# "Grupos" do Django saem do painel: o acesso agora é por setor, nível e resort.
+admin.site.unregister(Group)
+
+
+@admin.register(Resort)
+class ResortAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code', 'active', 'order', 'total_members', 'total_videos')
+    list_editable = ('active', 'order')
+    search_fields = ('name', 'code')
+    prepopulated_fields = {'code': ('name',)}
+
+    @admin.display(description='Pessoas')
+    def total_members(self, obj):
+        return obj.members.count()
+
+    @admin.display(description='Vídeos exclusivos')
+    def total_videos(self, obj):
+        return obj.videos.count()
 
 
 @admin.register(Department)
@@ -80,7 +111,8 @@ class DepartmentAdmin(admin.ModelAdmin):
 class TrainingVideoAdmin(admin.ModelAdmin):
     list_display = ('title', 'department', 'status_badge', 'duration')
     ordering = ('-created_at',)
-    list_filter = ('status', 'department', 'created_at')
+    list_filter = ('status', 'department', 'resorts', 'created_at')
+    filter_horizontal = ('resorts',)
     search_fields = ('title', 'file_name', 'script_text')
     list_select_related = ('department', 'created_by')
     list_per_page = 25
@@ -88,7 +120,7 @@ class TrainingVideoAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'completed_at', 'heygen_video_id', 'source_path',
                        'drive_file_id', 'drive_modified_at', 'drive_video_id')
     fieldsets = (
-        ('Identificação', {'fields': ('title', 'department', 'status', 'status_message')}),
+        ('Identificação', {'fields': ('title', 'department', 'resorts', 'status', 'status_message')}),
         ('Roteiro', {'fields': ('script_text',)}),
         ('Vídeo', {'fields': ('video_url', 'thumbnail_url', 'duration_seconds', 'completed_at')}),
         ('Dados técnicos', {

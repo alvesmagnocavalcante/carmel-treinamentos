@@ -32,7 +32,11 @@ class AdminPanelTests(BaseTestCase):
     def test_navigation_groups_models_with_icons(self):
         resp = self.client.get(reverse("admin:index"))
         titles = [g["title"] for g in resp.context["carmel_nav"]]
-        self.assertEqual(titles, ["Pessoas e acessos", "Conteúdo", "Sistema"])
+        self.assertEqual(titles, ["Pessoas e acessos", "Conteúdo"])
+        items = [i["name"] for g in resp.context["carmel_nav"] for i in g["items"]]
+        self.assertIn("Resorts", items)
+        self.assertNotIn("Grupos", items)
+        self.assertNotIn("Configurações", items)
         self.assertContains(resp, 'id="carmel-nav"')
         self.assertContains(resp, "Encerrar sessão")  # conta no menu (no celular o cabeçalho não mostra o usuário)
         self.assertContains(resp, "header-theme")

@@ -5,6 +5,26 @@ from django.dispatch import receiver
 from django.urls import reverse
 
 
+class Resort(models.Model):
+    """
+    Resort da rede (Magna/CM, Charme, Wind, Taiba, Icaraizinho).
+    Pessoas e vídeos podem ser ligados a vários resorts. Vídeo sem resort vale para todos.
+    """
+    code = models.SlugField("Código / Identificador", max_length=50, unique=True)
+    name = models.CharField("Nome do Resort", max_length=150)
+    order = models.PositiveSmallIntegerField("Ordem na lista", default=0)
+    active = models.BooleanField("Ativo", default=True, help_text="Desmarque para tirar o resort das listas de escolha.")
+    created_at = models.DateTimeField("Data de Criação", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Resort"
+        verbose_name_plural = "Resorts"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class Department(models.Model):
     """
     Setor da empresa (RH, Recepção, Governança, etc.).
@@ -47,6 +67,8 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Usuário")
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='members', verbose_name="Setor Principal")
     role = models.CharField("Nível de Acesso", max_length=20, choices=ROLE_CHOICES, default=ROLE_COLABORADOR)
+    resorts = models.ManyToManyField(Resort, blank=True, related_name='members', verbose_name="Resorts",
+                                     help_text="Resorts que a pessoa acessa. Sem nenhum, ela vê só os vídeos válidos para todos os resorts.")
 
     class Meta:
         verbose_name = "Perfil de Usuário"
@@ -65,6 +87,12 @@ class UserProfile(models.Model):
         """Pode revisar roteiros, sincronizar o Drive e reprocessar vídeos."""
         return self.is_global or (self.role == self.ROLE_GESTOR and self.department_id is not None)
 
+    def manageable_resorts(self):
+        """Resorts que a pessoa pode escolher ao aprovar um roteiro: todos (administrador) ou só os dela."""
+        if self.is_global:
+            return Resort.objects.filter(active=True)
+        return self.resorts.filter(active=True)
+
     def visible_departments(self):
         if self.is_global:
             return Department.objects.all()
@@ -77,6 +105,20 @@ class UserProfile(models.Model):
 def ensure_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.get_or_create(user=instance)
+
+
+class TrainingVideoQuerySet(models.QuerySet):
+    def visible_to(self, profile):
+        """
+        Vídeos que a pessoa pode ver: do setor dela E de pelo menos um resort dela.
+        Vídeo sem resort vale para todos. Administrador geral vê tudo.
+        """
+        if profile.is_global:
+            return self
+        resort_ids = list(profile.resorts.values_list('id', flat=True))
+        return self.filter(department__in=profile.visible_departments()).filter(
+            models.Q(resorts__isnull=True) | models.Q(resorts__in=resort_ids)
+        ).distinct()
 
 
 class TrainingVideo(models.Model):
@@ -95,7 +137,9 @@ class TrainingVideo(models.Model):
     IN_PROGRESS = (Status.PENDING, Status.PARSING, Status.GENERATING_HEYGEN)
 
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='videos', verbose_name="Setor")
-    title = models.CharField("Título do Treinamento", max_length=250)
+    resorts = models.ManyToManyField(Resort, blank=True, related_name='videos', verbose_name="Resorts",
+                                     help_text="Resorts para os quais o vídeo vale. Vazio = todos os resorts.")
+    title =models.CharField("Título do Treinamento", max_length=250)
     file_name = models.CharField("Nome do Arquivo Original", max_length=250)
     source_path = models.CharField("Caminho do Arquivo no Servidor", max_length=500, blank=True)
     drive_file_id = models.CharField("ID do Roteiro no Google Drive", max_length=200, blank=True, db_index=True)
@@ -114,6 +158,8 @@ class TrainingVideo(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Enviado por")
     created_at = models.DateTimeField("Data de Envio", auto_now_add=True)
     completed_at = models.DateTimeField("Data de Conclusão", null=True, blank=True)
+
+    objects = TrainingVideoQuerySet.as_manager()
 
     class Meta:
         verbose_name = "Vídeo de Treinamento"

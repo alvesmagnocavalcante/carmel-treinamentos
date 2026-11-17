@@ -47,7 +47,7 @@ def home_view(request):
 
     search_query = request.GET.get('q', '').strip()
 
-    videos = TrainingVideo.objects.filter(status=Status.COMPLETED, department__in=allowed_depts).select_related('department')
+    videos = TrainingVideo.objects.visible_to(profile).filter(status=Status.COMPLETED).select_related('department')
     if selected_dept != 'all':
         videos = videos.filter(department__code=selected_dept)
     if search_query:
@@ -75,7 +75,7 @@ def queue_view(request):
     """Fila de processamento (documentos lidos, roteirizados e enviados à HeyGen)."""
     profile = _require_manager(request)
     jobs = (
-        TrainingVideo.objects.filter(department__in=profile.visible_departments())
+        TrainingVideo.objects.visible_to(profile)
         .select_related('department', 'created_by')
         .order_by('-created_at')[:50]
     )
@@ -123,7 +123,7 @@ def sync_drive_ajax(request):
 def retry_video_view(request, video_id):
     """Reprocessa um vídeo que falhou."""
     profile = _require_manager(request)
-    video = get_object_or_404(TrainingVideo, id=video_id, department__in=profile.visible_departments())
+    video = get_object_or_404(TrainingVideo.objects.visible_to(profile), id=video_id)
     if video.is_in_progress and video.status != Status.PENDING:
         messages.error(request, "Este vídeo já está em processamento.")
     else:
@@ -137,14 +137,22 @@ def retry_video_view(request, video_id):
 def review_script_view(request, video_id):
     """O gestor lê/edita o roteiro e aprova antes de gastar crédito da HeyGen."""
     profile = _require_manager(request)
-    video = get_object_or_404(TrainingVideo, id=video_id, department__in=profile.visible_departments())
+    video = get_object_or_404(TrainingVideo.objects.visible_to(profile), id=video_id)
     if video.status != Status.AWAITING_REVIEW:
         messages.error(request, "Este vídeo não está aguardando revisão de roteiro.")
         return redirect('queue')
 
+    # Resorts que esta pessoa pode escolher (administrador: todos; gestor: só os dele)
+    choices = list(profile.manageable_resorts())
+    selected_ids = set(video.resorts.values_list('id', flat=True))
+
     script = video.script_text
     if request.method == 'POST':
         script = clean_script(request.POST.get('script', ''))
+        if choices:
+            allowed = {r.id for r in choices}
+            posted = {int(v) for v in request.POST.getlist('resorts') if v.isdigit()}
+            selected_ids = posted & allowed
         try:
             validate_script(script)
         except ValueError as exc:
@@ -152,6 +160,10 @@ def review_script_view(request, video_id):
         else:
             video.script_text = script
             video.save(update_fields=['script_text'])
+            if choices:
+                # só mexe nos resorts que a pessoa pode gerenciar; os demais ficam como estavam
+                kept = set(video.resorts.exclude(id__in=[r.id for r in choices]).values_list('id', flat=True))
+                video.resorts.set(kept | selected_ids)
             mark_awaiting_video(video)
             messages.success(
                 request, f"Roteiro de '{video.title}' aprovado! Agora o vídeo precisa ser gerado e registrado."
@@ -160,6 +172,7 @@ def review_script_view(request, video_id):
 
     return render(request, 'treinamentos/review.html', {
         'video': video, 'script': script, 'max_chars': MAX_SCRIPT_CHARS,
+        'resort_choices': choices, 'selected_resort_ids': selected_ids,
     })
 
 
@@ -167,7 +180,7 @@ def review_script_view(request, video_id):
 def attach_video_view(request, video_id):
     """Anexa o MP4 gerado fora do portal (MCP/site da HeyGen); ele é guardado no Drive e publicado no catálogo."""
     profile = _require_manager(request)
-    video = get_object_or_404(TrainingVideo, id=video_id, department__in=profile.visible_departments())
+    video = get_object_or_404(TrainingVideo.objects.visible_to(profile), id=video_id)
     if video.status != Status.AWAITING_VIDEO:
         messages.error(request, "Este vídeo não está aguardando a geração.")
         return redirect('queue')
@@ -215,7 +228,7 @@ def stream_video_view(request, video_id):
     """
     profile = get_profile(request.user)
     video = get_object_or_404(
-        TrainingVideo, id=video_id, status=Status.COMPLETED, department__in=profile.visible_departments()
+        TrainingVideo.objects.visible_to(profile), id=video_id, status=Status.COMPLETED
     )
     if not video.drive_video_id:
         if video.video_url:
@@ -263,7 +276,7 @@ def register_view(request, video_id):
     """Registra visualização / conclusão do treinamento pelo colaborador."""
     profile = get_profile(request.user)
     video = get_object_or_404(
-        TrainingVideo, id=video_id, status=Status.COMPLETED, department__in=profile.visible_departments()
+        TrainingVideo.objects.visible_to(profile), id=video_id, status=Status.COMPLETED
     )
     progress, _ = VideoProgress.objects.get_or_create(user=request.user, video=video)
     if request.POST.get('completed') == '1' and not progress.completed:

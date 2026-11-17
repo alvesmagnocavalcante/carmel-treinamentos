@@ -68,5 +68,5 @@ class AccessControlTests(BaseTestCase):
 
     def test_admin_pages_render(self):
         self.client.force_login(self.admin)
-        for url in ("/admin/", "/admin/treinamentos/trainingvideo/", "/admin/treinamentos/systemsetting/", "/admin/auth/user/"):
+        for url in ("/admin/", "/admin/treinamentos/trainingvideo/", "/admin/treinamentos/resort/", "/admin/auth/user/"):
             self.assertEqual(self.client.get(url).status_code, 200, url)
