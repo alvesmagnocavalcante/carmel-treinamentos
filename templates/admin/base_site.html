@@ -6,6 +6,7 @@
 <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
 <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'css/carmel_admin.css' %}">
+<link rel="stylesheet" href="{% static 'css/carmel_admin_motion.css' %}">
 {% endblock %}
 
 {% block branding %}
@@ -34,6 +35,8 @@
             return cur === 'dark' || ((!cur || cur === 'auto') && window.matchMedia('(prefers-color-scheme: dark)').matches);
         }
         function applyTheme(dark) {
+            root.classList.add('theme-fade');  // troca de cor suave
+            setTimeout(function () { root.classList.remove('theme-fade'); }, 450);
             root.dataset.theme = dark ? 'dark' : 'light';
             root.classList.toggle('dark', dark);
         }
@@ -56,6 +59,22 @@
         if (btn) btn.addEventListener('click', function () { setMenu(!document.body.classList.contains('menu-open')); });
         if (backdrop) backdrop.addEventListener('click', function () { setMenu(false); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+
+        // Sombra no topo ao rolar a página
+        var header = document.getElementById('header');
+        if (header) {
+            var onScroll = function () { header.classList.toggle('scrolled', window.scrollY > 4); };
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        }
+
+        // Mensagens do Django somem sozinhas depois de alguns segundos
+        document.querySelectorAll('.messagelist li').forEach(function (li) {
+            setTimeout(function () {
+                li.classList.add('leaving');
+                setTimeout(function () { li.remove(); }, 450);
+            }, 6000);
+        });
 
         // Listas: cada célula ganha o nome da coluna (usado no formato de cartões do celular).
         var table = document.getElementById('result_list');

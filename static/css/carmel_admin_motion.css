@@ -1,0 +1,132 @@
+/* ==========================================================================
+   CARMEL — Camada de movimento do painel de administração
+   Carregada DEPOIS de carmel_admin.css. Só transições e animações.
+   ========================================================================== */
+
+:root {
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: .16s ease both vt-out; }
+::view-transition-new(root) { animation: .3s var(--ease-out) both vt-in; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(6px); } }
+
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop  { from { opacity: 0; transform: scale(.95) translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes slide-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+
+/* ---- Estrutura -------------------------------------------------------------- */
+#header { animation: fade .5s ease both; transition: box-shadow .3s; }
+#header.scrolled { box-shadow: 0 8px 24px -14px rgba(76, 52, 39, .5); }
+.carmel-logo { transition: transform .35s var(--ease-spring); }
+#site-name a:hover .carmel-logo { transform: scale(1.04); }
+#content { animation: rise .55s var(--ease-out) both; }
+.portal-link { transition: border-color .2s, transform .25s var(--ease-out), background-color .2s; }
+.portal-link:hover { transform: translateX(-3px); }
+
+/* ---- Menu lateral ----------------------------------------------------------- */
+#carmel-nav .nav-link { transition: background-color .2s, color .2s, border-color .25s, transform .25s var(--ease-out), padding .25s var(--ease-out); animation: slide-in .5s var(--ease-out) both; }
+#carmel-nav .nav-link:hover { transform: translateX(3px); }
+#carmel-nav .nav-ico { transition: transform .35s var(--ease-spring), opacity .2s; }
+#carmel-nav .nav-link:hover .nav-ico { transform: scale(1.18) rotate(-6deg); opacity: 1; }
+#carmel-nav .nav-group:nth-of-type(1) .nav-link { animation-delay: .05s; }
+#carmel-nav .nav-group:nth-of-type(2) .nav-link { animation-delay: .12s; }
+#carmel-nav .nav-group:nth-of-type(3) .nav-link { animation-delay: .19s; }
+#carmel-nav .nav-group:nth-of-type(4) .nav-link { animation-delay: .26s; }
+#carmel-nav-backdrop { animation: fade .25s ease both; backdrop-filter: blur(2px); }
+.menu-btn { transition: transform .25s var(--ease-spring); }
+.menu-btn:hover { transform: scale(1.08); }
+@media (max-width: 1024px) { #carmel-nav { transition: transform .4s var(--ease-out), box-shadow .4s; } }
+
+/* ---- Painel inicial --------------------------------------------------------- */
+.dash-hello, .dash-actions, .dash-alert { animation: rise .6s var(--ease-out) both; }
+.dash-actions { animation-delay: .06s; }
+.dash-section { animation: rise .6s .12s var(--ease-out) both; }
+.dash-section + .dash-section { animation-delay: .2s; }
+.dash-section + .dash-section + .dash-section { animation-delay: .28s; }
+
+.kpis > *, .sectors > *, .shortcut { animation: pop .6s var(--ease-out) both; }
+.kpis > :nth-child(1), .sectors > :nth-child(1) { animation-delay: .12s; }
+.kpis > :nth-child(2), .sectors > :nth-child(2) { animation-delay: .18s; }
+.kpis > :nth-child(3), .sectors > :nth-child(3) { animation-delay: .24s; }
+.kpis > :nth-child(4), .sectors > :nth-child(4) { animation-delay: .30s; }
+.kpis > :nth-child(5), .sectors > :nth-child(5) { animation-delay: .36s; }
+.kpis > :nth-child(n+6), .sectors > :nth-child(n+6) { animation-delay: .42s; }
+
+.kpi, .sector, .shortcut-main, .shortcut-add, .dash-btn { transition: transform .3s var(--ease-out), box-shadow .3s, border-color .25s, background-color .25s, color .25s, opacity .2s; }
+.kpi:hover { transform: translateY(-5px); }
+.sector:hover, .shortcut-main:hover { transform: translateY(-3px); }
+.dash-btn:hover { transform: translateY(-2px); }
+.dash-btn:active, .kpi:active, .sector:active { transform: scale(.98); }
+.kpi-ico, .shortcut-ico { transition: transform .4s var(--ease-spring); }
+.kpi:hover .kpi-ico, .shortcut-main:hover .shortcut-ico { transform: rotate(-8deg) scale(1.12); }
+.dash-btn svg, .shortcut-add svg { transition: transform .35s var(--ease-spring); }
+.dash-btn:hover svg { transform: scale(1.15); }
+.shortcut-add:hover svg { transform: rotate(90deg); }
+.kpi-value { transition: color .25s, transform .35s var(--ease-spring); transform-origin: left bottom; }
+.kpi:hover .kpi-value { transform: scale(1.06); }
+.kpi-warn:not(.kpi-zero) .kpi-ico svg, .kpi-info .kpi-ico svg { animation: nudge 2.8s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateY(-2px); } }
+
+/* ---- Listas e formulários --------------------------------------------------- */
+.module { transition: box-shadow .3s, border-color .25s; animation: rise .55s var(--ease-out) both; }
+.module:hover { box-shadow: 0 14px 28px -18px rgba(76, 52, 39, .45); }
+#result_list tbody tr { transition: background-color .2s, transform .25s var(--ease-out); animation: fade .5s ease both; }
+#result_list tbody tr:hover { transform: translateX(2px); }
+#result_list tbody tr:nth-child(-n+12) { animation: rise .5s var(--ease-out) both; }
+#result_list tbody tr:nth-child(2) { animation-delay: .04s; }
+#result_list tbody tr:nth-child(3) { animation-delay: .08s; }
+#result_list tbody tr:nth-child(4) { animation-delay: .12s; }
+#result_list tbody tr:nth-child(5) { animation-delay: .16s; }
+#result_list tbody tr:nth-child(6) { animation-delay: .20s; }
+#result_list tbody tr:nth-child(n+7) { animation-delay: .24s; }
+
+.button, input[type=submit], input[type=button], a.button, .object-tools a, .submit-row a.deletelink {
+    transition: background-color .2s, border-color .2s, color .2s, transform .2s var(--ease-out), box-shadow .25s, opacity .2s;
+}
+.button:hover, input[type=submit]:hover, input[type=button]:hover, a.button:hover, .object-tools a:hover {
+    transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(76, 52, 39, .6);
+}
+.button:active, input[type=submit]:active, input[type=button]:active, a.button:active { transform: translateY(1px) scale(.98); box-shadow: none; }
+
+input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], input[type=search],
+input[type=date], input[type=time], textarea, select {
+    transition: border-color .2s, box-shadow .25s, background-color .2s;
+}
+input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--link-hover-color, #B14D1D) 25%, transparent); }
+.form-row { transition: background-color .25s; }
+.form-row:hover { background: color-mix(in srgb, var(--darkened-bg, #f4f3ee) 55%, transparent); }
+
+#changelist-filter li a { transition: background-color .2s, color .2s, padding-left .25s var(--ease-out); }
+#changelist-filter li a:hover { padding-left: 14px; }
+.paginator a { transition: background-color .2s, color .2s, transform .2s var(--ease-spring); }
+.paginator a:hover { transform: translateY(-2px); }
+.pill { transition: transform .2s var(--ease-spring); }
+.pill:hover { transform: scale(1.06); }
+
+/* ---- Mensagens do Django ---------------------------------------------------- */
+.messagelist li { animation: rise .5s var(--ease-out) both; transition: opacity .4s, transform .4s var(--ease-out); }
+.messagelist li.leaving { opacity: 0; transform: translateY(-8px); }
+.errornote, ul.errorlist { animation: shake .45s ease both; }
+@keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+
+/* ---- Login do admin --------------------------------------------------------- */
+.login #container { animation: pop .7s var(--ease-spring) both; }
+.login .form-row { animation: rise .55s var(--ease-out) both; }
+.login .form-row:nth-of-type(1) { animation-delay: .2s; }
+.login .form-row:nth-of-type(2) { animation-delay: .28s; }
+.login .submit-row { animation: rise .55s .36s var(--ease-out) both; }
+
+/* ---- Troca de tema suave ---------------------------------------------------- */
+html.theme-fade, html.theme-fade * { transition: background-color .35s ease, border-color .35s ease, color .35s ease !important; }
+
+* { scrollbar-width: thin; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}

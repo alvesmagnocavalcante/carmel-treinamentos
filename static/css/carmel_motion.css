@@ -1,0 +1,188 @@
+/* ==========================================================================
+   CARMEL TREINAMENTOS — Camada de movimento do portal
+   Carregada DEPOIS de carmel.css. Só adiciona transições e animações, sem mudar a identidade.
+   Quem prefere menos movimento é respeitado (regra no fim do arquivo).
+   ========================================================================== */
+
+:root {
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* ---- Troca de página suave (navegadores com View Transitions) ------------- */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: .18s ease both vt-out; }
+::view-transition-new(root) { animation: .32s var(--ease-out) both vt-in; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---- Fundo com leve profundidade ------------------------------------------ */
+body {
+    background:
+        radial-gradient(900px 420px at 85% -80px, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%),
+        radial-gradient(700px 380px at -10% 0, color-mix(in srgb, var(--brand) 7%, transparent), transparent 70%),
+        var(--bg);
+    background-attachment: fixed;
+}
+
+/* ---- Entrada dos elementos ------------------------------------------------- */
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop  { from { opacity: 0; transform: scale(.94) translateY(10px); } to { opacity: 1; transform: none; } }
+
+.page-head   { animation: rise .6s var(--ease-out) both; }
+.toolbar     { animation: rise .6s .06s var(--ease-out) both; }
+.chips, .notice { animation: rise .6s .12s var(--ease-out) both; }
+.form-card, .jobs, .empty { animation: rise .6s .1s var(--ease-out) both; }
+.alerts .alert { animation: rise .45s var(--ease-out) both; }
+
+.video-grid > *, .jobs > * { animation: rise .6s var(--ease-out) both; }
+.video-grid > :nth-child(1), .jobs > :nth-child(1) { animation-delay: .10s; }
+.video-grid > :nth-child(2), .jobs > :nth-child(2) { animation-delay: .15s; }
+.video-grid > :nth-child(3), .jobs > :nth-child(3) { animation-delay: .20s; }
+.video-grid > :nth-child(4), .jobs > :nth-child(4) { animation-delay: .25s; }
+.video-grid > :nth-child(5), .jobs > :nth-child(5) { animation-delay: .30s; }
+.video-grid > :nth-child(6), .jobs > :nth-child(6) { animation-delay: .35s; }
+.video-grid > :nth-child(7), .jobs > :nth-child(7) { animation-delay: .40s; }
+.video-grid > :nth-child(8), .jobs > :nth-child(8) { animation-delay: .45s; }
+.video-grid > :nth-child(n+9), .jobs > :nth-child(n+9) { animation-delay: .50s; }
+
+/* ---- Topbar ---------------------------------------------------------------- */
+.topbar { animation: fade .5s ease both; transition: box-shadow .3s; }
+.topbar.scrolled { box-shadow: 0 8px 24px -14px rgba(76, 52, 39, .45); }
+.brand-logo { transition: transform .35s var(--ease-spring), opacity .2s; }
+.brand:hover .brand-logo { transform: scale(1.04); }
+
+.nav a { position: relative; border-bottom: 0; transition: color .2s; }
+.nav a::after {
+    content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px; border-radius: 2px;
+    background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .35s var(--ease-out);
+}
+.nav a:hover::after { transform: scaleX(.45); }
+.nav a.active::after { transform: scaleX(1); }
+.nav a .icon { transition: transform .3s var(--ease-spring); }
+.nav a:hover .icon { transform: translateY(-2px) scale(1.12); }
+
+/* ---- Botões ---------------------------------------------------------------- */
+.btn { position: relative; overflow: hidden; transition: background-color .2s, border-color .2s, color .2s, transform .2s var(--ease-out), box-shadow .25s, opacity .2s; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(76, 52, 39, .55); }
+.btn:active:not(:disabled) { transform: translateY(1px) scale(.98); box-shadow: none; }
+.btn .icon { transition: transform .35s var(--ease-spring); }
+.btn:hover:not(:disabled) .icon { transform: scale(1.12); }
+#btn-sync-drive:hover:not(:disabled) .icon { transform: rotate(180deg); }
+#btn-sync-drive:disabled .icon { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* brilho que atravessa o botão primário/escuro ao passar o mouse */
+.btn-primary::before, .btn-dark::before {
+    content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .22) 50%, transparent 70%);
+    transition: transform .7s var(--ease-out); pointer-events: none;
+}
+.btn-primary:hover::before, .btn-dark:hover::before { transform: translateX(120%); }
+
+/* ---- Cartões de vídeo ------------------------------------------------------ */
+.video-card { transition: transform .35s var(--ease-out), box-shadow .35s, border-color .25s; will-change: transform; }
+.video-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 22px 40px -18px rgba(76, 52, 39, .45), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.video-card:active { transform: translateY(-2px) scale(.99); }
+
+/* esqueleto luminoso enquanto a miniatura carrega */
+.thumb { background: linear-gradient(110deg, #2a2420 30%, #3a322c 50%, #2a2420 70%); background-size: 220% 100%; animation: shimmer 1.6s linear infinite; }
+@keyframes shimmer { to { background-position: -220% 0; } }
+.thumb:has(img.loaded) { animation: none; background: #1D1D1B; }
+.thumb img { opacity: 0; transition: opacity .6s ease, transform .6s var(--ease-out); }
+.thumb img.loaded { opacity: 1; }
+.thumb::after { transition: opacity .3s; }
+.video-card:hover .thumb img { transform: scale(1.07); }
+.video-card:hover .thumb::after { opacity: .6; }
+
+.play { transition: transform .35s var(--ease-spring), box-shadow .3s; }
+.play::before {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0;
+}
+.video-card:hover .play { transform: scale(1.12); box-shadow: 0 10px 26px rgba(0, 0, 0, .45); }
+.video-card:hover .play::before { animation: ring 1.4s var(--ease-out) infinite; }
+@keyframes ring { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+
+.thumb-done { animation: pop .5s var(--ease-spring) both; }
+.video-title { transition: color .25s; }
+.video-card:hover .video-title { color: var(--accent-strong); }
+
+/* ---- Chips, campos, badges -------------------------------------------------- */
+.chip { transition: background-color .25s, border-color .25s, color .25s, transform .25s var(--ease-spring), box-shadow .25s; }
+.chip:hover { transform: translateY(-2px); }
+.chip.active { box-shadow: 0 8px 16px -10px rgba(76, 52, 39, .7); }
+.input { transition: border-color .2s, box-shadow .25s, background-color .2s, transform .2s; }
+.input:focus { transform: translateY(-1px); }
+.search .icon, .input-icon .icon { transition: color .2s, transform .3s var(--ease-spring); }
+.search:focus-within .icon, .input-icon:focus-within .icon { color: var(--accent); transform: translateY(-50%) scale(1.15); }
+.badge { transition: transform .2s var(--ease-spring); }
+.badge:hover { transform: scale(1.05); }
+
+/* ---- Fila ------------------------------------------------------------------ */
+.job { position: relative; transition: transform .3s var(--ease-out), box-shadow .3s, border-color .25s; }
+.job::before {
+    content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 3px;
+    background: var(--accent); transform: scaleY(0); transition: transform .35s var(--ease-out);
+}
+.job:hover { transform: translateX(4px); box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.job:hover::before { transform: scaleY(1); }
+.job-ico { transition: transform .35s var(--ease-spring), background-color .25s; }
+.job:hover .job-ico { transform: rotate(-6deg) scale(1.08); }
+
+/* ---- Vazio ----------------------------------------------------------------- */
+.empty-icon { animation: float 3.6s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-8px); } }
+
+/* ---- Modal do vídeo -------------------------------------------------------- */
+.modal.open { animation: fade .25s ease both; }
+.modal.open .modal-box { animation: pop .42s var(--ease-spring) both; }
+.modal-close { transition: transform .3s var(--ease-spring), border-color .2s, background-color .2s; }
+.modal-close:hover { transform: rotate(90deg) scale(1.08); }
+
+/* ---- Login ----------------------------------------------------------------- */
+.login-card { animation: pop .7s var(--ease-spring) both; backdrop-filter: blur(6px); }
+.login-head > * { animation: rise .7s var(--ease-out) both; }
+.login-head > :nth-child(2) { animation-delay: .12s; }
+.login-head > :nth-child(3) { animation-delay: .2s; }
+.login-tagline { display: inline-block; animation: rise .8s .15s var(--ease-out) both, sway 6s 1s ease-in-out infinite; }
+@keyframes sway { 50% { transform: translateY(-3px) rotate(-1deg); } }
+.login-card .field, .login-card .btn { animation: rise .6s var(--ease-out) both; }
+.login-card .field:nth-of-type(1) { animation-delay: .25s; }
+.login-card .field:nth-of-type(2) { animation-delay: .32s; }
+.login-card .btn { animation-delay: .4s; }
+
+/* ---- Avisos e notificações (toast) ----------------------------------------- */
+.alert { transition: opacity .4s, transform .4s var(--ease-out); }
+.alert.leaving { opacity: 0; transform: translateY(-8px); }
+.toast-stack { position: fixed; z-index: 80; right: 20px; bottom: 20px; display: grid; gap: 10px; width: min(380px, calc(100vw - 32px)); pointer-events: none; }
+.toast {
+    pointer-events: auto; display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-md); font-size: 13px; font-weight: 500;
+    animation: toast-in .5s var(--ease-spring) both;
+}
+.toast.ok  { border-left-color: var(--ok); }
+.toast.err { border-left-color: var(--err); }
+.toast .icon { margin-top: 2px; color: var(--accent); }
+.toast.ok .icon { color: var(--ok); }
+.toast.err .icon { color: var(--err); }
+.toast.leaving { animation: toast-out .35s ease both; }
+@keyframes toast-in  { from { opacity: 0; transform: translateX(40px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(40px) scale(.96); } }
+@media (max-width: 600px) { .toast-stack { right: 16px; left: 16px; bottom: 16px; width: auto; } }
+
+/* ---- Barra de rolagem discreta --------------------------------------------- */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-3) 50%, transparent) transparent; }
+
+/* ---- Troca de tema suave --------------------------------------------------- */
+html.theme-fade, html.theme-fade * { transition: background-color .35s ease, border-color .35s ease, color .35s ease !important; }
+
+/* ---- Menos movimento ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .thumb img { opacity: 1; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
