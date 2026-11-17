@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 
-from .models import Department, SystemSetting, TrainingVideo, UserProfile, VideoProgress
+from .models import Department, TrainingVideo, UserProfile, VideoProgress
 
 Status = TrainingVideo.Status
 
@@ -125,15 +125,3 @@ class VideoProgressAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'video__title')
     list_select_related = ('user', 'video')
     list_per_page = 25
-
-
-@admin.register(SystemSetting)
-class SystemSettingAdmin(admin.ModelAdmin):
-    list_display = ('key', 'display_value', 'description', 'updated_at')
-    search_fields = ('key', 'description')
-
-    @admin.display(description='Valor')
-    def display_value(self, obj):
-        if obj.key in SystemSetting.SECRET_KEYS and obj.value:
-            return f"••••••{obj.value[-4:]}"
-        return obj.value or '(vazio — usa .env)'

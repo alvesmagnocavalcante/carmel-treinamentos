@@ -18,9 +18,6 @@ NAV_GROUPS = [
         ("TrainingVideo", "clapperboard", "Vídeos de treinamento", "Roteiros, andamento e vídeos publicados."),
         ("VideoProgress", "eye", "Visualizações", "Quem assistiu e quem concluiu cada vídeo."),
     ]),
-    ("Sistema", [
-        ("SystemSetting", "settings", "Configurações", "Ajustes gerais do sistema."),
-    ]),
 ]
 
 
