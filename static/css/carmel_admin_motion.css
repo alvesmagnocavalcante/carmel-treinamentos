@@ -29,7 +29,8 @@
 .portal-link:hover { transform: translateX(-3px); }
 
 /* ---- Menu lateral ----------------------------------------------------------- */
-#carmel-nav { overflow-x: hidden; }
+/* a largura de 256px já inclui o espaçamento: sem isso o menu ficava 28px mais largo que o fundo e os destaques passavam da borda */
+#carmel-nav { box-sizing: border-box; overflow-x: hidden; }
 #carmel-nav .nav-link { transition: background-color .2s, color .2s, border-color .25s; animation: fade .5s var(--ease-out) both; }
 #carmel-nav .nav-ico { transition: transform .35s var(--ease-spring), opacity .2s; }
 #carmel-nav .nav-link:hover .nav-ico { transform: scale(1.18) rotate(-6deg); opacity: 1; }
