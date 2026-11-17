@@ -71,6 +71,8 @@
 /* ---- Chips e campos -------------------------------------------------------- */
 .chip { transition: background-color .2s, border-color .2s, color .2s, transform .2s var(--ease-out); }
 .chip:hover { transform: translateY(-1px); }
+/* a barra rola na horizontal e corta o que passa da caixa (borda e levantar do chip): dou folga em volta */
+.chips { padding: 4px 4px 10px; margin: -4px -4px 18px; }
 .input { transition: border-color .2s, box-shadow .2s; }
 .search .icon, .input-icon .icon { transition: color .2s; }
 .search:focus-within .icon, .input-icon:focus-within .icon { color: var(--accent); }
