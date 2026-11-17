@@ -4,7 +4,7 @@
 {% block extrastyle %}
 {{ block.super }}
 <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
-<link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+{% include 'partials/fonts.html' %}
 <link rel="stylesheet" href="{% static 'css/carmel_admin.css' %}">
 <link rel="stylesheet" href="{% static 'css/carmel_admin_motion.css' %}">
 {% endblock %}

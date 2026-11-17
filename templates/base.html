@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Carmel Treinamentos{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
-    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+    {% include 'partials/fonts.html' %}
     <link rel="stylesheet" href="{% static 'css/carmel.css' %}">
     <link rel="stylesheet" href="{% static 'css/carmel_motion.css' %}">
     {% include 'partials/theme_init.html' %}

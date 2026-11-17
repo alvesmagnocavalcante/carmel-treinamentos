@@ -60,9 +60,11 @@
 .play { transition: transform .25s var(--ease), background-color .2s; }
 .play { position: absolute; }
 .play::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; }
+/* anel que se expande: lento e discreto o tempo todo, mais vivo ao passar o mouse */
+.play::before { animation: ring 2.8s var(--ease-out) infinite; }
 .video-card:hover .play { transform: scale(1.1); }
-.video-card:hover .play::before { animation: ring 1.5s var(--ease-out) infinite; }
-@keyframes ring { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(1.8); } }
+.video-card:hover .play::before { animation-duration: 1.5s; }
+@keyframes ring { 0% { opacity: .55; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.7); } }
 .video-title { transition: color .2s; }
 .video-card:hover .video-title { color: var(--accent-strong); }
 
