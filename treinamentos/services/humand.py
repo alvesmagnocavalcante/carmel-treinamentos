@@ -79,12 +79,19 @@ def _fetch(cpf: str, transport: Optional[httpx.BaseTransport] = None) -> Optiona
         ) as client:
             response = client.get(f"/users/{cpf}")
     except httpx.RequestError as exc:
+        logger.warning("Humand: falha de conexão (%s: %s)", exc.__class__.__name__, exc)
         raise HumandUnavailable(f"Falha de conexão com a Humand: {exc.__class__.__name__}") from exc
     if response.status_code in (400, 404):
         return None
     if response.is_error:
+        # sem o CPF no log; o corpo da resposta ajuda a achar o motivo (chave recusada, limite de uso...)
+        logger.warning("Humand respondeu HTTP %s: %s", response.status_code, response.text[:200])
         raise HumandUnavailable(f"Humand respondeu HTTP {response.status_code}.")
-    data = response.json()
+    try:
+        data = response.json()
+    except ValueError as exc:
+        logger.warning("Humand: resposta não é JSON (HTTP %s): %s", response.status_code, response.text[:200])
+        raise HumandUnavailable("Resposta inválida da Humand.") from exc
     return data if isinstance(data, dict) else None
 
 
