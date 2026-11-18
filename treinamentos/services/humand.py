@@ -35,6 +35,8 @@ class HumandPerson:
     email: str
     resort_names: list = field(default_factory=list)
     department_names: list = field(default_factory=list)
+    position: str = ""        # função/cargo, quando a Humand tem
+    cpf: str = ""
 
 
 def clean_cpf(value: str) -> Optional[str]:
@@ -108,6 +110,15 @@ def split_segmentations(segmentations) -> tuple:
     return resorts, departments
 
 
+def find_position(fields) -> str:
+    """Função/cargo: campo do perfil sem nome na Humand, identificado pelo id (HUMAND_POSITION_FIELD_ID)."""
+    wanted = settings.HUMAND_POSITION_FIELD_ID
+    for item in fields or []:
+        if isinstance(item, dict) and item.get("id") == wanted and isinstance(item.get("value"), str):
+            return " ".join(item["value"].split())
+    return ""
+
+
 def lookup_person(cpf: str, birthdate: date, transport: Optional[httpx.BaseTransport] = None) -> Optional[HumandPerson]:
     """
     A pessoa da Humand, ou None se não existe, está inativa/excluída ou a data de nascimento não confere.
@@ -121,7 +132,8 @@ def lookup_person(cpf: str, birthdate: date, transport: Optional[httpx.BaseTrans
     resorts, departments = split_segmentations(data.get("segmentations"))
     name = " ".join(p for p in (data.get("firstName"), data.get("lastName")) if p).strip()
     return HumandPerson(name=name, email=(data.get("email") or "").strip().lower(),
-                        resort_names=resorts, department_names=departments)
+                        resort_names=resorts, department_names=departments,
+                        position=find_position(data.get("fields")), cpf=cpf)
 
 
 def match_portal(person: HumandPerson) -> tuple:

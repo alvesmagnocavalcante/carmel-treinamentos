@@ -20,5 +20,6 @@ urlpatterns = [
     path('mcp/<str:token>', mcp_server.mcp_endpoint),
     path('login/', views.login_view, name='login'),
     path('cadastro/', views.signup_view, name='signup'),
+    path('cadastro/confirmar/', views.signup_confirm_view, name='signup_confirm'),
     path('logout/', views.logout_view, name='logout'),
 ]

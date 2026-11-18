@@ -16,7 +16,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST, require_safe
 
 from .context_processors import get_profile
-from .forms import SignupForm
+from .forms import IdentifyForm, PasswordForm, create_account
 from .services import humand
 from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
@@ -383,8 +383,9 @@ def login_view(request):
         return redirect(next_url or 'home')
 
     if request.method == 'POST':
-        username, password = request.POST.get('username'), request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+        username, password = (request.POST.get('username') or '').strip(), request.POST.get('password')
+        # o login do colaborador é o CPF: aceita com ou sem pontos e traço
+        user = authenticate(request, username=humand.clean_cpf(username) or username, password=password)
         if user is not None:
             login(request, user)
             return redirect(next_url or 'home')
@@ -402,27 +403,57 @@ def _client_ip(request) -> str:
     return (forwarded.split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')) if forwarded else request.META.get('REMOTE_ADDR', '')
 
 
+SIGNUP_SESSION_KEY = 'signup_person'
+SIGNUP_SESSION_SECONDS = 15 * 60  # tempo para conferir os dados e criar a senha
+
+
 def signup_view(request):
-    """Cadastro por CPF + nascimento, validado na Humand: quem confere entra na hora."""
+    """Primeiro acesso, passo 1: CPF + nascimento conferidos na Humand."""
     if request.user.is_authenticated:
         return redirect('home')
     if not _signup_open():
         raise Http404()
-    form = SignupForm(request.POST or None, ip=_client_ip(request))
+    form = IdentifyForm(request.POST or None, ip=_client_ip(request))
     if request.method == 'POST' and form.is_valid():
+        p = form.person
+        request.session[SIGNUP_SESSION_KEY] = {
+            'cpf': p.cpf, 'name': p.name, 'email': p.email, 'position': p.position,
+            'departments': p.department_names, 'resorts': p.resort_names, 'at': timezone.now().timestamp(),
+        }
+        return redirect('signup_confirm')
+    return render(request, 'treinamentos/signup.html', {'form': form})
+
+
+def signup_confirm_view(request):
+    """Passo 2: a pessoa confere os dados vindos da Humand e cria a senha (o login é o CPF)."""
+    if request.user.is_authenticated:
+        return redirect('home')
+    if not _signup_open():
+        raise Http404()
+    data = request.session.get(SIGNUP_SESSION_KEY)
+    if not data or timezone.now().timestamp() - data.get('at', 0) > SIGNUP_SESSION_SECONDS:
+        request.session.pop(SIGNUP_SESSION_KEY, None)
+        messages.error(request, 'Sua confirmação expirou. Informe o CPF novamente.')
+        return redirect('signup')
+
+    form = PasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        person = humand.HumandPerson(
+            name=data['name'], email=data['email'], position=data['position'], cpf=data['cpf'],
+            department_names=data['departments'], resort_names=data['resorts'])
         try:
-            user = form.save()
+            user = create_account(person, form.cleaned_data['password'])
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
+            request.session.pop(SIGNUP_SESSION_KEY, None)
             login(request, user)
-            profile = user.profile
-            if profile.department_id is None:
+            if user.profile.department_id is None:
                 messages.warning(request, 'Cadastro feito! Seu setor ainda não foi identificado: avise o RH para liberar os vídeos.')
             else:
                 messages.success(request, f'Bem-vindo(a), {user.first_name}! Cadastro feito.')
             return redirect('home')
-    return render(request, 'treinamentos/signup.html', {'form': form})
+    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data})
 
 
 @require_POST

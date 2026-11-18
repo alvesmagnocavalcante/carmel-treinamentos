@@ -30,7 +30,7 @@
         <div class="login-head">
             <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
             <span class="login-sub">Primeiro acesso</span>
-            <p class="muted" style="margin-top:10px">Confirme seus dados e crie seu usuário.</p>
+            <p class="muted" style="margin-top:10px">Informe seu CPF e sua data de nascimento.</p>
         </div>
         {% for e in form.non_field_errors %}<div class="alert alert-error" role="alert">{% include 'partials/icon.html' with name='alert-circle' %} {{ e }}</div>{% endfor %}
         {% for e in form.website.errors %}<div class="alert alert-error" role="alert">{{ e }}</div>{% endfor %}
@@ -53,31 +53,7 @@
                 </div>
                 {% for e in form.birthdate.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
             </div>
-            <div class="field">
-                <label for="id_username">Escolha um usuário</label>
-                <div class="input-icon">
-                    {% include 'partials/icon.html' with name='user' %}
-                    <input id="id_username" type="text" name="username" class="input" autocomplete="username"  value="{{ form.username.value|default:'' }}" required>
-                </div>
-                {% for e in form.username.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
-            </div>
-            <div class="field">
-                <label for="id_password">Senha</label>
-                <div class="input-icon">
-                    {% include 'partials/icon.html' with name='lock' %}
-                    <input id="id_password" type="password" name="password" class="input" autocomplete="new-password" required>
-                </div>
-                {% for e in form.password.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
-            </div>
-            <div class="field">
-                <label for="id_password2">Confirmar senha</label>
-                <div class="input-icon">
-                    {% include 'partials/icon.html' with name='lock' %}
-                    <input id="id_password2" type="password" name="password2" class="input" autocomplete="new-password" required>
-                </div>
-                {% for e in form.password2.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
-            </div>
-            <button type="submit" class="btn btn-primary btn-lg">Criar cadastro</button>
+            <button type="submit" class="btn btn-primary btn-lg">Continuar</button>
         </form>
         <p class="muted" style="text-align:center; font-size:13px; margin-top:14px"><a href="{% url 'login' %}">Já tenho cadastro</a></p>
     </section>

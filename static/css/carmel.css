@@ -401,3 +401,11 @@ textarea.script-box { width: 100%; max-width: 100%; }
     .login-points li:nth-child(2) { animation-delay: .25s; }
     .login-points li:nth-child(3) { animation-delay: .35s; }
 }
+
+
+/* Primeiro acesso: dados vindos da Humand para o colaborador conferir */
+.confirm-box { display: grid; gap: 2px; margin: 4px 0 18px; padding: 6px 16px; border: 1px solid var(--border, rgba(128,128,128,.25)); border-radius: 12px; }
+.confirm-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; font-size: 14px; }
+.confirm-row + .confirm-row { border-top: 1px solid var(--border, rgba(128,128,128,.2)); }
+.confirm-row span { opacity: .7; }
+.confirm-row strong { text-align: right; font-weight: 600; }

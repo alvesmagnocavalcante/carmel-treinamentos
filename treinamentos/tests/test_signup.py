@@ -14,6 +14,7 @@ from .base import BaseTestCase
 
 CPF = "529.982.247-25"  # CPF válido de exemplo (dígitos verificadores corretos)
 CPF_DIGITS = "52998224725"
+SIGNUP_KEY = "signup_person"
 REAL_FETCH = humand._fetch  # a consulta de verdade; cada FakeHumand a troca por uma com respostas prontas
 
 
@@ -21,6 +22,7 @@ def person(**extra):
     data = {
         "id": 1, "employeeInternalId": CPF_DIGITS, "firstName": "Maria", "lastName": "da Silva",
         "email": "maria@carmel.com", "birthdate": "1990-05-17", "status": "ACTIVE", "deleted": False,
+        "fields": [{"id": "2b6041ca-27d0-412d-b385-dda2fd082e7d", "name": None, "value": "Eletricista"}],
         "segmentations": [{"group": "Carmel Taíba", "item": "Governança"}, {"group": "Hotéis", "item": "Taíba"}],
     }
     data.update(extra)
@@ -75,32 +77,70 @@ class SignupTests(BaseTestCase):
         self.gov.name = "Governança"
         self.gov.save()
 
-    def data(self, **extra):
-        data = {"cpf": CPF, "birthdate": "17/05/1990", "username": "maria", "password": "segredo123",
-                "password2": "segredo123", "website": ""}
+    def identify(self, **extra):
+        data = {"cpf": CPF, "birthdate": "17/05/1990", "website": ""}
         data.update(extra)
-        return data
+        return self.client.post(reverse("signup"), data)
 
-    def post(self, fake=None, **extra):
-        return self.client.post(reverse("signup"), self.data(**extra))
+    def finish(self, password="segredo123", password2=None):
+        return self.client.post(reverse("signup_confirm"),
+                                {"password": password, "password2": password2 or password})
 
-    def test_valid_person_enters_right_away_with_humand_data(self):
+    def register(self):
+        self.identify()
+        return self.finish()
+
+    # ---- fluxo feliz ----
+    def test_step_one_shows_the_humand_data_and_creates_nothing_yet(self):
         FakeHumand(self, person())
-        resp = self.post()
+        resp = self.identify()
+        self.assertRedirects(resp, reverse("signup_confirm"), fetch_redirect_response=False)
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        for expected in ("Maria da Silva", "Eletricista", "Governança", "Taíba"):
+            self.assertIn(expected, page)
+        self.assertNotIn(CPF_DIGITS, page)       # o CPF não volta para a tela
+        self.assertNotIn("maria@carmel.com", page)  # só o essencial: sem e-mail, nascimento, telefone
+
+    def test_confirming_creates_the_account_with_cpf_as_login(self):
+        FakeHumand(self, person())
+        self.identify()
+        resp = self.finish()
         self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False)
-        user = User.objects.get(username="maria")
+        user = User.objects.get(username=CPF_DIGITS)
         self.assertTrue(user.is_active)
         self.assertEqual((user.first_name, user.last_name, user.email), ("Maria", "da Silva", "maria@carmel.com"))
         self.assertEqual(user.profile.role, UserProfile.ROLE_COLABORADOR)
-        self.assertEqual(user.profile.department, self.gov)   # "Governança" igual ao nome do setor
-        self.assertEqual(list(user.profile.resorts.all()), [self.taiba])  # "Taíba" igual a "Taiba" sem acento
-        self.assertEqual(self.client.session["_auth_user_id"], str(user.id))  # já está logada
-        self.assertEqual(user.profile.cpf_hash, humand.cpf_hash(CPF_DIGITS))
+        self.assertEqual(user.profile.department, self.gov)
+        self.assertEqual(list(user.profile.resorts.all()), [self.taiba])
+        self.assertEqual(self.client.session["_auth_user_id"], str(user.id))
         self.assertNotIn(CPF_DIGITS, user.profile.cpf_hash)
+        self.assertNotIn(SIGNUP_KEY, self.client.session)  # dados da Humand saem da sessão
+
+    def test_login_accepts_the_cpf_with_or_without_punctuation(self):
+        FakeHumand(self, person())
+        self.register()
+        self.client.logout()
+        for typed in (CPF, CPF_DIGITS, f"  {CPF} "):
+            resp = self.client.post(reverse("login"), {"username": typed, "password": "segredo123"})
+            self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False, msg_prefix=typed)
+            self.client.logout()
+        resp = self.client.post(reverse("login"), {"username": CPF, "password": "errada"})
+        self.assertContains(resp, "inválidos")
+
+    def test_old_usernames_still_log_in(self):
+        resp = self.client.post(reverse("login"), {"username": "colab", "password": "x123456"})
+        self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False)
+
+    def test_position_is_optional(self):
+        FakeHumand(self, person(fields=[]))
+        self.identify()
+        self.assertNotContains(self.client.get(reverse("signup_confirm")), "Função")
+        self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)
 
     def test_only_reads_the_humand_never_writes(self):
         fake = FakeHumand(self, person())
-        self.post()
+        self.register()
         self.assertEqual([(r.method, r.url.path) for r in fake.requests], [("GET", f"/api/users/{CPF_DIGITS}")])
         self.assertEqual(fake.requests[0].headers["Authorization"], "Basic chave-teste")
 
@@ -111,91 +151,104 @@ class SignupTests(BaseTestCase):
         FakeHumand(self, person(segmentations=[
             {"group": "Hotéis", "item": "CM"}, {"group": "Hotéis", "item": "Magna"},
             {"group": "Carmel Taíba", "item": "Governança Taíba"}]))
-        self.post()
-        profile = User.objects.get(username="maria").profile
-        self.assertEqual(list(profile.resorts.all()), [magna])  # CM e Magna: o mesmo resort, sem repetir
+        self.register()
+        profile = User.objects.get(username=CPF_DIGITS).profile
+        self.assertEqual(list(profile.resorts.all()), [magna])
         self.assertEqual(profile.department, self.rh)
 
     def test_unknown_department_still_creates_the_account_without_sector(self):
         FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"}, {"group": "X", "item": "Setor Novo"}]))
-        resp = self.post(follow=False) if False else self.post()
-        self.assertEqual(resp.status_code, 302)
-        profile = User.objects.get(username="maria").profile
+        self.assertEqual(self.register().status_code, 302)
+        profile = User.objects.get(username=CPF_DIGITS).profile
         self.assertIsNone(profile.department)
         self.assertEqual(list(profile.resorts.all()), [self.taiba])
 
+    # ---- recusas ----
     def test_wrong_birthdate_inactive_deleted_and_unknown_are_all_the_same_refusal(self):
-        cases = [
-            (person(), {"birthdate": "01/01/2000"}),
-            (person(status="INACTIVE"), {}),
-            (person(deleted=True), {}),
-            ({}, {}),  # a Humand não conhece o CPF (404)
-        ]
-        for payload, extra in cases:
+        cases = [(person(), {"birthdate": "01/01/2000"}, 200), (person(status="INACTIVE"), {}, 200),
+                 (person(deleted=True), {}, 200), ({}, {}, 404)]
+        for payload, extra, status in cases:
             cache.clear()
-            FakeHumand(self, payload, status=404 if payload == {} else 200)
-            resp = self.post(**extra)
-            self.assertContains(resp, "Não foi possível validar seus dados", msg_prefix=str(extra))
-        self.assertFalse(User.objects.filter(username="maria").exists())
+            FakeHumand(self, payload, status=status)
+            self.assertContains(self.identify(**extra), "Não foi possível validar seus dados", msg_prefix=str(extra))
+            self.assertNotIn(SIGNUP_KEY, self.client.session)
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
 
     def test_invalid_cpf_or_date_never_reach_the_humand(self):
         fake = FakeHumand(self, person())
-        self.assertContains(self.post(cpf="111.111.111-11"), "CPF inválido")
-        self.assertContains(self.post(birthdate="99/99/9999"), "Data inválida")
+        self.assertContains(self.identify(cpf="111.111.111-11"), "CPF inválido")
+        self.assertContains(self.identify(birthdate="99/99/9999"), "Data inválida")
         self.assertEqual(fake.requests, [])
 
     def test_already_registered_cpf_is_refused(self):
         FakeHumand(self, person())
-        self.post()
+        self.register()
         self.client.logout()
-        resp = self.post(username="maria2")
-        self.assertContains(resp, "já possui cadastro")
-        self.assertEqual(User.objects.filter(profile__cpf_hash__isnull=False).count(), 1)
+        self.assertContains(self.identify(), "já possui cadastro")
 
     def test_too_many_wrong_attempts_lock_the_signup(self):
         fake = FakeHumand(self, person())
         for _ in range(5):
-            self.post(birthdate="01/01/2000")
+            self.identify(birthdate="01/01/2000")
         count = len(fake.requests)
-        resp = self.post()  # até a data certa é recusada durante o bloqueio
-        self.assertContains(resp, "Muitas tentativas")
-        self.assertEqual(len(fake.requests), count)  # nem consulta a Humand
+        self.assertContains(self.identify(), "Muitas tentativas")  # até a data certa é recusada
+        self.assertEqual(len(fake.requests), count)
 
     def test_humand_down_is_not_counted_as_the_persons_mistake(self):
         FakeHumand(self, {}, status=500)
         for _ in range(7):
-            resp = self.post()
+            resp = self.identify()
         self.assertContains(resp, "consultar o cadastro agora")
-        self.assertFalse(User.objects.filter(username="maria").exists())
 
-    def test_password_and_username_rules_still_apply_before_asking_the_humand(self):
-        fake = FakeHumand(self, person())
-        for extra, text in (({"password2": "outra"}, "As senhas não são iguais"),
-                            ({"password": "123", "password2": "123"}, "muito curta"),
-                            ({"username": "colab"}, "já está em uso"),
-                            ({"username": "a b!"}, "só letras")):
-            self.assertContains(self.post(**extra), text, msg_prefix=str(extra))
-        self.assertEqual(fake.requests, [])
-
-    def test_honeypot_and_privilege_fields_are_ignored(self):
+    def test_password_rules_apply_on_step_two(self):
         FakeHumand(self, person())
-        self.assertFalse(User.objects.filter(username="maria").exists() or self.post(website="http://spam").status_code == 302)
-        self.post(role="admin", is_superuser="on", department=self.rh.id)
-        user = User.objects.get(username="maria")
+        self.identify()
+        self.assertContains(self.finish("segredo123", "outra"), "As senhas não são iguais")
+        self.assertContains(self.finish("123", "123"), "muito curta")
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
+        self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)  # ainda dá para corrigir
+
+    def test_step_two_needs_a_validated_step_one(self):
+        self.assertRedirects(self.client.get(reverse("signup_confirm")), reverse("signup"), fetch_redirect_response=False)
+        resp = self.client.post(reverse("signup_confirm"), {"password": "segredo123", "password2": "segredo123"})
+        self.assertRedirects(resp, reverse("signup"), fetch_redirect_response=False)
+        self.assertEqual(User.objects.filter(username=CPF_DIGITS).count(), 0)
+
+    def test_step_two_expires(self):
+        FakeHumand(self, person())
+        self.identify()
+        session = self.client.session
+        session[SIGNUP_KEY]["at"] -= 16 * 60
+        session.save()
+        self.assertRedirects(self.finish(), reverse("signup"), fetch_redirect_response=False)
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
+
+    def test_honeypot_blocks_robots_and_form_cannot_set_role_or_sector(self):
+        FakeHumand(self, person())
+        self.assertEqual(self.identify(website="http://spam").status_code, 200)
+        self.assertNotIn(SIGNUP_KEY, self.client.session)
+        self.identify(role="admin", is_superuser="on", department=self.rh.id)
+        self.client.post(reverse("signup_confirm"), {"password": "segredo123", "password2": "segredo123",
+                                                     "role": "admin", "is_superuser": "on", "department": self.rh.id})
+        user = User.objects.get(username=CPF_DIGITS)
         self.assertEqual(user.profile.role, UserProfile.ROLE_COLABORADOR)
         self.assertFalse(user.is_superuser)
         self.assertEqual(user.profile.department, self.gov)  # setor vem da Humand, não do formulário
 
     def test_signup_is_off_without_key_or_when_disabled(self):
+        for name in ("signup", "signup_confirm"):
+            with override_settings(HUMAND_API_KEY=""):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 404)
+            with override_settings(HUMAND_API_KEY="k", SIGNUP_ENABLED=False):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 404)
         with override_settings(HUMAND_API_KEY=""):
-            self.assertEqual(self.client.get(reverse("signup")).status_code, 404)
             self.assertNotContains(self.client.get(reverse("login")), "Criar cadastro")
-        with override_settings(HUMAND_API_KEY="k", SIGNUP_ENABLED=False):
-            self.assertEqual(self.client.get(reverse("signup")).status_code, 404)
 
-    def test_pages_render_and_login_links_to_signup(self):
+    def test_pages_render_and_login_asks_for_cpf(self):
         with override_settings(HUMAND_API_KEY="k"):
             self.assertContains(self.client.get(reverse("signup")), 'name="birthdate"')
-            self.assertContains(self.client.get(reverse("login")), "Criar cadastro")
+            login = self.client.get(reverse("login"))
+            self.assertContains(login, "Criar cadastro")
+            self.assertContains(login, "<label for=\"username\">CPF</label>")
             self.client.force_login(self.colab)
             self.assertRedirects(self.client.get(reverse("signup")), reverse("home"), fetch_redirect_response=False)

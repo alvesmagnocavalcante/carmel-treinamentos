@@ -31,7 +31,7 @@
             <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
             <span class="login-tagline">a arte de saber viver</span>
             <span class="login-sub">Plataforma de Treinamentos</span>
-            <p class="muted" style="margin-top:10px">Olá! Entre com o seu usuário corporativo.</p>
+            <p class="muted" style="margin-top:10px">Olá! Entre com o seu CPF e a sua senha.</p>
         </div>
 
         {% for message in messages %}
@@ -42,10 +42,10 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
             <div class="field">
-                <label for="username">Usuário</label>
+                <label for="username">CPF</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='user' %}
-                    <input id="username" type="text" name="username" class="input" autocomplete="username" value="{{ request.POST.username|default:'' }}" required autofocus>
+                    <input id="username" type="text" name="username" class="input" autocomplete="username" inputmode="numeric" placeholder="000.000.000-00" value="{{ request.POST.username|default:'' }}" required autofocus>
                 </div>
             </div>
             <div class="field">
