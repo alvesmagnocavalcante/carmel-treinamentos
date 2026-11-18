@@ -121,6 +121,8 @@ class DriveImage(models.Model):
     mime_type = models.CharField("Tipo", max_length=100, blank=True)
     size_bytes = models.BigIntegerField("Tamanho em bytes", default=0)
     too_large = models.BooleanField("Grande demais", default=False, help_text="Passou do limite de tamanho: não é usada nos vídeos.")
+    width = models.PositiveIntegerField("Largura (px)", default=0, help_text="0 = o Drive não informou.")
+    height = models.PositiveIntegerField("Altura (px)", default=0, help_text="0 = o Drive não informou.")
     modified_at = models.CharField("Última alteração no Drive", max_length=40, blank=True)
     updated_at = models.DateTimeField("Atualizada em", auto_now=True)
 

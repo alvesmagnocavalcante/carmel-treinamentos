@@ -14,5 +14,6 @@
         <input type="text" name="scene_image" class="input" list="image-names" value="{{ scene.imagem }}"
                placeholder="nome-do-arquivo.png" autocomplete="off">
         {% if scene.problema %}<span class="scene-problem">{% include 'partials/icon.html' with name='alert-triangle' %} {{ scene.problema }}</span>{% endif %}
+        {% if scene.aviso and not scene.problema %}<span class="scene-notice">{% include 'partials/icon.html' with name='info' %} {{ scene.aviso }}</span>{% endif %}
     </div>
 </div>

@@ -36,6 +36,20 @@ def image_problem(department: Department, name: str) -> str:
     return ""
 
 
+MIN_LANDSCAPE_RATIO = 1.4  # abaixo disso (4:3, quadrada, em pé) o corte no 16:9 já come uma parte relevante da foto
+
+
+def image_notice(department: Department, name: str) -> str:
+    """Aviso (não bloqueia) sobre a imagem citada: foto em pé ou quase quadrada é cortada no vídeo 16:9."""
+    image = find_image(department, name)
+    if image is None or not image.width or not image.height:
+        return ""
+    if image.width / image.height < MIN_LANDSCAPE_RATIO:
+        return (f"A imagem '{image.name}' é em pé ou quase quadrada ({image.width}×{image.height}): "
+                "no vídeo 16:9 ela será cortada. Prefira fotos na horizontal.")
+    return ""
+
+
 def scene_image_problems(department: Department, scenes: List[dict]) -> List[str]:
     """Problemas das imagens citadas nas cenas, sem repetir a mesma mensagem."""
     seen, problems = set(), []
@@ -48,8 +62,13 @@ def scene_image_problems(department: Department, scenes: List[dict]) -> List[str
 
 
 def check_scenes(department: Department, scenes: List[dict]) -> List[dict]:
-    """As cenas com o campo `problema` preenchido quando a imagem citada não pode ser usada."""
-    return [{**scene, "problema": image_problem(department, scene.get("imagem", ""))} for scene in scenes]
+    """As cenas com `problema` (a imagem citada não pode ser usada) e `aviso` (pode, mas com ressalva) preenchidos."""
+    return [
+        {**scene,
+         "problema": image_problem(department, scene.get("imagem", "")),
+         "aviso": image_notice(department, scene.get("imagem", ""))}
+        for scene in scenes
+    ]
 
 
 TOKEN_SALT = "carmel.scene-image"
