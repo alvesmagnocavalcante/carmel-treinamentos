@@ -9,8 +9,7 @@
         <h1 class="page-title">Revisar roteiro</h1>
         <p class="page-sub">
             <strong>{{ video.title }}</strong> • {{ video.department.name }}<br>
-            O avatar vai narrar exatamente este texto. Corrija o que for preciso e aprove para gerar o vídeo
-            (cada vídeo consome créditos da HeyGen).
+            Confira o texto e aprove.
         </p>
     </div>
 </div>
@@ -18,15 +17,6 @@
 <div class="card form-card">
     <form method="post" style="display:grid; gap:18px">
         {% csrf_token %}
-        <div class="field">
-            <label>Cenas do vídeo</label>
-            <span class="hint">
-                Cada cena é um trecho falado, com uma imagem opcional. A imagem é um arquivo da pasta
-                <strong>Imagens</strong> do setor no Drive (png, jpg ou webp) e aparece em tela cheia durante o trecho,
-                <strong>sem o avatar</strong>. Sem imagem, a cena mostra o avatar como sempre.
-            </span>
-        </div>
-
         <div id="scenes" class="scenes">
             {% for scene in scenes %}{% include 'treinamentos/_scene_row.html' %}{% empty %}{% include 'treinamentos/_scene_row.html' %}{% endfor %}
         </div>
@@ -34,12 +24,10 @@
 
         <div class="scenes-foot">
             <button type="button" id="add-scene" class="btn btn-ghost btn-sm">{% include 'partials/icon.html' with name='plus' %} Adicionar cena</button>
-            <span class="hint"><span id="char-count" class="counter">0</span> / {{ max_chars }} caracteres falados no total</span>
+            <span class="hint"><span id="char-count" class="counter">0</span> / {{ max_chars }} caracteres</span>
         </div>
         <p class="hint" id="animate-note" hidden>
-            <strong><span id="animate-count">0</span> de {{ max_animated }}</strong> cenas animadas. Cada cena animada gasta
-            crédito extra da HeyGen e leva alguns minutos. Sem texto de movimento, a imagem recebe só uma aproximação lenta
-            da câmera, sem mexer em nada da cena. A IA ainda pode errar: confira o vídeo antes de divulgar.
+            <strong><span id="animate-count">0</span> de {{ max_animated }}</strong> cenas animadas
         </p>
 
         {% if resort_choices %}
@@ -53,11 +41,11 @@
                 </label>
                 {% endfor %}
             </div>
-            <span class="hint">Nenhum marcado = o vídeo vale para todos os resorts.</span>
+            <span class="hint">Nenhum marcado = todos.</span>
         </div>
         {% endif %}
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-lg">{% include 'partials/icon.html' with name='check' %} Aprovar e gerar vídeo</button>
+            <button type="submit" class="btn btn-primary btn-lg">{% include 'partials/icon.html' with name='check' %} Aprovar</button>
             <a href="{% url 'queue' %}" class="btn btn-ghost btn-lg">Voltar à fila</a>
         </div>
     </form>

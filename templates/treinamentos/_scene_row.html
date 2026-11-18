@@ -10,7 +10,7 @@
         <textarea name="scene_text" class="input scene-text" rows="6">{{ scene.texto }}</textarea>
     </div>
     <div class="field">
-        <label>Imagem em tela cheia <span class="muted">(opcional, sem o avatar)</span></label>
+        <label>Imagem <span class="muted">(opcional)</span></label>
         <input type="text" name="scene_image" class="input" list="image-names" value="{{ scene.imagem }}"
                placeholder="nome-do-arquivo.png" autocomplete="off">
         <div class="scene-animate">
@@ -26,7 +26,7 @@
                 {% endfor %}
             </select>
             <input type="text" name="scene_movimento" class="input" value="{{ scene.movimento }}" maxlength="500"
-                   placeholder="Como animar (opcional): ex. aproximação lenta da câmera" autocomplete="off"
+                   placeholder="Movimento (opcional)" autocomplete="off"
                    {% if not scene.animar %}hidden{% endif %}>
         </div>
         {% if scene.problema %}<span class="scene-problem">{% include 'partials/icon.html' with name='alert-triangle' %} {{ scene.problema }}</span>{% endif %}
