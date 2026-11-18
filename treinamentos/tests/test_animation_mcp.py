@@ -85,6 +85,15 @@ class AnimationMcpTests(BaseTestCase):
         self.make([{"ordem": 1, "texto": "a" * 400, "imagem": "a.png", "animar": True, "movimento": ""}])
         self.assertEqual(self.item()["animacoes"][0]["image_to_video"]["duration"], 8)
 
+    def test_scene_duration_overrides_the_default_and_is_clamped(self):
+        self.make([
+            {"ordem": 1, "texto": "Um.", "imagem": "a.png", "animar": True, "movimento": "", "duracao": 10},
+            {"ordem": 2, "texto": "Dois.", "imagem": "b.png", "animar": True, "movimento": ""},
+            {"ordem": 3, "texto": "Três.", "imagem": "c.png", "animar": True, "movimento": "", "duracao": 99},
+        ])
+        durations = [a["image_to_video"]["duration"] for a in self.item()["animacoes"]]
+        self.assertEqual(durations, [10, 5, 15])
+
     def test_custom_movement_text_is_used_but_always_with_the_guard(self):
         self.make([{"ordem": 1, "texto": "Texto.", "imagem": "a.png", "animar": True, "movimento": "zoom lento"}])
         item = self.item()

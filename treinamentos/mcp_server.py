@@ -92,6 +92,7 @@ def _scenes_for_claude(video: TrainingVideo, request) -> list:
         if scene.get("animar"):
             item["animar"] = True
             item["movimento"] = animation_prompt(scene.get("movimento"))
+            item["duracao_clipe"] = animation_seconds(scene.get("duracao"))
         if name:
             problem = image_problem(video.department, name)
             image = None if problem else find_image(video.department, name)
@@ -132,7 +133,7 @@ def _heygen_plan(video: TrainingVideo, scenes: list, params: dict) -> dict:
             request_args = {
                 "image": {"type": "url", "url": scene["imagem_url"]},
                 "prompt": scene["movimento"],
-                "duration": animation_seconds(),  # curto de propósito: clipe longo inventa mais
+                "duration": scene["duracao_clipe"],  # escolhida na revisão; padrão curto: clipe longo inventa mais
                 "resolution": "768p",
                 "promptEnhancement": "disabled",  # sem reescrita do texto: o aprimoramento costuma inventar detalhes
             }

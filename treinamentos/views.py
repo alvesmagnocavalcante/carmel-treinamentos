@@ -23,7 +23,10 @@ from .services.pipeline import (
     MAX_SCRIPT_CHARS, attach_uploaded_video, generation_params, mark_awaiting_video,
     start_pipeline_async, store_scenes, validate_scenes,
 )
-from .services.scenes import check_scenes, image_from_token, scene_image_problems, usable_image_names
+from .services.scenes import (
+    MAX_CLIP_SECONDS, MIN_CLIP_SECONDS, animation_seconds, check_scenes, image_from_token, scene_image_problems,
+    usable_image_names,
+)
 
 Status = TrainingVideo.Status
 logger = logging.getLogger(__name__)
@@ -145,6 +148,7 @@ def _scenes_from_post(post) -> list:
         return parse_scenes(post.get('script', ''))
     texts, images = post.getlist('scene_text'), post.getlist('scene_image')
     animars, movements = post.getlist('scene_animar'), post.getlist('scene_movimento')
+    durations = post.getlist('scene_duracao')
     scenes = []
     for i, raw in enumerate(texts):
         image = (images[i] if i < len(images) else '').strip()
@@ -156,6 +160,9 @@ def _scenes_from_post(post) -> list:
             # animar sem imagem não é descartado aqui: a validação avisa a pessoa
             movement = (movements[i] if i < len(movements) else '').strip()[:MAX_MOVEMENT_CHARS]
             scene.update({'animar': True, 'movimento': movement})
+            raw_seconds = (durations[i] if i < len(durations) else '').strip()
+            if raw_seconds.isdigit():  # vazio = usa o padrão do sistema
+                scene['duracao'] = animation_seconds(raw_seconds)
         scenes.append(scene)
     return scenes
 
@@ -205,6 +212,8 @@ def review_script_view(request, video_id):
     return render(request, 'treinamentos/review.html', {
         'video': video, 'scenes': check_scenes(video.department, scenes), 'max_chars': MAX_SCRIPT_CHARS,
         'image_names': usable_image_names(video.department), 'max_animated': settings.MAX_ANIMATED_SCENES,
+        'default_clip_seconds': animation_seconds(),
+        'clip_seconds_options': range(MIN_CLIP_SECONDS, MAX_CLIP_SECONDS + 1),
         'resort_choices': choices, 'selected_resort_ids': selected_ids,
     })
 

@@ -80,6 +80,7 @@
                 total += row.querySelector('textarea').value.length;
                 var on = row.querySelector('select[name=scene_animar]').value === '1';
                 row.querySelector('input[name=scene_movimento]').hidden = !on;
+                row.querySelector('select[name=scene_duracao]').hidden = !on;
                 if (on) animated++;
             });
             out.textContent = total;

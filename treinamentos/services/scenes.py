@@ -93,9 +93,16 @@ def animation_prompt(movement: str) -> str:
     return f"{movement.rstrip('. ')}. {ANIMATION_GUARD}"
 
 
-def animation_seconds() -> int:
-    """Duração do clipe animado (ANIMATION_CLIP_SECONDS, entre 5 e 15 s). Curto de propósito: clipe longo inventa mais."""
-    return max(MIN_CLIP_SECONDS, min(MAX_CLIP_SECONDS, settings.ANIMATION_CLIP_SECONDS))
+def animation_seconds(chosen=None) -> int:
+    """
+    Duração do clipe animado, entre 5 e 15 s: a escolhida na cena (tela de revisão) ou, sem escolha, o padrão
+    ANIMATION_CLIP_SECONDS. Curto por padrão de propósito: clipe longo inventa mais.
+    """
+    try:
+        seconds = int(chosen) if chosen not in (None, "") else settings.ANIMATION_CLIP_SECONDS
+    except (TypeError, ValueError):
+        seconds = settings.ANIMATION_CLIP_SECONDS
+    return max(MIN_CLIP_SECONDS, min(MAX_CLIP_SECONDS, seconds))
 
 
 TOKEN_SALT = "carmel.scene-image"

@@ -18,6 +18,13 @@
                 <option value="0" {% if not scene.animar %}selected{% endif %}>Imagem parada</option>
                 <option value="1" {% if scene.animar %}selected{% endif %}>Animar a imagem (IA)</option>
             </select>
+            <select name="scene_duracao" class="input" aria-label="Duração do clipe animado"
+                    {% if not scene.animar %}hidden{% endif %}>
+                <option value="">Duração padrão ({{ default_clip_seconds }} s)</option>
+                {% for s in clip_seconds_options %}
+                <option value="{{ s }}" {% if scene.duracao == s %}selected{% endif %}>{{ s }} segundos</option>
+                {% endfor %}
+            </select>
             <input type="text" name="scene_movimento" class="input" value="{{ scene.movimento }}" maxlength="500"
                    placeholder="Como animar (opcional): ex. aproximação lenta da câmera" autocomplete="off"
                    {% if not scene.animar %}hidden{% endif %}>

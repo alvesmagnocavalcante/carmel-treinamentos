@@ -38,6 +38,28 @@ class AnimationReviewTests(BaseTestCase):
             {"ordem": 2, "texto": "A piscina.", "imagem": "a.png", "animar": True, "movimento": "brisa leve nas palmeiras"},
         ])
 
+    def test_page_offers_the_clip_duration_with_the_system_default(self):
+        resp = self.client.get(self.url)
+        self.assertContains(resp, 'name="scene_duracao"')
+        self.assertContains(resp, "Duração padrão (5 s)")
+        self.assertContains(resp, '<option value="15" >15 segundos</option>', html=False)
+
+    def test_chosen_duration_is_stored_clamped_and_empty_means_default(self):
+        self.approve(scene_text=["Um.", "Dois.", "Três."], scene_image=["a.png", "b.png", "a.png"],
+                     scene_animar=["1", "1", "1"], scene_movimento=["", "", ""], scene_duracao=["9", "", "99"])
+        self.video.refresh_from_db()
+        self.assertEqual([s.get("duracao") for s in self.video.scenes], [9, None, 15])
+
+    def test_duration_of_a_still_scene_is_ignored_and_saved_value_is_shown_again(self):
+        self.approve(scene_text=["Um."], scene_image=["a.png"], scene_animar=["0"], scene_movimento=[""],
+                     scene_duracao=["9"])
+        self.video.refresh_from_db()
+        self.assertNotIn("duracao", self.video.scenes[0])
+        self.video.scenes = [{"ordem": 1, "texto": "A.", "imagem": "a.png", "animar": True, "movimento": "", "duracao": 8}]
+        self.video.status = "AWAITING_REVIEW"  # a aprovação acima já avançou o vídeo
+        self.video.save()
+        self.assertIn('<option value="8" selected>', self.client.get(self.url).content.decode())
+
     def test_not_animated_scene_has_no_new_keys(self):
         self.approve(scene_text=["Um.", "Dois."], scene_image=["a.png", "b.png"],
                      scene_animar=["0", "0"], scene_movimento=["", ""])
