@@ -36,6 +36,10 @@
             <button type="button" id="add-scene" class="btn btn-ghost btn-sm">{% include 'partials/icon.html' with name='plus' %} Adicionar cena</button>
             <span class="hint"><span id="char-count" class="counter">0</span> / {{ max_chars }} caracteres falados no total</span>
         </div>
+        <p class="hint" id="animate-note" hidden>
+            <strong><span id="animate-count">0</span> de {{ max_animated }}</strong> cenas animadas. Cada cena animada gasta
+            crédito extra da HeyGen e leva alguns minutos. Sem texto de movimento, a IA usa um padrão sutil que não altera a imagem.
+        </p>
 
         {% if resort_choices %}
         <div class="field">
@@ -65,16 +69,23 @@
 <script>
     (function () {
         var list = document.getElementById('scenes'), out = document.getElementById('char-count'), max = {{ max_chars }};
+        var note = document.getElementById('animate-note'), animCount = document.getElementById('animate-count'), maxAnim = {{ max_animated }};
         function rows() { return list.querySelectorAll('[data-scene]'); }
         function refresh() {
-            var total = 0, all = rows();
+            var total = 0, animated = 0, all = rows();
             all.forEach(function (row, i) {
                 row.querySelector('.scene-n').textContent = i + 1;
                 row.querySelector('[data-remove-scene]').hidden = all.length < 2;
                 total += row.querySelector('textarea').value.length;
+                var on = row.querySelector('select[name=scene_animar]').value === '1';
+                row.querySelector('input[name=scene_movimento]').hidden = !on;
+                if (on) animated++;
             });
             out.textContent = total;
             out.classList.toggle('over', total > max);
+            animCount.textContent = animated;
+            note.hidden = animated === 0;
+            note.classList.toggle('over', animated > maxAnim);
         }
         document.getElementById('add-scene').addEventListener('click', function () {
             var node = document.getElementById('scene-template').content.cloneNode(true);
@@ -88,6 +99,7 @@
             if (btn && rows().length > 1) { btn.closest('[data-scene]').remove(); refresh(); }
         });
         list.addEventListener('input', refresh);
+        list.addEventListener('change', refresh);
         refresh();
     })();
 </script>

@@ -13,6 +13,15 @@
         <label>Imagem em tela cheia <span class="muted">(opcional, sem o avatar)</span></label>
         <input type="text" name="scene_image" class="input" list="image-names" value="{{ scene.imagem }}"
                placeholder="nome-do-arquivo.png" autocomplete="off">
+        <div class="scene-animate">
+            <select name="scene_animar" class="input" aria-label="Movimento da imagem">
+                <option value="0" {% if not scene.animar %}selected{% endif %}>Imagem parada</option>
+                <option value="1" {% if scene.animar %}selected{% endif %}>Animar a imagem (IA)</option>
+            </select>
+            <input type="text" name="scene_movimento" class="input" value="{{ scene.movimento }}" maxlength="500"
+                   placeholder="Como animar (opcional): brisa leve nas palmeiras, água calma" autocomplete="off"
+                   {% if not scene.animar %}hidden{% endif %}>
+        </div>
         {% if scene.problema %}<span class="scene-problem">{% include 'partials/icon.html' with name='alert-triangle' %} {{ scene.problema }}</span>{% endif %}
         {% if scene.aviso and not scene.problema %}<span class="scene-notice">{% include 'partials/icon.html' with name='info' %} {{ scene.aviso }}</span>{% endif %}
     </div>

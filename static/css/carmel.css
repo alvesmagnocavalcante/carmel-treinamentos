@@ -297,6 +297,8 @@ textarea.script-box { min-height: 340px; resize: vertical; line-height: 1.65; fo
 .scene-text { min-height: 130px; resize: vertical; line-height: 1.6; }
 .scene-problem { display: flex; align-items: flex-start; gap: 8px; color: var(--err); font-size: 12.5px; font-weight: 500; }
 .scene-problem .icon { margin-top: 2px; }
+.scene-animate { display: grid; gap: 8px; }
+#animate-note.over { color: var(--err); }
 .scene-notice { display: flex; align-items: flex-start; gap: 8px; color: var(--warn); font-size: 12.5px; font-weight: 500; }
 .scene-notice .icon { margin-top: 2px; }
 .scenes-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
