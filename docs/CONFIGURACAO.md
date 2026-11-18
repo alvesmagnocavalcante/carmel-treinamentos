@@ -189,7 +189,7 @@ Quando eu pedir para gerar os vídeos:
       - script: o campo "roteiro", EXATAMENTE como veio;
       - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
       - aspectRatio 16:9 e resolução 720p.
-   b) "studio": chame create_video_from_studio passando o campo "cenas_heygen" EXATAMENTE como veio, como "scenes". Não monte as cenas por conta própria, não troque o tipo de nenhuma cena e não coloque avatar nas cenas de imagem (a cena de imagem mostra a imagem em tela cheia, com a voz e sem avatar, de propósito). Use aspectRatio, resolution e title de "parametros_heygen". Acrescente só o que a ferramenta exigir para a voz (voice_settings, conforme get_video_voice_capabilities), igual em todas as cenas. Se a HeyGen não aceitar esse formato, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
+   b) "studio": chame create_video_from_studio passando o campo "cenas_heygen" EXATAMENTE como veio, como "scenes". Não monte as cenas por conta própria, não troque o tipo de nenhuma cena e não coloque avatar nas cenas de imagem (a cena de imagem mostra a imagem em tela cheia, com a voz e sem avatar, de propósito). Use aspectRatio, resolution e title de "parametros_heygen". Acrescente só o que a ferramenta exigir para a voz (voice_settings, conforme get_video_voice_capabilities), igual em todas as cenas. Se a HeyGen não aceitar esse formato, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item. Se o item tiver "animacoes" (imagens para animar), faça isto ANTES do create_video_from_studio: chame image_to_video uma vez para cada animação, com EXATAMENTE os argumentos de "image_to_video" (peça todas de uma vez, sem esperar uma terminar para pedir a outra, e não repita um pedido); acompanhe cada uma com get_model_video até "completed" (nunca recrie para verificar); depois, em cada cena de "cenas_heygen" que tem "aguarda_animacao", troque esse campo por "source" = {"type": "url", "url": <video_url do clipe daquela ordem>}. Se alguma animação falhar ou for cancelada, NÃO gere o vídeo e NÃO troque por imagem parada por conta própria: me avise e pare esse item.
    c) "bloqueado": NÃO gere o vídeo; me avise do "motivo" e pare esse item.
 3. Chame mark_video_rendering com o video_id da HeyGen.
 4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento.
@@ -235,11 +235,35 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 |---|---|
 | `MAX_IMAGE_MB` | Tamanho máximo de cada imagem (padrão 10) |
 | `IMAGE_URL_TTL_MINUTES` | Validade do link temporário (padrão 120) |
+| `MAX_ANIMATED_SCENES` | Máximo de cenas com imagem animada por vídeo (padrão 4) |
 | `PORTAL_BASE_URL` | Endereço público do portal nesses links, por exemplo `https://carmel-treinamentos.onrender.com`. Vazio = usa o endereço da requisição (e o `X-Forwarded-Proto` do proxy). **Recomendado definir** em produção, para o link sair sempre em https |
 
 **Nas cenas com imagem, o avatar não aparece.** Muitos avatares vêm com um cenário gravado atrás (um escritório, por exemplo) que ocupa o quadro inteiro e **esconde qualquer imagem de fundo**. Em testes reais com o avatar `Abigail_standing_office_front`, a imagem chegou à HeyGen e ficou toda coberta, mesmo pedindo a remoção do fundo. Por isso, a cena com imagem mostra **a imagem em tela cheia, com a voz narrando o texto**, e as cenas sem imagem continuam com o avatar. Para ter o avatar *sobre* a imagem, o setor precisa de um avatar de fundo removível (por exemplo, um avatar digital próprio, criado na HeyGen com essa opção); aí o prompt pode voltar a usar a imagem como fundo.
 
 **O portal já monta as cenas para a HeyGen.** Para o Claude não precisar interpretar texto (e errar o formato), cada item do `list_awaiting_videos` traz o `modo_heygen`: `avatar` (uma cena sem imagem: vídeo de sempre), `studio` (tem imagem ou várias cenas: o campo `cenas_heygen` é o JSON exato para o `create_video_from_studio`, com cena `image` para as cenas com imagem e `avatar_video` para as sem) ou `bloqueado` (alguma imagem citada não existe ou é grande demais: o campo `motivo` diz qual, e o Claude não gera). A configuração de voz (`voice_settings`) continua por conta do Claude, que a consulta na HeyGen.
+
+### Imagem animada
+
+Em vez de mostrar a imagem parada, a cena pode **animar a imagem com IA** (a HeyGen cria um clipe curto a partir dela, com a narração por cima, sem o avatar). Marque com o modificador `animar` na linha da imagem:
+
+```
+[IMAGEM: piscina.png | animar]
+[IMAGEM: piscina.png | animar: brisa leve nas palmeiras, água calma]
+```
+
+Sem texto depois de `animar:`, usa-se um padrão conservador (*movimento de câmera sutil e movimento natural dos elementos; não adicione, remova nem deforme objetos, pessoas ou textos; mantenha a imagem fiel*). Na tela **Revisar roteiro**, cada cena tem a escolha **Imagem parada / Animar a imagem (IA)** e o campo opcional **Como animar**.
+
+| Ponto | Como funciona |
+|---|---|
+| Limite | No máximo `MAX_ANIMATED_SCENES` cenas animadas por vídeo (padrão 4). Passar disso, ou animar uma cena sem imagem, bloqueia a aprovação |
+| Duração do clipe | Estimada pela narração (cerca de 14 caracteres por segundo), entre 5 e 15 s. O clipe é esticado ou encurtado para caber no tempo da fala e sai sem o som dele |
+| Texto de instrução | A HeyGen não reescreve o texto (aprimoramento desligado), porque a reescrita costuma inventar detalhes |
+| Foto em pé ou quase quadrada | A revisão avisa (sem bloquear): o vídeo é 16:9 e a foto será cortada. O portal lê as dimensões da imagem no Drive na sincronização |
+| Custo e tempo | **Cada cena animada é uma geração a mais na HeyGen**: gasta crédito extra e leva alguns minutos. O vídeo só é montado quando todos os clipes terminam |
+
+**Como o Claude faz.** O `list_awaiting_videos` traz, para cada cena animada, o pedido pronto de `image_to_video` em `animacoes`. O Claude pede todos os clipes de uma vez, acompanha com `get_model_video` e, quando ficam prontos, coloca o endereço de cada clipe na cena correspondente de `cenas_heygen` (a cena do tipo `video` que espera o clipe) e cria o vídeo. **Se algum clipe falhar, o Claude avisa e para**: ele não troca por imagem parada por conta própria.
+
+**Cuidado com a marca.** A IA pode alterar a imagem (inventar, apagar ou deformar elementos) mesmo com o texto conservador, e não há como ver o resultado antes de gerar. Anime só as cenas em que isso importa e confira o vídeo antes de divulgar. O teste com a HeyGen real **ainda não foi feito**.
 
 **O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita várias cenas e cenas de imagem narradas e, se aceitar, gera **um vídeo** com uma cena por bloco e o texto exato: a cena com imagem mostra a imagem em tela cheia com a voz, e a sem imagem mostra o avatar. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
 
