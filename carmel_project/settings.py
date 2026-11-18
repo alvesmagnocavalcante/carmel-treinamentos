@@ -146,6 +146,10 @@ ALLOWED_DOC_EXTENSIONS = (".pdf", ".docx", ".txt", ".md")
 # True: o gestor revisa/aprova o roteiro antes de gastar crédito da HeyGen. False: envio automático.
 REQUIRE_SCRIPT_REVIEW = env_bool("REQUIRE_SCRIPT_REVIEW", True)
 MAX_VIDEO_MB = int(os.getenv("MAX_VIDEO_MB", "500"))
+# Imagens das cenas (subpasta Imagens do Drive): tamanho máximo e validade do link temporário dado à HeyGen.
+MAX_IMAGE_MB = int(os.getenv("MAX_IMAGE_MB", "10"))
+IMAGE_URL_TTL_MINUTES = int(os.getenv("IMAGE_URL_TTL_MINUTES", "120"))
+PORTAL_BASE_URL = os.getenv("PORTAL_BASE_URL", "").strip().rstrip("/")  # vazio = usa o endereço da requisição
 
 # Conector MCP do portal (para o Claude): vazio = conector desligado.
 MCP_TOKEN = os.getenv("MCP_TOKEN", "").strip()

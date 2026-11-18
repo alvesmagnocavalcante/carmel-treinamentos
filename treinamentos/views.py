@@ -18,11 +18,12 @@ from django.views.decorators.http import require_POST
 from .context_processors import get_profile
 from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
-from .services.document_parser import clean_script
+from .services.document_parser import clean_script, parse_scenes
 from .services.pipeline import (
     MAX_SCRIPT_CHARS, attach_uploaded_video, generation_params, mark_awaiting_video,
-    start_pipeline_async, validate_script,
+    start_pipeline_async, store_scenes, validate_scenes,
 )
+from .services.scenes import check_scenes, scene_image_problems, usable_image_names
 
 Status = TrainingVideo.Status
 logger = logging.getLogger(__name__)
@@ -133,6 +134,24 @@ def retry_video_view(request, video_id):
     return redirect('queue')
 
 
+def _scenes_from_post(post) -> list:
+    """
+    Cenas enviadas pela tela de revisão (scene_text/scene_image em paralelo). Sem esses campos, vale o
+    campo antigo `script`, que aceita a marcação [IMAGEM: arquivo] escrita no próprio texto.
+    """
+    if 'scene_text' not in post:
+        return parse_scenes(post.get('script', ''))
+    texts, images = post.getlist('scene_text'), post.getlist('scene_image')
+    scenes = []
+    for i, raw in enumerate(texts):
+        image = (images[i] if i < len(images) else '').strip()
+        text = clean_script(raw)
+        if not text and not image:
+            continue  # cena em branco: some da lista
+        scenes.append({'ordem': len(scenes) + 1, 'texto': text, 'imagem': image})
+    return scenes
+
+
 @login_required
 def review_script_view(request, video_id):
     """O gestor lê/edita o roteiro e aprova antes de gastar crédito da HeyGen."""
@@ -146,20 +165,25 @@ def review_script_view(request, video_id):
     choices = list(profile.manageable_resorts())
     selected_ids = set(video.resorts.values_list('id', flat=True))
 
-    script = video.script_text
+    scenes = video.scene_list
     if request.method == 'POST':
-        script = clean_script(request.POST.get('script', ''))
+        scenes = _scenes_from_post(request.POST)
         if choices:
             allowed = {r.id for r in choices}
             posted = {int(v) for v in request.POST.getlist('resorts') if v.isdigit()}
             selected_ids = posted & allowed
+        errors = []
         try:
-            validate_script(script)
+            validate_scenes(scenes)
         except ValueError as exc:
-            messages.error(request, str(exc))
+            errors.append(str(exc))
+        errors += scene_image_problems(video.department, scenes)  # imagem citada que não existe bloqueia a aprovação
+        if errors:
+            for error in errors:
+                messages.error(request, error)
         else:
-            video.script_text = script
-            video.save(update_fields=['script_text'])
+            store_scenes(video, scenes)
+            video.save(update_fields=['script_text', 'scenes'])
             if choices:
                 # só mexe nos resorts que a pessoa pode gerenciar; os demais ficam como estavam
                 kept = set(video.resorts.exclude(id__in=[r.id for r in choices]).values_list('id', flat=True))
@@ -171,7 +195,8 @@ def review_script_view(request, video_id):
             return redirect('queue')
 
     return render(request, 'treinamentos/review.html', {
-        'video': video, 'script': script, 'max_chars': MAX_SCRIPT_CHARS,
+        'video': video, 'scenes': check_scenes(video.department, scenes), 'max_chars': MAX_SCRIPT_CHARS,
+        'image_names': usable_image_names(video.department),
         'resort_choices': choices, 'selected_resort_ids': selected_ids,
     })
 

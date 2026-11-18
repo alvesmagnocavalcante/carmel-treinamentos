@@ -16,7 +16,8 @@ from django.utils import timezone
 
 from treinamentos.models import TrainingVideo
 from treinamentos.services.drive_service import GoogleDriveService
-from treinamentos.services.document_parser import DocumentParser, clean_script
+from treinamentos.services.document_parser import DocumentParser, parse_scenes, scenes_text, spoken_chars
+from treinamentos.services.scenes import scene_image_problems
 
 logger = logging.getLogger(__name__)
 Status = TrainingVideo.Status
@@ -75,6 +76,30 @@ def validate_script(script: str) -> None:
         )
 
 
+def validate_scenes(scenes: list) -> None:
+    """Cenas válidas: todas com texto e o texto falado total dentro do limite (as marcações não contam)."""
+    if not scenes or not spoken_chars(scenes):
+        raise ValueError("O roteiro está vazio.")
+    for scene in scenes:
+        if not scene["texto"].strip():
+            raise ValueError(f"A cena {scene['ordem']} está sem texto.")
+    total = spoken_chars(scenes)
+    if total > MAX_SCRIPT_CHARS:
+        raise ValueError(
+            f"Roteiro com {total} caracteres; o limite da HeyGen é {MAX_SCRIPT_CHARS}. "
+            "Reduza o texto ou divida o documento em partes menores."
+        )
+
+
+def store_scenes(video: TrainingVideo, scenes: list) -> None:
+    """
+    Grava as cenas no vídeo. Uma cena só e sem imagem é o roteiro de sempre: nada é guardado em `scenes`,
+    então quem não usa imagens não vê diferença.
+    """
+    video.scenes = scenes if (len(scenes) > 1 or any(s["imagem"] for s in scenes)) else []
+    video.script_text = scenes_text(scenes)
+
+
 def process_training_video(video_id: int) -> None:
     """Etapa 1: lê o documento e prepara o roteiro. Com revisão ativa, para aqui até o gestor aprovar."""
     video = _load(video_id)
@@ -86,14 +111,15 @@ def process_training_video(video_id: int) -> None:
         if not file_path:
             raise FileNotFoundError(f"Arquivo não localizado no servidor: {video.file_name}")
         raw_text, _ = DocumentParser.extract_text(file_path)
-        video.script_text = clean_script(raw_text)
-        video.save(update_fields=['script_text'])
+        notes: list = []
+        store_scenes(video, parse_scenes(raw_text, notes))
+        video.save(update_fields=['script_text', 'scenes'])
 
         if settings.REQUIRE_SCRIPT_REVIEW:
-            video.set_status(
-                Status.AWAITING_REVIEW,
-                "Roteiro pronto. Revise e aprove para gerar o vídeo.",
-            )
+            message = "Roteiro pronto. Revise e aprove para gerar o vídeo."
+            if notes:
+                message += " Atenção: " + " ".join(notes)
+            video.set_status(Status.AWAITING_REVIEW, message)
             return
         mark_awaiting_video(video)
     except Exception as exc:  # noqa: BLE001 - qualquer falha marca o job como FAILED
@@ -112,7 +138,13 @@ def generation_params(video: TrainingVideo) -> dict:
 
 def mark_awaiting_video(video: TrainingVideo) -> None:
     """Roteiro aprovado, mas o vídeo é gerado fora do portal (MCP/site da HeyGen): fica esperando o registro."""
-    validate_script(video.script_text)
+    if video.scenes:
+        validate_scenes(video.scenes)
+        problems = scene_image_problems(video.department, video.scenes)
+        if problems:
+            raise ValueError(" ".join(problems))
+    else:
+        validate_script(video.script_text)
     video.set_status(Status.AWAITING_VIDEO, "Roteiro aprovado. Aguardando a geração do vídeo.")
 
 
