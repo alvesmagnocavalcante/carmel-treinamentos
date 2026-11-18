@@ -156,6 +156,31 @@ class SignupTests(BaseTestCase):
         self.assertEqual(list(profile.resorts.all()), [magna])
         self.assertEqual(profile.department, self.rh)
 
+    def test_new_collaborator_lands_on_the_catalog_of_their_own_sector(self):
+        from ..models import Department, TrainingVideo
+        gov = Department.objects.get(code="governanca") if Department.objects.filter(code="governanca").exists() else self.gov
+        TrainingVideo.objects.filter(department=gov).update(title="Vídeo da Governança")
+        FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"},
+                                               {"group": "Carmel Taíba", "item": "Governança"}]))
+        self.register()
+        page = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Vídeo da Governança", page)  # o do setor dele
+        self.assertNotIn("Vídeo RH", page)          # e só ele
+
+    def test_humand_sector_names_are_linked_to_portal_sectors_out_of_the_box(self):
+        from ..models import Department
+        # em banco com os setores do seed, os nomes da Humand já apontam para o setor certo
+        for code, name in (("alimentos_bebidas", "Alimentos & Bebidas"), ("recepcao", "Recepção & Concierge")):
+            Department.objects.get_or_create(code=code, defaults={"name": name})
+        from importlib import import_module
+        migration = import_module("treinamentos.migrations.0015_correspondencias_setores_humand")
+        from django.apps import apps
+        migration.seed(apps, None)
+        for humand_name, code in (("Cozinha", "alimentos_bebidas"), ("Portaria", "recepcao"), ("Bar e Restaurante", "alimentos_bebidas")):
+            alias = HumandAlias.objects.get(name=humand_name)
+            self.assertEqual(alias.department.code, code)
+        self.assertFalse(HumandAlias.objects.filter(name="Comercial").exists())  # sem equivalente: de fora
+
     def test_unknown_department_still_creates_the_account_without_sector(self):
         FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"}, {"group": "X", "item": "Setor Novo"}]))
         self.assertEqual(self.register().status_code, 302)
