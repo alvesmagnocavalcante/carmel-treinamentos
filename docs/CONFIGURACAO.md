@@ -189,7 +189,7 @@ Quando eu pedir para gerar os vídeos:
       - script: o campo "roteiro", EXATAMENTE como veio, sem reescrever, resumir ou corrigir;
       - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
       - aspectRatio 16:9 e resolução 720p.
-   b) Item COM imagens (alguma cena com imagem_url) ou com mais de uma cena: ANTES de gerar, confira se o conector HeyGen aceita imagem de fundo e várias cenas (por exemplo create_video_from_studio, com uma cena avatar_video por bloco). Se aceitar, gere UM vídeo com uma cena por bloco do campo "cenas", na ordem: script = o "texto" EXATO da cena, avatar e voz do item, e a "imagem_url" da cena como fundo em imagem. Se NÃO aceitar, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
+   b) Item COM imagens (alguma cena com imagem_url) ou com mais de uma cena: ANTES de gerar, confira se o conector HeyGen aceita imagem de fundo e várias cenas (por exemplo create_video_from_studio, com uma cena avatar_video por bloco). Se aceitar, gere UM vídeo com uma cena por bloco do campo "cenas", na ordem: script = o "texto" EXATO da cena, avatar e voz do item, e a "imagem_url" da cena como fundo em imagem. Em cada cena com imagem, peça também remove_background: true no avatar (sem isso o cenário gravado do avatar cobre a imagem). Se a HeyGen recusar a remoção do fundo, NÃO gere com a imagem escondida: me avise que o avatar do setor precisa ser de fundo removível e pare esse item. Se o conector NÃO aceitar imagem de fundo ou várias cenas, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
    c) Se uma cena citar uma imagem mas vier sem imagem_url (veja "imagem_erro"), NÃO gere: me avise e pare esse item.
 3. Chame mark_video_rendering com o video_id da HeyGen.
 4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento.
@@ -236,6 +236,8 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 | `MAX_IMAGE_MB` | Tamanho máximo de cada imagem (padrão 10) |
 | `IMAGE_URL_TTL_MINUTES` | Validade do link temporário (padrão 120) |
 | `PORTAL_BASE_URL` | Endereço público do portal nesses links, por exemplo `https://carmel-treinamentos.onrender.com`. Vazio = usa o endereço da requisição (e o `X-Forwarded-Proto` do proxy). **Recomendado definir** em produção, para o link sair sempre em https |
+
+**O avatar precisa ter fundo removível.** Muitos avatares vêm com um cenário gravado atrás (um escritório, por exemplo) que ocupa o quadro inteiro e **esconde a imagem de fundo**. Num primeiro teste com o avatar `Abigail_standing_office_front`, a imagem chegou à HeyGen e ficou toda coberta. Por isso, nas cenas com imagem, o Claude pede a remoção do fundo do avatar (`remove_background`). Isso só funciona em avatares preparados para isso (por exemplo, um avatar digital treinado com essa opção). Se a HeyGen recusar, o Claude avisa e para; a saída é trocar o avatar do setor (**Admin → Setores → Avatar HeyGen**) por um de fundo removível.
 
 **O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita imagem de fundo e várias cenas e, se aceitar, gera **um vídeo** com uma cena por bloco, a imagem como fundo e o texto exato. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
 

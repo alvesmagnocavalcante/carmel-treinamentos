@@ -142,7 +142,8 @@ class McpScenesTests(BaseTestCase):
     # --- prompt
     def test_instructions_tell_claude_to_stop_instead_of_improvising(self):
         for phrase in ("imagem de fundo", "várias cenas", "NÃO improvise", "NÃO gere o vídeo sem as imagens",
-                       "imagem_erro", "texto EXATO"):
+                       "imagem_erro", "texto EXATO", "remove_background: true", "fundo removível",
+                       "imagem escondida atrás do avatar"):
             self.assertIn(phrase, INSTRUCTIONS)
         initialize = self.rpc("initialize", {"protocolVersion": "2025-06-18"}).json()["result"]
         self.assertEqual(initialize["instructions"], INSTRUCTIONS)
