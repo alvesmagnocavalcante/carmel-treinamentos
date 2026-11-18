@@ -21,7 +21,7 @@ O portal transforma roteiros guardados no Google Drive em vídeos com avatar da 
 | Peça | Para quê |
 |---|---|
 | Portal (Django) | Catálogo, fila, revisão do roteiro e permissões por setor |
-| Google Drive | Guarda roteiros e vídeos: uma pasta por setor, com as subpastas **Roteiros** e **Vídeos** |
+| Google Drive | Guarda roteiros, imagens e vídeos: uma pasta por setor, com as subpastas **Roteiros**, **Imagens** e **Vídeos** |
 | HeyGen (plano Creator) | Gera o vídeo com avatar. Usada pelo Claude, sem chave de API |
 | Claude | Pede a geração à HeyGen e entrega o resultado ao portal |
 
@@ -72,6 +72,7 @@ O portal acessa o Drive por uma **Service Account** (uma "conta robô"). Estrutu
 Unidade Compartilhada
 ├── RH
 │   ├── Roteiros   ← a equipe coloca os roteiros aqui
+│   ├── Imagens    ← imagens de fundo das cenas (png, jpg, webp)
 │   └── Vídeos     ← o portal grava os vídeos aqui
 └── (uma pasta por setor, com a mesma estrutura)
 ```
@@ -84,7 +85,7 @@ Unidade Compartilhada
 
 **3.4 Criar a Unidade Compartilhada e dar acesso.** *Obrigatório:* a Service Account não tem espaço no "Meu Drive", e gravar vídeos lá falha. No Drive, crie uma Unidade Compartilhada, abra **Gerenciar membros** e adicione o e-mail da Service Account como **Gerente de conteúdo**. Adicione também as pessoas da equipe.
 
-**3.5 Criar as pastas.** Dentro da Unidade Compartilhada, crie uma pasta por setor com as subpastas `Roteiros` e `Vídeos`. Se faltar alguma, o portal cria na primeira sincronização.
+**3.5 Criar as pastas.** Dentro da Unidade Compartilhada, crie uma pasta por setor com as subpastas `Roteiros`, `Imagens` e `Vídeos`. Se faltar alguma, o portal cria na primeira sincronização (o nome tolera maiúsculas e acento).
 
 **3.6 Pegar o ID da pasta do setor.** Abra a **pasta do setor** (não a raiz da unidade) e copie o trecho final do endereço: `drive.google.com/drive/folders/<ID>`.
 > Não use o ID da raiz da Unidade Compartilhada (costuma começar com `0A`): o portal criaria pastas duplicadas lá.
@@ -183,10 +184,13 @@ Você produz os vídeos de treinamento da Carmel Hotéis. Use os conectores "Car
 
 Quando eu pedir para gerar os vídeos:
 1. Chame list_awaiting_videos. Se não houver itens, diga isso e pare.
-2. Para cada item, um de cada vez, chame create_video_from_avatar da HeyGen com:
-   - script: o campo "roteiro", EXATAMENTE como veio, sem reescrever, resumir ou corrigir;
-   - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
-   - aspectRatio 16:9 e resolução 720p.
+2. Para cada item, um de cada vez:
+   a) Item SEM imagens (nenhuma cena com imagem_url): chame create_video_from_avatar da HeyGen com:
+      - script: o campo "roteiro", EXATAMENTE como veio, sem reescrever, resumir ou corrigir;
+      - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
+      - aspectRatio 16:9 e resolução 720p.
+   b) Item COM imagens (alguma cena com imagem_url) ou com mais de uma cena: ANTES de gerar, confira se o conector HeyGen aceita imagem de fundo e várias cenas (por exemplo create_video_from_studio, com uma cena avatar_video por bloco). Se aceitar, gere UM vídeo com uma cena por bloco do campo "cenas", na ordem: script = o "texto" EXATO da cena, avatar e voz do item, e a "imagem_url" da cena como fundo em imagem. Se NÃO aceitar, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
+   c) Se uma cena citar uma imagem mas vier sem imagem_url (veja "imagem_erro"), NÃO gere: me avise e pare esse item.
 3. Chame mark_video_rendering com o video_id da HeyGen.
 4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento.
 5. Quando estiver "completed", chame save_generated_video com o video_url, o ID da HeyGen e a duração (duration).
@@ -199,12 +203,43 @@ Nunca gere o mesmo item duas vezes e nunca altere o texto do roteiro.
 
 | Ferramenta | O que faz |
 |---|---|
-| `list_awaiting_videos` | Lista os roteiros aprovados, com texto exato, avatar e voz |
+| `list_awaiting_videos` | Lista os roteiros aprovados, com texto exato, avatar, voz e as `cenas` (`ordem`, `texto`, `imagem`, `imagem_url`) |
 | `mark_video_rendering` | Marca o item como "Renderizando" |
 | `save_generated_video` | O portal baixa o MP4, salva no Drive do setor e publica |
 | `get_video_status` | Consulta o status de um item |
 
-**6.5 Segurança.** A chave no endereço é um segredo: ela aparece nos registros de acesso do servidor. Se vazar, troque o `MCP_TOKEN` e atualize o conector. Só são baixados links https de `heygen.ai` e `heygen.com`. Login por OAuth e limite de chamadas ainda não foram implementados.
+**6.5 Segurança.** A chave no endereço é um segredo: ela aparece nos registros de acesso do servidor. Se vazar, troque o `MCP_TOKEN` e atualize o conector. Só são baixados links https de `heygen.ai` e `heygen.com`. Login por OAuth e limite de chamadas ainda não foram implementados. As imagens das cenas saem por links temporários (veja "Cenas com imagem de fundo", abaixo).
+
+## Cenas com imagem de fundo
+
+Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trecho do roteiro com uma imagem de fundo própria.
+
+**Como a equipe escreve.** No roteiro (Google Doc, DOCX, PDF ou TXT), uma linha **sozinha** `[IMAGEM: nome.png]` abre uma cena com aquela imagem. Tudo até a próxima marcação é o texto falado da cena.
+
+| Regra | Como funciona |
+|---|---|
+| Texto antes da primeira marcação | Vira a cena 1, sem imagem |
+| Sem nenhuma marcação | Uma cena só, sem imagem: tudo igual a antes |
+| A marcação | Não é narrada e não conta para o limite de 5.000 caracteres (conta só o texto falado, somando as cenas) |
+| Cena sem texto | É ignorada (a revisão avisa na mensagem do item) |
+| Marcação dentro de uma frase | É texto comum: só vale a linha sozinha |
+| Nome do arquivo | Não diferencia maiúscula nem acento. Formatos: png, jpg, webp |
+
+**No Drive.** Coloque as imagens em `<Setor>/Imagens` (a pasta é criada junto com as outras) e clique em **Sincronizar Drive**. O portal cadastra o arquivo pelo nome. Imagem acima de `MAX_IMAGE_MB` (padrão 10) fica marcada como "grande demais" e não é usada; imagem que sai da pasta deixa de existir para o portal.
+
+**Na revisão.** A tela **Revisar roteiro** mostra uma caixa por cena, com o texto e a imagem. O gestor pode editar o texto e a imagem de cada cena, **adicionar** e **remover** cenas. Quando a imagem citada não existe na pasta, é grande demais ou não é png/jpg/webp, a cena aparece em vermelho e a aprovação fica **bloqueada** até corrigir o nome, colocar o arquivo no Drive ou tirar a imagem.
+
+**Como a HeyGen recebe as imagens.** O Drive é privado. Para cada cena com imagem, o `list_awaiting_videos` devolve uma `imagem_url`: um **link temporário** do próprio portal (`/imagem/<token>/<arquivo>`) que entrega a imagem direto, sem pedir login e sem redirecionar. O token é assinado e vale `IMAGE_URL_TTL_MINUTES` minutos (padrão 120); depois disso o link responde 404 e uma nova listagem gera outro. O link só dá acesso a **uma** imagem e não serve para mais nada.
+
+| Variável | Para quê |
+|---|---|
+| `MAX_IMAGE_MB` | Tamanho máximo de cada imagem (padrão 10) |
+| `IMAGE_URL_TTL_MINUTES` | Validade do link temporário (padrão 120) |
+| `PORTAL_BASE_URL` | Endereço público do portal nesses links, por exemplo `https://carmel-treinamentos.onrender.com`. Vazio = usa o endereço da requisição (e o `X-Forwarded-Proto` do proxy). **Recomendado definir** em produção, para o link sair sempre em https |
+
+**O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita imagem de fundo e várias cenas e, se aceitar, gera **um vídeo** com uma cena por bloco, a imagem como fundo e o texto exato. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
+
+**Conferir (uma vez, com crédito da HeyGen).** Coloque duas imagens em `Imagens`, escreva um roteiro curto com duas marcações, sincronize, aprove e peça "gere os vídeos aprovados". O vídeo deve mostrar cada imagem como fundo durante o trecho certo. O ciclo completo com a HeyGen real **ainda não foi testado**: os testes automáticos cobrem o portal e o MCP, mas não o render.
 
 ## Identidade visual
 
@@ -225,8 +260,8 @@ Onde ficam os arquivos: cores e componentes em `static/css/carmel.css` (portal) 
 
 ## Uso no dia a dia
 
-1. **Roteiro:** a equipe coloca o documento em `<Setor>/Roteiros` no Drive. O gestor clica em **Sincronizar Drive**.
-2. **Revisão:** na **Fila**, o gestor abre **Revisar roteiro**, corrige o texto se precisar e aprova. O item passa para "Aguardando Vídeo".
+1. **Roteiro:** a equipe coloca o documento em `<Setor>/Roteiros` no Drive (e, se o roteiro usa `[IMAGEM: arquivo]`, as imagens em `<Setor>/Imagens`). O gestor clica em **Sincronizar Drive**.
+2. **Revisão:** na **Fila**, o gestor abre **Revisar roteiro**, corrige o texto e as imagens das cenas se precisar e aprova. O item passa para "Aguardando Vídeo".
 3. **Vídeo:** alguém abre o Projeto no Claude e escreve "gere os vídeos aprovados". O Claude gera os vídeos e o portal os publica.
    - *Sem o Claude:* na Fila, **Anexar vídeo** mostra o roteiro, o avatar e a voz; gere no site da HeyGen e anexe o MP4.
 4. **Catálogo:** os colaboradores assistem aos vídeos do próprio setor. O portal registra quem assistiu e quem terminou o vídeo.
