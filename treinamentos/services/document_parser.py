@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 from docx import Document
 from pypdf import PdfReader
@@ -53,6 +53,57 @@ class DocumentParser:
             except UnicodeDecodeError:
                 continue
         return raw.decode("utf-8", errors="replace").strip()
+
+
+# Marcação de imagem: uma linha sozinha, ex.: [IMAGEM: piscina.png]. Tolera marcador de lista e negrito ao redor.
+IMAGE_MARKER_RE = re.compile(
+    r"^[ \t]*(?:[-*•>][ \t]+)?(?:\*\*|__)?\[[ \t]*IMAGEM[ \t]*:[ \t]*(?P<name>[^\]\r\n]*?)[ \t]*\](?:\*\*|__)?[ \t]*$",
+    flags=re.IGNORECASE | re.MULTILINE,
+)
+ALLOWED_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
+
+
+def parse_scenes(raw_text: str, warnings: Optional[List[str]] = None) -> List[dict]:
+    """
+    Separa o roteiro em cenas [{ordem, texto, imagem}].
+
+    Uma linha `[IMAGEM: nome.png]` abre uma cena com aquela imagem; tudo até a próxima marcação é o texto
+    falado dela. O texto antes da primeira marcação é a cena 1, sem imagem. Sem nenhuma marcação, o resultado é
+    uma única cena sem imagem, com o mesmo texto que clean_script() produziria (comportamento de sempre).
+    A marcação nunca entra no texto narrado, e o parser só divide nas marcações: não corta o texto sozinho.
+    Cenas sem texto são descartadas e, se `warnings` for dado, o motivo é anotado nele.
+    """
+    warn = warnings if warnings is not None else []
+    matches = list(IMAGE_MARKER_RE.finditer(raw_text))
+
+    pieces = []  # (imagem, texto bruto)
+    if not matches:
+        pieces.append(("", raw_text))
+    else:
+        pieces.append(("", raw_text[:matches[0].start()]))
+        for i, match in enumerate(matches):
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(raw_text)
+            pieces.append((match.group("name").strip(), raw_text[match.end():end]))
+
+    scenes = []
+    for image, raw in pieces:
+        text = clean_script(raw)
+        if not text:
+            if image:
+                warn.append(f"A imagem '{image}' ficou sem texto e a cena foi ignorada.")
+            continue
+        scenes.append({"ordem": len(scenes) + 1, "texto": text, "imagem": image})
+    return scenes
+
+
+def scenes_text(scenes: List[dict]) -> str:
+    """Texto falado completo (as cenas, uma após a outra): é o que vai em script_text e no campo `roteiro`."""
+    return "\n\n".join(s["texto"] for s in scenes)
+
+
+def spoken_chars(scenes: List[dict]) -> int:
+    """Total de caracteres narrados; o limite da HeyGen conta isto, sem as marcações."""
+    return sum(len(s["texto"]) for s in scenes)
 
 
 def clean_script(text: str) -> str:
