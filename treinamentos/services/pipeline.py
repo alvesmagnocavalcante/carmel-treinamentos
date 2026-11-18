@@ -83,6 +83,15 @@ def validate_scenes(scenes: list) -> None:
     for scene in scenes:
         if not scene["texto"].strip():
             raise ValueError(f"A cena {scene['ordem']} está sem texto.")
+    animated = [s for s in scenes if s.get("animar")]
+    for scene in animated:
+        if not scene.get("imagem"):
+            raise ValueError(f"A cena {scene['ordem']} pede animação mas não tem imagem.")
+    if len(animated) > settings.MAX_ANIMATED_SCENES:
+        raise ValueError(
+            f"{len(animated)} cenas animadas; o máximo por vídeo é {settings.MAX_ANIMATED_SCENES} "
+            "(cada cena animada gasta crédito extra da HeyGen). Tire a animação de algumas cenas."
+        )
     total = spoken_chars(scenes)
     if total > MAX_SCRIPT_CHARS:
         raise ValueError(
