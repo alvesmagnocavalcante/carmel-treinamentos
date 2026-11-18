@@ -164,7 +164,7 @@ class GoogleDriveService:
         while True:
             resp = client.files().list(
                 q=query,
-                fields="nextPageToken, files(id, name, mimeType, modifiedTime, appProperties, size)",
+                fields="nextPageToken, files(id, name, mimeType, modifiedTime, appProperties, size, imageMediaMetadata(width, height))",
                 pageSize=100,
                 pageToken=page_token,
                 supportsAllDrives=True,
@@ -345,9 +345,11 @@ class GoogleDriveService:
                 size = int(f.get("size") or 0)
             except (TypeError, ValueError):
                 size = 0
+            meta = f.get("imageMediaMetadata") or {}
             fields = {
                 "department": dept, "name": name, "mime_type": mime, "size_bytes": size,
                 "too_large": size > limit, "modified_at": f.get("modifiedTime", ""),
+                "width": int(meta.get("width") or 0), "height": int(meta.get("height") or 0),
             }
             existing = DriveImage.objects.filter(drive_file_id=f["id"]).first()
             if existing is None:

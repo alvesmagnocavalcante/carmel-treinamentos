@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import TrainingVideo
 from .services.pipeline import generation_params, save_generated_video
-from .services.scenes import find_image, image_problem, scene_image_url
+from .services.scenes import DEFAULT_ANIMATION_PROMPT, animation_seconds, find_image, image_problem, scene_image_url
 
 logger = logging.getLogger(__name__)
 Status = TrainingVideo.Status
@@ -40,6 +40,13 @@ INSTRUCTIONS = (
     "e use aspectRatio, resolution e title de `parametros_heygen`. Acrescente apenas o que a própria ferramenta exige para "
     "a voz (voice_settings com engine_settings, conforme get_video_voice_capabilities), igual em todas as cenas. Se a "
     "HeyGen não aceitar esse formato, NÃO improvise e NÃO gere o vídeo sem as imagens: avise o usuário e pare esse item. "
+    "     Se o item tiver `animacoes` (imagens para animar), faça isto ANTES do create_video_from_studio: chame "
+    "image_to_video UMA vez para cada animação, com EXATAMENTE os argumentos de `image_to_video` (peça todas de uma vez, "
+    "sem esperar uma terminar para pedir a outra, e não repita um pedido); acompanhe cada uma com get_model_video até "
+    "'completed' (nunca recrie para verificar); então, em cada cena de `cenas_heygen` que tem `aguarda_animacao`, "
+    "troque esse campo por `source` = {\"type\": \"url\", \"url\": <video_url do clipe daquela ordem>}. Se alguma animação "
+    "falhar ou for cancelada, NÃO gere o vídeo e NÃO troque por imagem parada por conta própria: avise o usuário e pare "
+    "esse item. "
     "  c) \"bloqueado\": NÃO gere o vídeo; avise o usuário do `motivo` e pare esse item. "
     "As imagem_url são links temporários: use-os logo ao criar o vídeo. "
     "3) mark_video_rendering com o video_id da HeyGen. "
@@ -82,6 +89,9 @@ def _scenes_for_claude(video: TrainingVideo, request) -> list:
     for scene in video.scene_list:
         name = scene.get("imagem") or ""
         item = {"ordem": scene["ordem"], "texto": scene["texto"], "imagem": name, "imagem_url": None}
+        if scene.get("animar"):
+            item["animar"] = True
+            item["movimento"] = scene.get("movimento") or DEFAULT_ANIMATION_PROMPT
         if name:
             problem = image_problem(video.department, name)
             image = None if problem else find_image(video.department, name)
@@ -110,9 +120,33 @@ def _heygen_plan(video: TrainingVideo, scenes: list, params: dict) -> dict:
         return {"modo_heygen": "bloqueado", "cenas_heygen": None,
                 "motivo": " ".join(s["imagem_erro"] for s in blocked)}
 
-    studio = []
+    animated = [s for s in scenes if s.get("animar")]
+    if len(animated) > settings.MAX_ANIMATED_SCENES:
+        return {"modo_heygen": "bloqueado", "cenas_heygen": None,
+                "motivo": f"{len(animated)} cenas animadas; o máximo por vídeo é {settings.MAX_ANIMATED_SCENES}."}
+
+    studio, animations = [], []
     for scene in scenes:
-        if scene["imagem_url"]:
+        if scene.get("animar"):
+            # a imagem vira um clipe (image_to_video); a cena do vídeo espera esse clipe e só então ganha o `source`
+            animations.append({
+                "ordem": scene["ordem"],
+                "image_to_video": {
+                    "image": {"type": "url", "url": scene["imagem_url"]},
+                    "prompt": scene["movimento"],
+                    "duration": animation_seconds(scene["texto"]),
+                    "resolution": "768p",
+                    "promptEnhancement": "disabled",  # sem reescrita do texto: o aprimoramento costuma inventar detalhes
+                },
+            })
+            studio.append({
+                "type": "video",
+                "aguarda_animacao": scene["ordem"],
+                "script": scene["texto"],
+                "voice_id": params["voice_id"],
+                "playback": {"mode": "fit_to_scene", "mute": True},  # clipe ajustado à narração, sem o som dele
+            })
+        elif scene["imagem_url"]:
             studio.append({
                 "type": "image",
                 "source": {"type": "url", "url": scene["imagem_url"]},
@@ -125,11 +159,14 @@ def _heygen_plan(video: TrainingVideo, scenes: list, params: dict) -> dict:
                 "input": {"type": "avatar", "avatar_id": params["avatar_id"],
                           "script": scene["texto"], "voice_id": params["voice_id"]},
             })
-    return {
+    plan = {
         "modo_heygen": "studio",
         "cenas_heygen": studio,
         "parametros_heygen": {"aspectRatio": "16:9", "resolution": "720p", "title": video.title},
     }
+    if animations:
+        plan["animacoes"] = animations
+    return plan
 
 
 def _describe(video: TrainingVideo, request=None) -> dict:
@@ -228,7 +265,8 @@ TOOLS = {
             "voice_id a usar na HeyGen e as `cenas` ({ordem, texto, imagem, imagem_url}): cada cena é um trecho do "
             "roteiro com uma imagem opcional (imagem_url é um link temporário para a HeyGen baixar). Traz também o "
             "`modo_heygen` (\"avatar\", \"studio\" ou \"bloqueado\") e, no modo studio, as `cenas_heygen` prontas para "
-            "passar como `scenes` ao create_video_from_studio, com `parametros_heygen`."
+            "passar como `scenes` ao create_video_from_studio, com `parametros_heygen`. Se houver imagens para animar, "
+            "traz `animacoes` (os pedidos prontos de image_to_video a fazer antes)."
         ),
         "inputSchema": {
             "type": "object",

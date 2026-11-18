@@ -16,7 +16,7 @@ class FakeDrive:
     def __init__(self):
         self.items, self.n = {}, 0
 
-    def add(self, name, parent, mime="text/plain", props=None, modified="2026-01-01T00:00:00Z", size=None):
+    def add(self, name, parent, mime="text/plain", props=None, modified="2026-01-01T00:00:00Z", size=None, dims=None):
         self.n += 1
         item_id = f"id{self.n}"
         self.items[item_id] = {
@@ -24,6 +24,8 @@ class FakeDrive:
         }
         if size is not None:
             self.items[item_id]["size"] = str(size)  # a API do Drive devolve o tamanho como texto
+        if dims is not None:
+            self.items[item_id]["imageMediaMetadata"] = {"width": dims[0], "height": dims[1]}
         return item_id
 
     def files(self):

@@ -27,6 +27,8 @@ Roteiros colocados na subpasta **Roteiros** passam por:
    ```
 
    O nome do arquivo não diferencia maiúsculas nem acentos. Aceita png, jpg e webp, até `MAX_IMAGE_MB` (10 MB por padrão).
+
+   **Imagem animada (opcional).** `[IMAGEM: piscina.png | animar]` (ou `| animar: brisa leve nas palmeiras`) faz a HeyGen animar a imagem com IA, com a voz por cima e sem o avatar. Cada cena animada **gasta crédito extra** e leva alguns minutos; o máximo por vídeo é `MAX_ANIMATED_SCENES` (4). A IA pode alterar a imagem, então anime só o que precisa e confira o vídeo. Detalhes em [docs/CONFIGURACAO.md](docs/CONFIGURACAO.md).
 2. **Revisão** — o gestor lê o roteiro na tela *Fila → Revisar roteiro*, que mostra **uma caixa por cena** (texto e imagem), corrige se necessário e aprova. Imagem citada que não existe na pasta Imagens, que passa do tamanho ou que não é png/jpg/webp aparece em vermelho e **bloqueia a aprovação** até ser corrigida (ou tirada da cena). Depois de colocar uma imagem no Drive, clique em **Sincronizar Drive**. Só então o vídeo é pedido à HeyGen (evita gastar crédito com texto errado). Desative com `REQUIRE_SCRIPT_REVIEW=false` para envio automático.
 3. **Vídeo** — o item fica **Aguardando Vídeo**. O Claude gera o vídeo na HeyGen pelo MCP e o portal o salva na subpasta **Vídeos** do setor no Drive; ao clicar em **Sincronizar Drive**, o portal também carrega vídeos colocados ali, liga ao roteiro certo e os publica no catálogo. Também é possível gerar no site da HeyGen e anexar o MP4 pela tela *Anexar vídeo*. Para o Claude operar isso pela web, o portal expõe um **conector MCP** (`/mcp/<chave>/`, ligado por `MCP_TOKEN`) com quatro ferramentas.
 4. **Drive** — o MP4 pronto é copiado para a subpasta **Vídeos** do setor (o ID do arquivo fica registrado no vídeo, no Admin). Se o Drive falhar, o vídeo continua disponível no portal.
@@ -79,6 +81,7 @@ Tudo fica no `.env` (veja `.env.example`). Os pontos principais:
 | `MCP_TOKEN` | Chave do conector MCP do portal para o Claude. Vazio = desligado. |
 | `MAX_IMAGE_MB` | Tamanho máximo de cada imagem da pasta Imagens (padrão 10). Acima disso a imagem não é usada. |
 | `IMAGE_URL_TTL_MINUTES` | Validade, em minutos, do link temporário que o portal dá à HeyGen para baixar a imagem de uma cena (padrão 120). |
+| `MAX_ANIMATED_SCENES` | Máximo de cenas com imagem animada por IA em um vídeo (padrão 4). Cada uma gasta crédito extra da HeyGen. |
 | `PORTAL_BASE_URL` | Endereço público do portal (`https://...`) usado nesses links. Vazio = usa o endereço da própria requisição do conector. |
 | `REQUIRE_SCRIPT_REVIEW` | `true` (padrão): o gestor aprova o roteiro antes de gerar o vídeo. `false`: envio automático. |
 | `DEFAULT_AVATAR_ID` / `DEFAULT_VOICE_ID` | Avatar e voz padrão. Cada setor pode ter os seus em **Admin → Setores**. |

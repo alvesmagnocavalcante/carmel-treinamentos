@@ -18,7 +18,7 @@ from django.views.decorators.http import require_POST, require_safe
 from .context_processors import get_profile
 from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
-from .services.document_parser import clean_script, parse_scenes
+from .services.document_parser import MAX_MOVEMENT_CHARS, clean_script, parse_scenes
 from .services.pipeline import (
     MAX_SCRIPT_CHARS, attach_uploaded_video, generation_params, mark_awaiting_video,
     start_pipeline_async, store_scenes, validate_scenes,
@@ -144,13 +144,19 @@ def _scenes_from_post(post) -> list:
     if 'scene_text' not in post:
         return parse_scenes(post.get('script', ''))
     texts, images = post.getlist('scene_text'), post.getlist('scene_image')
+    animars, movements = post.getlist('scene_animar'), post.getlist('scene_movimento')
     scenes = []
     for i, raw in enumerate(texts):
         image = (images[i] if i < len(images) else '').strip()
         text = clean_script(raw)
         if not text and not image:
             continue  # cena em branco: some da lista
-        scenes.append({'ordem': len(scenes) + 1, 'texto': text, 'imagem': image})
+        scene = {'ordem': len(scenes) + 1, 'texto': text, 'imagem': image}
+        if i < len(animars) and animars[i] == '1':
+            # animar sem imagem não é descartado aqui: a validação avisa a pessoa
+            movement = (movements[i] if i < len(movements) else '').strip()[:MAX_MOVEMENT_CHARS]
+            scene.update({'animar': True, 'movimento': movement})
+        scenes.append(scene)
     return scenes
 
 
@@ -198,7 +204,7 @@ def review_script_view(request, video_id):
 
     return render(request, 'treinamentos/review.html', {
         'video': video, 'scenes': check_scenes(video.department, scenes), 'max_chars': MAX_SCRIPT_CHARS,
-        'image_names': usable_image_names(video.department),
+        'image_names': usable_image_names(video.department), 'max_animated': settings.MAX_ANIMATED_SCENES,
         'resort_choices': choices, 'selected_resort_ids': selected_ids,
     })
 

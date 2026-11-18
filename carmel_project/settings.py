@@ -149,6 +149,8 @@ MAX_VIDEO_MB = int(os.getenv("MAX_VIDEO_MB", "500"))
 # Imagens das cenas (subpasta Imagens do Drive): tamanho máximo e validade do link temporário dado à HeyGen.
 MAX_IMAGE_MB = int(os.getenv("MAX_IMAGE_MB", "10"))
 IMAGE_URL_TTL_MINUTES = int(os.getenv("IMAGE_URL_TTL_MINUTES", "120"))
+# Cenas com imagem animada por IA (cada uma é uma geração a mais na HeyGen): máximo por vídeo, para não gastar sem querer.
+MAX_ANIMATED_SCENES = int(os.getenv("MAX_ANIMATED_SCENES", "4"))
 PORTAL_BASE_URL = os.getenv("PORTAL_BASE_URL", "").strip().rstrip("/")  # vazio = usa o endereço da requisição
 
 # Conector MCP do portal (para o Claude): vazio = conector desligado.
