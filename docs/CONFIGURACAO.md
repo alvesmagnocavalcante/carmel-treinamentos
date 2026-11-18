@@ -189,7 +189,7 @@ Quando eu pedir para gerar os vídeos:
       - script: o campo "roteiro", EXATAMENTE como veio, sem reescrever, resumir ou corrigir;
       - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
       - aspectRatio 16:9 e resolução 720p.
-   b) Item COM imagens (alguma cena com imagem_url) ou com mais de uma cena: ANTES de gerar, confira se o conector HeyGen aceita imagem de fundo e várias cenas (por exemplo create_video_from_studio, com uma cena avatar_video por bloco). Se aceitar, gere UM vídeo com uma cena por bloco do campo "cenas", na ordem: script = o "texto" EXATO da cena, avatar e voz do item, e a "imagem_url" da cena como fundo em imagem. Em cada cena com imagem, peça também remove_background: true no avatar (sem isso o cenário gravado do avatar cobre a imagem). Se a HeyGen recusar a remoção do fundo, NÃO gere com a imagem escondida: me avise que o avatar do setor precisa ser de fundo removível e pare esse item. Se o conector NÃO aceitar imagem de fundo ou várias cenas, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
+   b) Item COM imagens (alguma cena com imagem_url) ou com mais de uma cena: ANTES de gerar, confira se o conector HeyGen aceita várias cenas e cenas de imagem narradas (create_video_from_studio). Se aceitar, gere UM vídeo com uma cena por bloco do campo "cenas", na ordem, sempre com o "texto" EXATO da cena e a voz do item. Cena COM imagem_url: cena do tipo image em tela cheia, com a imagem_url como fonte e o texto como narração (script + voice_id); nessa cena o avatar NÃO aparece, de propósito. Cena SEM imagem: cena avatar_video com o avatar_id do item, o texto e a voz. Siga as regras da própria ferramenta para a voz (get_video_voice_capabilities). Se o conector NÃO aceitar várias cenas ou cenas de imagem narradas, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
    c) Se uma cena citar uma imagem mas vier sem imagem_url (veja "imagem_erro"), NÃO gere: me avise e pare esse item.
 3. Chame mark_video_rendering com o video_id da HeyGen.
 4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento.
@@ -212,7 +212,7 @@ Nunca gere o mesmo item duas vezes e nunca altere o texto do roteiro.
 
 ## Cenas com imagem de fundo
 
-Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trecho do roteiro com uma imagem de fundo própria.
+Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trecho do roteiro pode mostrar uma imagem própria em tela cheia, enquanto a voz narra o texto (nessas cenas o avatar não aparece, veja abaixo).
 
 **Como a equipe escreve.** No roteiro (Google Doc, DOCX, PDF ou TXT), uma linha **sozinha** `[IMAGEM: nome.png]` abre uma cena com aquela imagem. Tudo até a próxima marcação é o texto falado da cena.
 
@@ -237,11 +237,11 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 | `IMAGE_URL_TTL_MINUTES` | Validade do link temporário (padrão 120) |
 | `PORTAL_BASE_URL` | Endereço público do portal nesses links, por exemplo `https://carmel-treinamentos.onrender.com`. Vazio = usa o endereço da requisição (e o `X-Forwarded-Proto` do proxy). **Recomendado definir** em produção, para o link sair sempre em https |
 
-**O avatar precisa ter fundo removível.** Muitos avatares vêm com um cenário gravado atrás (um escritório, por exemplo) que ocupa o quadro inteiro e **esconde a imagem de fundo**. Num primeiro teste com o avatar `Abigail_standing_office_front`, a imagem chegou à HeyGen e ficou toda coberta. Por isso, nas cenas com imagem, o Claude pede a remoção do fundo do avatar (`remove_background`). Isso só funciona em avatares preparados para isso (por exemplo, um avatar digital treinado com essa opção). Se a HeyGen recusar, o Claude avisa e para; a saída é trocar o avatar do setor (**Admin → Setores → Avatar HeyGen**) por um de fundo removível.
+**Nas cenas com imagem, o avatar não aparece.** Muitos avatares vêm com um cenário gravado atrás (um escritório, por exemplo) que ocupa o quadro inteiro e **esconde qualquer imagem de fundo**. Em testes reais com o avatar `Abigail_standing_office_front`, a imagem chegou à HeyGen e ficou toda coberta, mesmo pedindo a remoção do fundo. Por isso, a cena com imagem mostra **a imagem em tela cheia, com a voz narrando o texto**, e as cenas sem imagem continuam com o avatar. Para ter o avatar *sobre* a imagem, o setor precisa de um avatar de fundo removível (por exemplo, um avatar digital próprio, criado na HeyGen com essa opção); aí o prompt pode voltar a usar a imagem como fundo.
 
-**O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita imagem de fundo e várias cenas e, se aceitar, gera **um vídeo** com uma cena por bloco, a imagem como fundo e o texto exato. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
+**O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita várias cenas e cenas de imagem narradas e, se aceitar, gera **um vídeo** com uma cena por bloco e o texto exato: a cena com imagem mostra a imagem em tela cheia com a voz, e a sem imagem mostra o avatar. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
 
-**Conferir (uma vez, com crédito da HeyGen).** Coloque duas imagens em `Imagens`, escreva um roteiro curto com duas marcações, sincronize, aprove e peça "gere os vídeos aprovados". O vídeo deve mostrar cada imagem como fundo durante o trecho certo. O ciclo completo com a HeyGen real **ainda não foi testado**: os testes automáticos cobrem o portal e o MCP, mas não o render.
+**Conferir (uma vez, com crédito da HeyGen).** Coloque duas imagens em `Imagens`, escreva um roteiro curto com duas marcações, sincronize, aprove e peça "gere os vídeos aprovados". O vídeo deve mostrar cada imagem em tela cheia, com a voz, durante o trecho certo (o avatar aparece nas cenas sem imagem). O ciclo completo com a HeyGen real **ainda não foi testado**: os testes automáticos cobrem o portal e o MCP, mas não o render.
 
 ## Identidade visual
 

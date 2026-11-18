@@ -10,7 +10,7 @@
         <textarea name="scene_text" class="input scene-text" rows="6">{{ scene.texto }}</textarea>
     </div>
     <div class="field">
-        <label>Imagem de fundo <span class="muted">(opcional)</span></label>
+        <label>Imagem em tela cheia <span class="muted">(opcional, sem o avatar)</span></label>
         <input type="text" name="scene_image" class="input" list="image-names" value="{{ scene.imagem }}"
                placeholder="nome-do-arquivo.png" autocomplete="off">
         {% if scene.problema %}<span class="scene-problem">{% include 'partials/icon.html' with name='alert-triangle' %} {{ scene.problema }}</span>{% endif %}

@@ -14,7 +14,7 @@ O **Google Drive** é o repositório central (uma conta unificada), com uma past
 Roteiros colocados na subpasta **Roteiros** passam por:
 
 1. **Leitura** — extração do texto (`pypdf` / `python-docx`). O texto do documento **é** o roteiro: o responsável entrega o documento já escrito para ser falado, e o avatar narra exatamente o que está escrito. Marcações de lista, markdown e numeração no início das linhas ("1.", "3.2", "a)") são removidas e o limite é de 5.000 caracteres (acima disso não é possível aprovar: reduza o texto).
-   **Imagens no vídeo (opcional).** Uma linha sozinha `[IMAGEM: piscina.png]` no roteiro abre uma **cena** com essa imagem de fundo (arquivo da subpasta **Imagens** do setor). Tudo até a próxima marcação é o texto falado daquela cena. O texto antes da primeira marcação é a cena 1, sem imagem. A marcação **não é narrada** e não conta para o limite de 5.000 caracteres. Sem nenhuma marcação, nada muda: é uma cena só, com o fundo de sempre.
+   **Imagens no vídeo (opcional).** Uma linha sozinha `[IMAGEM: piscina.png]` no roteiro abre uma **cena** que mostra essa imagem em tela cheia, com a voz narrando o texto (arquivo da subpasta **Imagens** do setor). **Nas cenas com imagem o avatar não aparece**; nas cenas sem imagem, sim. Tudo até a próxima marcação é o texto falado daquela cena. O texto antes da primeira marcação é a cena 1, sem imagem. A marcação **não é narrada** e não conta para o limite de 5.000 caracteres. Sem nenhuma marcação, nada muda: é uma cena só, com o fundo de sempre.
 
    ```
    Bem-vindo ao nosso resort.          ← cena 1, sem imagem
