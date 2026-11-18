@@ -238,6 +238,8 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 | `MAX_IMAGE_MB` | Tamanho máximo de cada imagem (padrão 10) |
 | `IMAGE_URL_TTL_MINUTES` | Validade do link temporário (padrão 120) |
 | `MAX_ANIMATED_SCENES` | Máximo de cenas com imagem animada por vídeo (padrão 4) |
+| `ANIMATION_CLIP_SECONDS` | Duração do clipe animado, de 5 a 15 s (padrão 5). Curto reduz as invenções da IA |
+| `ANIMATION_LOCK_END_FRAME` | `true` (padrão): o último quadro do clipe é a imagem original |
 | `PORTAL_BASE_URL` | Endereço público do portal nesses links, por exemplo `https://carmel-treinamentos.onrender.com`. Vazio = usa o endereço da requisição (e o `X-Forwarded-Proto` do proxy). **Recomendado definir** em produção, para o link sair sempre em https |
 
 **Nas cenas com imagem, o avatar não aparece.** Muitos avatares vêm com um cenário gravado atrás (um escritório, por exemplo) que ocupa o quadro inteiro e **esconde qualquer imagem de fundo**. Em testes reais com o avatar `Abigail_standing_office_front`, a imagem chegou à HeyGen e ficou toda coberta, mesmo pedindo a remoção do fundo. Por isso, a cena com imagem mostra **a imagem em tela cheia, com a voz narrando o texto**, e as cenas sem imagem continuam com o avatar. Para ter o avatar *sobre* a imagem, o setor precisa de um avatar de fundo removível (por exemplo, um avatar digital próprio, criado na HeyGen com essa opção); aí o prompt pode voltar a usar a imagem como fundo.
@@ -250,22 +252,23 @@ Em vez de mostrar a imagem parada, a cena pode **animar a imagem com IA** (a Hey
 
 ```
 [IMAGEM: piscina.png | animar]
-[IMAGEM: piscina.png | animar: brisa leve nas palmeiras, água calma]
+[IMAGEM: piscina.png | animar: aproximação lenta da câmera]
 ```
 
-Sem texto depois de `animar:`, usa-se um padrão conservador (*movimento de câmera sutil e movimento natural dos elementos; não adicione, remova nem deforme objetos, pessoas ou textos; mantenha a imagem fiel*). Na tela **Revisar roteiro**, cada cena tem a escolha **Imagem parada / Animar a imagem (IA)** e o campo opcional **Como animar**.
+Sem texto depois de `animar:`, o padrão é **só um movimento lento de câmera (aproximação)**, com a cena em si parada e proibições explícitas de mexer, acrescentar, apagar ou deformar objetos, comida, mãos, pessoas, animais, textos ou logotipos. Se você escrever o movimento, o portal **acrescenta sempre essa trava** ao seu texto. Prefira movimentos de câmera: pedir que "elementos se mexam" (vento, água, mãos, comida) é o que mais faz a IA inventar. Na tela **Revisar roteiro**, cada cena tem a escolha **Imagem parada / Animar a imagem (IA)** e o campo opcional **Como animar**.
 
 | Ponto | Como funciona |
 |---|---|
 | Limite | No máximo `MAX_ANIMATED_SCENES` cenas animadas por vídeo (padrão 4). Passar disso, ou animar uma cena sem imagem, bloqueia a aprovação |
-| Duração do clipe | Estimada pela narração (cerca de 14 caracteres por segundo), entre 5 e 15 s. O clipe é esticado ou encurtado para caber no tempo da fala e sai sem o som dele |
-| Texto de instrução | A HeyGen não reescreve o texto (aprimoramento desligado), porque a reescrita costuma inventar detalhes |
+| Duração do clipe | **Curta, 5 s por padrão** (`ANIMATION_CLIP_SECONDS`, de 5 a 15), seja qual for o tamanho do texto. Quanto mais longo o clipe, mais a IA inventa. Se a narração for mais longa, o clipe se **repete em ciclo** (sem som), sem esticar o movimento |
+| Último quadro | Por padrão (`ANIMATION_LOCK_END_FRAME=true`) o último quadro do clipe é a **própria imagem original**: a IA volta ao ponto de partida e se afasta menos da foto, e o ciclo fica contínuo |
+| Texto de instrução | Padrão só de câmera, em inglês (a IA obedece melhor), com proibições explícitas. A HeyGen não reescreve o texto (aprimoramento desligado), porque a reescrita costuma inventar detalhes |
 | Foto em pé ou quase quadrada | A revisão avisa (sem bloquear): o vídeo é 16:9 e a foto será cortada. O portal lê as dimensões da imagem no Drive na sincronização |
 | Custo e tempo | **Cada cena animada é uma geração a mais na HeyGen**: gasta crédito extra e leva alguns minutos. O vídeo só é montado quando todos os clipes terminam |
 
 **Como o Claude faz.** O `list_awaiting_videos` traz, para cada cena animada, o pedido pronto de `image_to_video` em `animacoes`. O Claude pede todos os clipes de uma vez, acompanha com `get_model_video` e, quando ficam prontos, coloca o endereço de cada clipe na cena correspondente de `cenas_heygen` (a cena do tipo `video` que espera o clipe) e cria o vídeo. **Se algum clipe falhar, o Claude avisa e para**: ele não troca por imagem parada por conta própria.
 
-**Cuidado com a marca.** A IA pode alterar a imagem (inventar, apagar ou deformar elementos) mesmo com o texto conservador, e não há como ver o resultado antes de gerar. Anime só as cenas em que isso importa e confira o vídeo antes de divulgar. O teste com a HeyGen real **ainda não foi feito**.
+**Cuidado com a marca.** A IA pode alterar a imagem (inventar, apagar ou deformar elementos) mesmo com o texto conservador, e não há como ver o resultado antes de gerar. Num teste real com uma cena de cozinha (carne, faca, mãos), um clipe de 15 s com instrução genérica inventou muita coisa; por isso o padrão passou a ser clipe curto, só câmera e último quadro preso à imagem. Isso **reduz** o risco, não o elimina: cenas com mãos, comida e pessoas são as mais arriscadas. Anime só as cenas em que isso importa e confira o vídeo antes de divulgar. O teste com a HeyGen real **ainda não foi feito**.
 
 **O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita várias cenas e cenas de imagem narradas e, se aceitar, gera **um vídeo** com uma cena por bloco e o texto exato: a cena com imagem mostra a imagem em tela cheia com a voz, e a sem imagem mostra o avatar. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
 

@@ -19,7 +19,7 @@
                 <option value="1" {% if scene.animar %}selected{% endif %}>Animar a imagem (IA)</option>
             </select>
             <input type="text" name="scene_movimento" class="input" value="{{ scene.movimento }}" maxlength="500"
-                   placeholder="Como animar (opcional): brisa leve nas palmeiras, água calma" autocomplete="off"
+                   placeholder="Como animar (opcional): ex. aproximação lenta da câmera" autocomplete="off"
                    {% if not scene.animar %}hidden{% endif %}>
         </div>
         {% if scene.problema %}<span class="scene-problem">{% include 'partials/icon.html' with name='alert-triangle' %} {{ scene.problema }}</span>{% endif %}

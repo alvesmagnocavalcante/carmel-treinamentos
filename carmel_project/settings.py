@@ -151,6 +151,10 @@ MAX_IMAGE_MB = int(os.getenv("MAX_IMAGE_MB", "10"))
 IMAGE_URL_TTL_MINUTES = int(os.getenv("IMAGE_URL_TTL_MINUTES", "120"))
 # Cenas com imagem animada por IA (cada uma é uma geração a mais na HeyGen): máximo por vídeo, para não gastar sem querer.
 MAX_ANIMATED_SCENES = int(os.getenv("MAX_ANIMATED_SCENES", "4"))
+# Fidelidade da animação: clipe curto (5 s é o mínimo da HeyGen; a narração mais longa repete o clipe em ciclo) e o
+# último quadro preso à imagem original (endImage), para a IA não ir se afastando da foto.
+ANIMATION_CLIP_SECONDS = int(os.getenv("ANIMATION_CLIP_SECONDS", "5"))
+ANIMATION_LOCK_END_FRAME = env_bool("ANIMATION_LOCK_END_FRAME", True)
 PORTAL_BASE_URL = os.getenv("PORTAL_BASE_URL", "").strip().rstrip("/")  # vazio = usa o endereço da requisição
 
 # Conector MCP do portal (para o Claude): vazio = conector desligado.

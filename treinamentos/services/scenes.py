@@ -71,18 +71,31 @@ def check_scenes(department: Department, scenes: List[dict]) -> List[dict]:
     ]
 
 
-# Texto de instrução padrão para animar uma imagem: conservador, para a IA não inventar nem deformar nada.
+# Animar com IA é arriscado: quanto mais livre a instrução e mais longo o clipe, mais a IA inventa. Por isso o padrão
+# é SÓ movimento de câmera (a cena em si fica parada), em inglês (a IA obedece melhor) e com proibições explícitas.
 DEFAULT_ANIMATION_PROMPT = (
-    "Movimento de câmera sutil e movimento natural dos elementos da cena (vento leve, água calma, folhas). "
-    "Não adicione, remova nem deforme objetos, pessoas ou textos; mantenha a imagem fiel à original."
+    "Very slow, subtle camera push-in. Keep the scene exactly as in the photo: do not animate, move, add, remove or "
+    "change any object, food, hands, people, animals, text or logos. No new elements. Realistic, photographic, stable."
 )
-SPEECH_CHARS_PER_SECOND = 14   # estimativa da fala em português
-MIN_CLIP_SECONDS, MAX_CLIP_SECONDS = 5, 15  # acima de 15 s a HeyGen exige o aprimoramento de texto, que evitamos
+# Acrescentado a qualquer texto de movimento escrito pela equipe, para ele não abrir a porta para invenções.
+ANIMATION_GUARD = (
+    "Keep everything else exactly as in the photo: do not add, remove, move or deform any object, food, hands, "
+    "people, animals, text or logos."
+)
+MIN_CLIP_SECONDS, MAX_CLIP_SECONDS = 5, 15  # 5 s é o mínimo da HeyGen; acima de 15 s ela exige o aprimoramento de texto
 
 
-def animation_seconds(text: str) -> int:
-    """Duração do clipe animado: a da narração estimada, entre 5 e 15 s."""
-    return max(MIN_CLIP_SECONDS, min(MAX_CLIP_SECONDS, -(-len(text or "") // SPEECH_CHARS_PER_SECOND)))
+def animation_prompt(movement: str) -> str:
+    """Texto de instrução enviado à IA: o padrão, ou o da equipe seguido da trava contra invenções."""
+    movement = (movement or "").strip()
+    if not movement:
+        return DEFAULT_ANIMATION_PROMPT
+    return f"{movement.rstrip('. ')}. {ANIMATION_GUARD}"
+
+
+def animation_seconds() -> int:
+    """Duração do clipe animado (ANIMATION_CLIP_SECONDS, entre 5 e 15 s). Curto de propósito: clipe longo inventa mais."""
+    return max(MIN_CLIP_SECONDS, min(MAX_CLIP_SECONDS, settings.ANIMATION_CLIP_SECONDS))
 
 
 TOKEN_SALT = "carmel.scene-image"

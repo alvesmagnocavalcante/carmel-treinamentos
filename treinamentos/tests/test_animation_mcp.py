@@ -6,19 +6,34 @@ from django.test import SimpleTestCase, override_settings
 
 from ..mcp_server import INSTRUCTIONS
 from ..models import DriveImage, TrainingVideo
-from ..services.scenes import DEFAULT_ANIMATION_PROMPT, animation_seconds
+from ..services.scenes import ANIMATION_GUARD, DEFAULT_ANIMATION_PROMPT, animation_prompt, animation_seconds
 from .base import BaseTestCase
 
 PORTAL = "https://portal.exemplo.com"
 
 
-class AnimationSecondsTests(SimpleTestCase):
-    def test_duration_follows_the_estimated_speech_and_is_clamped(self):
-        self.assertEqual(animation_seconds("Oi."), 5)               # curto: mínimo de 5 s
-        self.assertEqual(animation_seconds("a" * 140), 10)          # 140 caracteres ≈ 10 s
-        self.assertEqual(animation_seconds("a" * 141), 11)          # arredonda para cima
-        self.assertEqual(animation_seconds("a" * 2000), 15)         # longo: máximo de 15 s
-        self.assertEqual(animation_seconds(""), 5)
+class AnimationSettingsTests(SimpleTestCase):
+    def test_clip_is_short_by_default_and_clamped_to_what_heygen_accepts(self):
+        self.assertEqual(animation_seconds(), 5)  # padrão: o mínimo da HeyGen
+        with override_settings(ANIMATION_CLIP_SECONDS=9):
+            self.assertEqual(animation_seconds(), 9)
+        with override_settings(ANIMATION_CLIP_SECONDS=1):
+            self.assertEqual(animation_seconds(), 5)    # abaixo do mínimo
+        with override_settings(ANIMATION_CLIP_SECONDS=40):
+            self.assertEqual(animation_seconds(), 15)   # acima disso a HeyGen exige aprimoramento de texto
+
+    def test_default_prompt_is_camera_only_with_explicit_prohibitions(self):
+        text = DEFAULT_ANIMATION_PROMPT.lower()
+        for phrase in ("camera push-in", "do not animate, move, add, remove or change", "no new elements"):
+            self.assertIn(phrase, text)
+        self.assertEqual(animation_prompt(""), DEFAULT_ANIMATION_PROMPT)
+        self.assertEqual(animation_prompt("   "), DEFAULT_ANIMATION_PROMPT)
+
+    def test_custom_movement_always_carries_the_guard_against_inventions(self):
+        prompt = animation_prompt("brisa leve nas palmeiras.")
+        self.assertTrue(prompt.startswith("brisa leve nas palmeiras. "))
+        self.assertTrue(prompt.endswith(ANIMATION_GUARD))
+        self.assertEqual(prompt.count("brisa leve"), 1)
 
 
 @override_settings(MCP_TOKEN="chave-de-teste-123", PORTAL_BASE_URL=PORTAL)
@@ -55,13 +70,28 @@ class AnimationMcpTests(BaseTestCase):
         self.assertEqual(args["image"], {"type": "url", "url": item["cenas"][0]["imagem_url"]})
         self.assertTrue(args["image"]["url"].startswith(f"{PORTAL}/imagem/"))
         self.assertEqual(args["prompt"], DEFAULT_ANIMATION_PROMPT)
-        self.assertEqual((args["duration"], args["resolution"], args["promptEnhancement"]), (10, "768p", "disabled"))
+        # clipe curto (5 s) mesmo com texto longo: a narração repete o clipe, e clipe longo inventa mais
+        self.assertEqual((args["duration"], args["resolution"], args["promptEnhancement"]), (5, "768p", "disabled"))
+        # o último quadro é a própria imagem
+        self.assertEqual(args["endImage"], args["image"])
 
-    def test_custom_movement_text_is_used_as_the_prompt(self):
+    @override_settings(ANIMATION_LOCK_END_FRAME=False)
+    def test_end_frame_lock_can_be_turned_off(self):
+        self.make([{"ordem": 1, "texto": "Texto.", "imagem": "a.png", "animar": True, "movimento": ""}])
+        self.assertNotIn("endImage", self.item()["animacoes"][0]["image_to_video"])
+
+    @override_settings(ANIMATION_CLIP_SECONDS=8)
+    def test_clip_length_follows_the_setting_not_the_text_length(self):
+        self.make([{"ordem": 1, "texto": "a" * 400, "imagem": "a.png", "animar": True, "movimento": ""}])
+        self.assertEqual(self.item()["animacoes"][0]["image_to_video"]["duration"], 8)
+
+    def test_custom_movement_text_is_used_but_always_with_the_guard(self):
         self.make([{"ordem": 1, "texto": "Texto.", "imagem": "a.png", "animar": True, "movimento": "zoom lento"}])
         item = self.item()
-        self.assertEqual(item["animacoes"][0]["image_to_video"]["prompt"], "zoom lento")
-        self.assertEqual(item["cenas"][0]["movimento"], "zoom lento")
+        prompt = item["animacoes"][0]["image_to_video"]["prompt"]
+        self.assertTrue(prompt.startswith("zoom lento. "))
+        self.assertTrue(prompt.endswith(ANIMATION_GUARD))
+        self.assertEqual(item["cenas"][0]["movimento"], prompt)
 
     def test_studio_scene_waits_for_the_clip_and_keeps_the_exact_text(self):
         exact = "Esta é a piscina.\nEla funciona das 8h às 18h."
@@ -69,7 +99,7 @@ class AnimationMcpTests(BaseTestCase):
         (scene,) = self.item()["cenas_heygen"]
         self.assertEqual(scene, {
             "type": "video", "aguarda_animacao": 1, "script": exact, "voice_id": "vo-2",
-            "playback": {"mode": "fit_to_scene", "mute": True},
+            "playback": {"mode": "loop", "mute": True},  # narração longa repete o clipe, sem esticar o movimento
         })
         self.assertNotIn("source", scene)  # o Claude preenche com o video_url do clipe pronto
 

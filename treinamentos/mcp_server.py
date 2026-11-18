@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import TrainingVideo
 from .services.pipeline import generation_params, save_generated_video
-from .services.scenes import DEFAULT_ANIMATION_PROMPT, animation_seconds, find_image, image_problem, scene_image_url
+from .services.scenes import animation_prompt, animation_seconds, find_image, image_problem, scene_image_url
 
 logger = logging.getLogger(__name__)
 Status = TrainingVideo.Status
@@ -91,7 +91,7 @@ def _scenes_for_claude(video: TrainingVideo, request) -> list:
         item = {"ordem": scene["ordem"], "texto": scene["texto"], "imagem": name, "imagem_url": None}
         if scene.get("animar"):
             item["animar"] = True
-            item["movimento"] = scene.get("movimento") or DEFAULT_ANIMATION_PROMPT
+            item["movimento"] = animation_prompt(scene.get("movimento"))
         if name:
             problem = image_problem(video.department, name)
             image = None if problem else find_image(video.department, name)
@@ -129,22 +129,24 @@ def _heygen_plan(video: TrainingVideo, scenes: list, params: dict) -> dict:
     for scene in scenes:
         if scene.get("animar"):
             # a imagem vira um clipe (image_to_video); a cena do vídeo espera esse clipe e só então ganha o `source`
-            animations.append({
-                "ordem": scene["ordem"],
-                "image_to_video": {
-                    "image": {"type": "url", "url": scene["imagem_url"]},
-                    "prompt": scene["movimento"],
-                    "duration": animation_seconds(scene["texto"]),
-                    "resolution": "768p",
-                    "promptEnhancement": "disabled",  # sem reescrita do texto: o aprimoramento costuma inventar detalhes
-                },
-            })
+            request_args = {
+                "image": {"type": "url", "url": scene["imagem_url"]},
+                "prompt": scene["movimento"],
+                "duration": animation_seconds(),  # curto de propósito: clipe longo inventa mais
+                "resolution": "768p",
+                "promptEnhancement": "disabled",  # sem reescrita do texto: o aprimoramento costuma inventar detalhes
+            }
+            if settings.ANIMATION_LOCK_END_FRAME:
+                # o último quadro é a própria imagem: a IA volta ao ponto de partida e se afasta menos da foto
+                request_args["endImage"] = {"type": "url", "url": scene["imagem_url"]}
+            animations.append({"ordem": scene["ordem"], "image_to_video": request_args})
             studio.append({
                 "type": "video",
                 "aguarda_animacao": scene["ordem"],
                 "script": scene["texto"],
                 "voice_id": params["voice_id"],
-                "playback": {"mode": "fit_to_scene", "mute": True},  # clipe ajustado à narração, sem o som dele
+                # a narração mais longa que o clipe repete o clipe em ciclo (sem esticar o movimento); sem o som dele
+                "playback": {"mode": "loop", "mute": True},
             })
         elif scene["imagem_url"]:
             studio.append({
