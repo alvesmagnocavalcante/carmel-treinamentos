@@ -150,6 +150,12 @@ MAX_VIDEO_MB = int(os.getenv("MAX_VIDEO_MB", "500"))
 MAX_IMAGE_MB = int(os.getenv("MAX_IMAGE_MB", "10"))
 IMAGE_URL_TTL_MINUTES = int(os.getenv("IMAGE_URL_TTL_MINUTES", "120"))
 # Cenas com imagem animada por IA (cada uma é uma geração a mais na HeyGen): máximo por vídeo, para não gastar sem querer.
+# Cadastro feito pela própria pessoa: valida CPF + data de nascimento na Humand (só leitura) e libera o acesso na hora.
+SIGNUP_ENABLED = os.getenv("SIGNUP_ENABLED", "true").lower() in ("1", "true", "yes")
+HUMAND_API_KEY = os.getenv("HUMAND_API_KEY", "").removeprefix("Basic ").strip()
+HUMAND_BASE_URL = os.getenv("HUMAND_BASE_URL", "https://api-prod.humand.co/public/api/v1").rstrip("/")
+SIGNUP_MAX_ATTEMPTS = int(os.getenv("SIGNUP_MAX_ATTEMPTS", "5"))      # tentativas erradas por IP/CPF...
+SIGNUP_LOCK_MINUTES = int(os.getenv("SIGNUP_LOCK_MINUTES", "15"))     # ...dentro desta janela
 MAX_ANIMATED_SCENES = int(os.getenv("MAX_ANIMATED_SCENES", "4"))
 # Fidelidade da animação: clipe curto (5 s é o mínimo da HeyGen; a narração mais longa repete o clipe em ciclo) e o
 # último quadro preso à imagem original (endImage), para a IA não ir se afastando da foto.

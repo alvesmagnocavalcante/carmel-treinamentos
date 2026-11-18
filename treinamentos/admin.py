@@ -5,7 +5,7 @@ from django.utils.html import format_html
 
 from django.contrib.auth.models import Group
 
-from .models import Department, Resort, TrainingVideo, UserProfile, VideoProgress
+from .models import Department, HumandAlias, Resort, TrainingVideo, UserProfile, VideoProgress
 
 Status = TrainingVideo.Status
 
@@ -78,6 +78,14 @@ class ResortAdmin(admin.ModelAdmin):
     @admin.display(description='Vídeos exclusivos')
     def total_videos(self, obj):
         return obj.videos.count()
+
+
+@admin.register(HumandAlias)
+class HumandAliasAdmin(admin.ModelAdmin):
+    """Nomes da Humand que não são iguais aos do portal. Iguais (sem acento/maiúscula) já funcionam sozinhos."""
+    list_display = ('name', 'department', 'resort')
+    search_fields = ('name',)
+    autocomplete_fields = ()
 
 
 @admin.register(Department)

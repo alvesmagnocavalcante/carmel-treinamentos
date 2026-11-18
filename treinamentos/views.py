@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,6 +16,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST, require_safe
 
 from .context_processors import get_profile
+from .forms import SignupForm
+from .services import humand
 from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
 from .services.document_parser import MAX_MOVEMENT_CHARS, clean_script, parse_scenes
@@ -381,13 +383,46 @@ def login_view(request):
         return redirect(next_url or 'home')
 
     if request.method == 'POST':
-        user = authenticate(request, username=request.POST.get('username'), password=request.POST.get('password'))
+        username, password = request.POST.get('username'), request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             return redirect(next_url or 'home')
         messages.error(request, 'Usuário ou senha inválidos.')
 
-    return render(request, 'treinamentos/login.html', {'next': next_url})
+    return render(request, 'treinamentos/login.html', {'next': next_url, 'signup_enabled': _signup_open()})
+
+
+def _signup_open() -> bool:
+    return settings.SIGNUP_ENABLED and humand.is_configured()
+
+
+def _client_ip(request) -> str:
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    return (forwarded.split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')) if forwarded else request.META.get('REMOTE_ADDR', '')
+
+
+def signup_view(request):
+    """Cadastro por CPF + nascimento, validado na Humand: quem confere entra na hora."""
+    if request.user.is_authenticated:
+        return redirect('home')
+    if not _signup_open():
+        raise Http404()
+    form = SignupForm(request.POST or None, ip=_client_ip(request))
+    if request.method == 'POST' and form.is_valid():
+        try:
+            user = form.save()
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            login(request, user)
+            profile = user.profile
+            if profile.department_id is None:
+                messages.warning(request, 'Cadastro feito! Seu setor ainda não foi identificado: avise o RH para liberar os vídeos.')
+            else:
+                messages.success(request, f'Bem-vindo(a), {user.first_name}! Cadastro feito.')
+            return redirect('home')
+    return render(request, 'treinamentos/signup.html', {'form': form})
 
 
 @require_POST

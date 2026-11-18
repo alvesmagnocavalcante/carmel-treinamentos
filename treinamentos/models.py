@@ -72,6 +72,11 @@ class UserProfile(models.Model):
     resorts = models.ManyToManyField(Resort, blank=True, related_name='members', verbose_name="Resorts",
                                      help_text="Resorts que a pessoa acessa. Sem nenhum, ela vê só os vídeos válidos para todos os resorts.")
 
+    cpf_hash = models.CharField(
+        "CPF (hash)", max_length=64, unique=True, null=True, blank=True, editable=False,
+        help_text="Impressão digital do CPF validado na Humand no cadastro. Impede duas contas para a mesma pessoa; "
+                  "o CPF em si não é guardado.")
+
     class Meta:
         verbose_name = "Perfil de Usuário"
         verbose_name_plural = "Perfis de Usuários"
@@ -107,6 +112,36 @@ class UserProfile(models.Model):
 def ensure_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.get_or_create(user=instance)
+
+
+class HumandAlias(models.Model):
+    """
+    Liga um nome da Humand (grupo de segmentação) a um setor ou resort do portal. Nomes iguais (sem diferenciar
+    acento e maiúscula) já são ligados sozinhos; use esta tabela para os que diferem ('CM' -> Magna/CM).
+    """
+    name = models.CharField("Nome na Humand", max_length=150)
+    name_key = models.CharField(max_length=150, unique=True, editable=False)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, null=True, blank=True,
+                                   related_name='humand_aliases', verbose_name="Setor do portal")
+    resort = models.ForeignKey(Resort, on_delete=models.CASCADE, null=True, blank=True,
+                               related_name='humand_aliases', verbose_name="Resort do portal")
+
+    class Meta:
+        verbose_name = "Correspondência com a Humand"
+        verbose_name_plural = "Correspondências com a Humand"
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} → {self.department or self.resort}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if bool(self.department_id) == bool(self.resort_id):
+            raise ValidationError("Escolha um setor OU um resort.")
+
+    def save(self, *args, **kwargs):
+        self.name_key = normalize_name(self.name)
+        super().save(*args, **kwargs)
 
 
 class DriveImage(models.Model):

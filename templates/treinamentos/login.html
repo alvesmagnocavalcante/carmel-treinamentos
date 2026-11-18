@@ -57,6 +57,7 @@
             </div>
             <button type="submit" class="btn btn-primary btn-lg">Acessar plataforma</button>
         </form>
+        {% if signup_enabled %}<p class="muted" style="text-align:center; font-size:13px">Primeiro acesso? <a href="{% url 'signup' %}">Criar cadastro</a></p>{% endif %}
         <p class="muted" style="text-align:center; font-size:12px">Carmel Hotéis & Resorts</p>
     </section>
     </div>

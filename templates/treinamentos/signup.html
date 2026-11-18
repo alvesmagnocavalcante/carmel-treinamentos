@@ -1,0 +1,89 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro • Carmel Treinamentos</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    {% include 'partials/fonts.html' %}
+    <link rel="stylesheet" href="{% static 'css/carmel.css' %}">
+    <link rel="stylesheet" href="{% static 'css/carmel_motion.css' %}">
+    {% include 'partials/theme_init.html' %}
+</head>
+<body>
+<main class="login-wrap">
+    <aside class="login-aside" aria-hidden="false">
+        <div class="login-aside-inner">
+            <div class="login-aside-brand">
+                <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
+                <span class="login-aside-tagline">a arte de saber viver</span>
+            </div>
+            <ul class="login-points">
+                <li>{% include 'partials/icon.html' with name='clapperboard' %}<div><strong>Vídeos do seu setor</strong><span>Treinamentos organizados por área, sempre à mão.</span></div></li>
+                <li>{% include 'partials/icon.html' with name='circle-check' %}<div><strong>Seu progresso registrado</strong><span>Acompanhe o que você já assistiu e concluiu.</span></div></li>
+                <li>{% include 'partials/icon.html' with name='smartphone' %}<div><strong>Em qualquer tela</strong><span>Acesse pelo computador, tablet ou celular.</span></div></li>
+            </ul>
+        </div>
+    </aside>
+    <div class="login-main">
+    <section class="card login-card">
+        <div class="login-head">
+            <span class="brand-logo" role="img" aria-label="Carmel Hotéis"></span>
+            <span class="login-sub">Primeiro acesso</span>
+            <p class="muted" style="margin-top:10px">Confirme seus dados e crie seu usuário.</p>
+        </div>
+        {% for e in form.non_field_errors %}<div class="alert alert-error" role="alert">{% include 'partials/icon.html' with name='alert-circle' %} {{ e }}</div>{% endfor %}
+        {% for e in form.website.errors %}<div class="alert alert-error" role="alert">{{ e }}</div>{% endfor %}
+        <form method="post" style="display:grid; gap:18px">
+            {% csrf_token %}
+            <input type="text" name="website" value="" tabindex="-1" autocomplete="off" style="position:absolute; left:-9999px" aria-hidden="true">
+            <div class="field">
+                <label for="id_cpf">CPF</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='id-card' %}
+                    <input id="id_cpf" type="text" name="cpf" class="input" autocomplete="off" inputmode="numeric" placeholder="000.000.000-00" value="{{ form.cpf.value|default:'' }}" required>
+                </div>
+                {% for e in form.cpf.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            <div class="field">
+                <label for="id_birthdate">Data de nascimento</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='calendar' %}
+                    <input id="id_birthdate" type="text" name="birthdate" class="input" autocomplete="off" inputmode="numeric" placeholder="DD/MM/AAAA" value="{{ form.birthdate.value|default:'' }}" required>
+                </div>
+                {% for e in form.birthdate.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            <div class="field">
+                <label for="id_username">Escolha um usuário</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='user' %}
+                    <input id="id_username" type="text" name="username" class="input" autocomplete="username"  value="{{ form.username.value|default:'' }}" required>
+                </div>
+                {% for e in form.username.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            <div class="field">
+                <label for="id_password">Senha</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='lock' %}
+                    <input id="id_password" type="password" name="password" class="input" autocomplete="new-password" required>
+                </div>
+                {% for e in form.password.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            <div class="field">
+                <label for="id_password2">Confirmar senha</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='lock' %}
+                    <input id="id_password2" type="password" name="password2" class="input" autocomplete="new-password" required>
+                </div>
+                {% for e in form.password2.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Criar cadastro</button>
+        </form>
+        <p class="muted" style="text-align:center; font-size:13px; margin-top:14px"><a href="{% url 'login' %}">Já tenho cadastro</a></p>
+    </section>
+    </div>
+</main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

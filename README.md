@@ -63,6 +63,8 @@ uv run python manage.py runserver 8008
 | `gestor.rh` | `carmel2026` | Gestor (RH) | Ver e gerenciar **somente o RH**: sincronizar o Drive, revisar roteiros, anexar vídeos e reprocessar falhas. |
 | `colab.governanca` | `carmel2026` | Colaborador (Governança) | Assistir **somente** os treinamentos da Governança. |
 
+**Primeiro acesso (cadastro pela própria pessoa).** Na tela de login, *Primeiro acesso? Criar cadastro*: a pessoa informa **CPF e data de nascimento**, o portal confere na **Humand** (só consulta, nunca altera nada lá) e, se o colaborador existe, está ativo e a data confere, o acesso é liberado na hora, como Colaborador. Nome, e-mail, setor e resort vêm da Humand (grupo *Hotéis* = resorts; itens dos demais grupos = setor). Nomes iguais aos do portal (sem diferenciar acento) ligam sozinhos; os diferentes (ex.: *CM* → Magna/CM) ficam em **Admin → Correspondências Humand**. Setor não reconhecido: a pessoa entra sem setor e o administrador completa. O CPF não é guardado, só uma impressão digital dele, que impede duas contas para a mesma pessoa. Após 5 tentativas erradas (por IP ou CPF) há bloqueio de 15 minutos. Variáveis: `HUMAND_API_KEY` (sem ela o cadastro fica desligado), `HUMAND_BASE_URL`, `SIGNUP_ENABLED`, `SIGNUP_MAX_ATTEMPTS`, `SIGNUP_LOCK_MINUTES`.
+
 Regras:
 - Colaborador sem setor definido não vê nenhum treinamento.
 - Gestor sem setor definido não gerencia nada.
