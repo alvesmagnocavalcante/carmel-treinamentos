@@ -9,7 +9,8 @@ import httpx
 from django.conf import settings
 from django.utils import timezone
 
-from treinamentos.models import Department, SystemSetting, TrainingVideo
+from treinamentos.models import Department, DriveImage, SystemSetting, TrainingVideo
+from treinamentos.services.document_parser import ALLOWED_IMAGE_EXTENSIONS
 from treinamentos.services.storage import is_allowed_extension, new_source_path, safe_filename, title_from_filename
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,8 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 FOLDER_MIME = 'application/vnd.google-apps.folder'
 SCRIPTS_FOLDER = 'Roteiros'
 VIDEOS_FOLDER = 'Vídeos'
+IMAGES_FOLDER = 'Imagens'  # imagens de fundo das cenas ([IMAGEM: nome.png] no roteiro)
+IMAGE_MIMES = {'image/png', 'image/jpeg', 'image/webp'}
 
 # Google Docs nativos não podem ser baixados diretamente: exportamos como .docx.
 GOOGLE_DOC_MIME = 'application/vnd.google-apps.document'
@@ -131,6 +134,7 @@ class GoogleDriveService:
         new_videos: List[TrainingVideo] = []
         published: List[TrainingVideo] = []
         errors: List[str] = []
+        images_synced = 0
 
         client = cls.get_drive_client()
         if client:
@@ -138,6 +142,8 @@ class GoogleDriveService:
                 if not dept.drive_folder_id:
                     continue
                 try:
+                    # imagens primeiro: um roteiro novo que cita uma imagem já a encontra cadastrada
+                    images_synced += cls._scan_images_folder(client, dept)
                     new_videos += cls._scan_drive_folder(client, dept)
                     published += cls._scan_videos_folder(client, dept)
                 except Exception as exc:  # noqa: BLE001
@@ -147,6 +153,7 @@ class GoogleDriveService:
         return {
             "found": len(new_videos), "new_videos": new_videos,
             "published": len(published), "published_videos": published,
+            "images": images_synced,
             "errors": errors, "drive_connected": bool(client),
         }
 
@@ -157,7 +164,7 @@ class GoogleDriveService:
         while True:
             resp = client.files().list(
                 q=query,
-                fields="nextPageToken, files(id, name, mimeType, modifiedTime, appProperties)",
+                fields="nextPageToken, files(id, name, mimeType, modifiedTime, appProperties, size)",
                 pageSize=100,
                 pageToken=page_token,
                 supportsAllDrives=True,
@@ -318,6 +325,42 @@ class GoogleDriveService:
             published.append(video)
         return published
 
+    @classmethod
+    def _scan_images_folder(cls, client, dept: Department) -> int:
+        """
+        Cadastra as imagens da subpasta Imagens do setor (png, jpg, webp), achadas depois pelo nome no roteiro.
+        Arquivo acima do limite de tamanho fica cadastrado como "grande demais" (a revisão avisa). Imagem que
+        saiu da pasta é esquecida. Devolve quantas imagens foram novas ou mudaram.
+        """
+        folder = cls._get_or_create_subfolder(client, dept.drive_folder_id, IMAGES_FOLDER)
+        limit = settings.MAX_IMAGE_MB * 1024 * 1024
+        seen, changed = set(), 0
+        for f in cls._list_folder(client, folder):
+            name, mime = f["name"], f.get("mimeType", "")
+            if not (Path(name).suffix.lower() in ALLOWED_IMAGE_EXTENSIONS or mime in IMAGE_MIMES):
+                logger.info("Ignorando arquivo que não é imagem png/jpg/webp em Imagens: %s", name)
+                continue
+            seen.add(f["id"])
+            try:
+                size = int(f.get("size") or 0)
+            except (TypeError, ValueError):
+                size = 0
+            fields = {
+                "department": dept, "name": name, "mime_type": mime, "size_bytes": size,
+                "too_large": size > limit, "modified_at": f.get("modifiedTime", ""),
+            }
+            existing = DriveImage.objects.filter(drive_file_id=f["id"]).first()
+            if existing is None:
+                DriveImage.objects.create(drive_file_id=f["id"], **fields)
+                changed += 1
+            elif any(getattr(existing, k) != v for k, v in fields.items()):
+                for key, value in fields.items():
+                    setattr(existing, key, value)
+                existing.save()
+                changed += 1
+        DriveImage.objects.filter(department=dept).exclude(drive_file_id__in=seen).delete()
+        return changed
+
     @staticmethod
     def _download_script(client, dept: Department, f: dict, ext: str):
         """Baixa um roteiro do Drive (Google Docs vira .docx) e devolve (nome do arquivo local, caminho)."""
@@ -346,6 +389,7 @@ class GoogleDriveService:
         """
         scripts_folder = cls._get_or_create_subfolder(client, dept.drive_folder_id, SCRIPTS_FOLDER)
         cls._get_or_create_subfolder(client, dept.drive_folder_id, VIDEOS_FOLDER)  # garante a estrutura
+        cls._get_or_create_subfolder(client, dept.drive_folder_id, IMAGES_FOLDER)
 
         Status = TrainingVideo.Status
         found = []

@@ -101,13 +101,15 @@ def sync_drive_ajax(request):
     for video in result['new_videos']:
         start_pipeline_async(video.id)
 
-    found, published = result['found'], result['published']
+    found, published, images = result['found'], result['published'], result.get('images', 0)
     parts = []
     if found:
         parts.append(f"{found} roteiro(s) novo(s) ou atualizado(s) enviado(s) para a fila")
     if published:
         parts.append(f"{published} vídeo(s) carregado(s) do Drive e publicado(s) no catálogo")
-    message = ("; ".join(parts) + ".") if parts else "Nada novo encontrado nas pastas Roteiros e Vídeos."
+    if images:
+        parts.append(f"{images} imagem(ns) da pasta Imagens atualizada(s)")
+    message = ("; ".join(parts) + ".") if parts else "Nada novo encontrado nas pastas Roteiros, Imagens e Vídeos."
     if not result['drive_connected']:
         message = "O Google Drive não está configurado neste ambiente, então não há o que sincronizar."
     if result['errors']:

@@ -14,7 +14,8 @@ def find_image(department: Department, name: str) -> Optional[DriveImage]:
     name = (name or "").strip()
     if not name:
         return None
-    return DriveImage.objects.filter(department=department, name_key=name_key(name)).first()
+    # dois arquivos com o mesmo nome: vale o alterado por último
+    return DriveImage.objects.filter(department=department, name_key=name_key(name)).order_by("-modified_at", "-id").first()
 
 
 def image_problem(department: Department, name: str) -> str:

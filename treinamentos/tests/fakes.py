@@ -16,12 +16,14 @@ class FakeDrive:
     def __init__(self):
         self.items, self.n = {}, 0
 
-    def add(self, name, parent, mime="text/plain", props=None, modified="2026-01-01T00:00:00Z"):
+    def add(self, name, parent, mime="text/plain", props=None, modified="2026-01-01T00:00:00Z", size=None):
         self.n += 1
         item_id = f"id{self.n}"
         self.items[item_id] = {
             "name": name, "mimeType": mime, "parents": [parent], "appProperties": props or {}, "modifiedTime": modified,
         }
+        if size is not None:
+            self.items[item_id]["size"] = str(size)  # a API do Drive devolve o tamanho como texto
         return item_id
 
     def files(self):

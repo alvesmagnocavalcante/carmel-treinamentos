@@ -26,7 +26,8 @@ class DriveFolderStructureTests(BaseTestCase):
         with mock.patch.object(self.svc, "get_drive_client", return_value=self.drive):
             result = self.svc.scan_all_departments([self.rh])
         self.assertEqual(result["errors"], [])
-        self.assertEqual(self.names(), ["Roteiros", "videos"])  # só criou Roteiros, não duplicou Vídeos
+        # criou Roteiros e Imagens, e não duplicou Vídeos
+        self.assertEqual(self.names(), ["Imagens", "Roteiros", "videos"])
 
     def test_scan_reads_scripts_only_from_roteiros_folder(self):
         roteiros = self.drive.add("Roteiros", "root", FakeDrive.FOLDER)
