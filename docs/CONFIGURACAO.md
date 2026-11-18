@@ -184,13 +184,13 @@ Você produz os vídeos de treinamento da Carmel Hotéis. Use os conectores "Car
 
 Quando eu pedir para gerar os vídeos:
 1. Chame list_awaiting_videos. Se não houver itens, diga isso e pare.
-2. Para cada item, um de cada vez:
-   a) Item SEM imagens (nenhuma cena com imagem_url): chame create_video_from_avatar da HeyGen com:
-      - script: o campo "roteiro", EXATAMENTE como veio, sem reescrever, resumir ou corrigir;
+2. Para cada item, um de cada vez, siga o campo "modo_heygen" do item, sem reescrever, resumir ou corrigir nenhum texto:
+   a) "avatar": chame create_video_from_avatar da HeyGen com:
+      - script: o campo "roteiro", EXATAMENTE como veio;
       - avatarId e voiceId: os campos "avatar_id" e "voice_id" do item;
       - aspectRatio 16:9 e resolução 720p.
-   b) Item COM imagens (alguma cena com imagem_url) ou com mais de uma cena: ANTES de gerar, confira se o conector HeyGen aceita várias cenas e cenas de imagem narradas (create_video_from_studio). Se aceitar, gere UM vídeo com uma cena por bloco do campo "cenas", na ordem, sempre com o "texto" EXATO da cena e a voz do item. Cena COM imagem_url: cena do tipo image em tela cheia, com a imagem_url como fonte e o texto como narração (script + voice_id); nessa cena o avatar NÃO aparece, de propósito. Cena SEM imagem: cena avatar_video com o avatar_id do item, o texto e a voz. Siga as regras da própria ferramenta para a voz (get_video_voice_capabilities). Se o conector NÃO aceitar várias cenas ou cenas de imagem narradas, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
-   c) Se uma cena citar uma imagem mas vier sem imagem_url (veja "imagem_erro"), NÃO gere: me avise e pare esse item.
+   b) "studio": chame create_video_from_studio passando o campo "cenas_heygen" EXATAMENTE como veio, como "scenes". Não monte as cenas por conta própria, não troque o tipo de nenhuma cena e não coloque avatar nas cenas de imagem (a cena de imagem mostra a imagem em tela cheia, com a voz e sem avatar, de propósito). Use aspectRatio, resolution e title de "parametros_heygen". Acrescente só o que a ferramenta exigir para a voz (voice_settings, conforme get_video_voice_capabilities), igual em todas as cenas. Se a HeyGen não aceitar esse formato, NÃO improvise e NÃO gere o vídeo sem as imagens: me avise e pare esse item.
+   c) "bloqueado": NÃO gere o vídeo; me avise do "motivo" e pare esse item.
 3. Chame mark_video_rendering com o video_id da HeyGen.
 4. Acompanhe com get_video da HeyGen a cada 30 a 60 segundos até "completed". Nunca recrie o vídeo para verificar o andamento.
 5. Quando estiver "completed", chame save_generated_video com o video_url, o ID da HeyGen e a duração (duration).
@@ -203,7 +203,7 @@ Nunca gere o mesmo item duas vezes e nunca altere o texto do roteiro.
 
 | Ferramenta | O que faz |
 |---|---|
-| `list_awaiting_videos` | Lista os roteiros aprovados, com texto exato, avatar, voz e as `cenas` (`ordem`, `texto`, `imagem`, `imagem_url`) |
+| `list_awaiting_videos` | Lista os roteiros aprovados, com texto exato, avatar, voz e as `cenas` (`ordem`, `texto`, `imagem`, `imagem_url`). Traz também o `modo_heygen` (`avatar`, `studio` ou `bloqueado`) e, no modo `studio`, as `cenas_heygen` já prontas para o `create_video_from_studio` |
 | `mark_video_rendering` | Marca o item como "Renderizando" |
 | `save_generated_video` | O portal baixa o MP4, salva no Drive do setor e publica |
 | `get_video_status` | Consulta o status de um item |
@@ -238,6 +238,8 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 | `PORTAL_BASE_URL` | Endereço público do portal nesses links, por exemplo `https://carmel-treinamentos.onrender.com`. Vazio = usa o endereço da requisição (e o `X-Forwarded-Proto` do proxy). **Recomendado definir** em produção, para o link sair sempre em https |
 
 **Nas cenas com imagem, o avatar não aparece.** Muitos avatares vêm com um cenário gravado atrás (um escritório, por exemplo) que ocupa o quadro inteiro e **esconde qualquer imagem de fundo**. Em testes reais com o avatar `Abigail_standing_office_front`, a imagem chegou à HeyGen e ficou toda coberta, mesmo pedindo a remoção do fundo. Por isso, a cena com imagem mostra **a imagem em tela cheia, com a voz narrando o texto**, e as cenas sem imagem continuam com o avatar. Para ter o avatar *sobre* a imagem, o setor precisa de um avatar de fundo removível (por exemplo, um avatar digital próprio, criado na HeyGen com essa opção); aí o prompt pode voltar a usar a imagem como fundo.
+
+**O portal já monta as cenas para a HeyGen.** Para o Claude não precisar interpretar texto (e errar o formato), cada item do `list_awaiting_videos` traz o `modo_heygen`: `avatar` (uma cena sem imagem: vídeo de sempre), `studio` (tem imagem ou várias cenas: o campo `cenas_heygen` é o JSON exato para o `create_video_from_studio`, com cena `image` para as cenas com imagem e `avatar_video` para as sem) ou `bloqueado` (alguma imagem citada não existe ou é grande demais: o campo `motivo` diz qual, e o Claude não gera). A configuração de voz (`voice_settings`) continua por conta do Claude, que a consulta na HeyGen.
 
 **O que o Claude faz com cenas.** Se o item tem mais de uma cena ou alguma imagem, o Claude primeiro confere se o conector HeyGen aceita várias cenas e cenas de imagem narradas e, se aceitar, gera **um vídeo** com uma cena por bloco e o texto exato: a cena com imagem mostra a imagem em tela cheia com a voz, e a sem imagem mostra o avatar. Se o conector **não** aceitar, ou se alguma imagem citada estiver sem link, o Claude **avisa e para**: ele não gera o vídeo sem as imagens nem improvisa. Itens sem imagens seguem o fluxo de sempre.
 

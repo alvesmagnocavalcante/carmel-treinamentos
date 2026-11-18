@@ -29,21 +29,19 @@ WAITING = (Status.AWAITING_VIDEO, Status.GENERATING_HEYGEN)
 
 INSTRUCTIONS = (
     "Portal Carmel Treinamentos. Fluxo para gerar os vídeos aprovados: "
-    "1) list_awaiting_videos para ver os roteiros aprovados. Cada item traz `roteiro` (o texto falado completo) e "
-    "`cenas` (lista de {ordem, texto, imagem, imagem_url}: cada cena é um trecho do roteiro, com uma imagem de fundo opcional). "
-    "2) Para cada item, gere o vídeo na HeyGen com o texto EXATO, o avatar_id e o voice_id devolvidos, sem reescrever, "
-    "resumir ou corrigir nada. "
-    "  a) Item SEM imagens (nenhuma cena tem imagem_url): create_video_from_avatar com o `roteiro`, como sempre. "
-    "  b) Item COM imagens (alguma cena tem imagem_url) ou com mais de uma cena: ANTES de criar o vídeo, confira se o "
-    "conector HeyGen aceita várias cenas e cenas de imagem narradas (create_video_from_studio). Se aceitar, gere UM vídeo "
-    "com uma cena por bloco do campo `cenas`, na ordem, sempre com o `texto` EXATO da cena e a voz do item (voice_id): "
-    "cena COM imagem_url = cena do tipo image em tela cheia, com a imagem_url como fonte e o texto como narração (script + "
-    "voice_id); nesta cena o avatar NÃO aparece, de propósito, porque o avatar traz um cenário gravado que cobriria a "
-    "imagem. Cena SEM imagem = cena avatar_video com o avatar_id do item, o texto e a voz, como sempre. Siga as regras da "
-    "própria ferramenta para a voz (get_video_voice_capabilities). Se o conector NÃO aceitar várias cenas ou cenas de "
-    "imagem narradas, NÃO improvise e NÃO gere o vídeo sem as imagens: avise o usuário do que faltou e pare esse item. "
-    "  c) Se uma cena citar uma imagem mas vier sem imagem_url (veja imagem_erro), NÃO gere o vídeo: avise o usuário e pare "
-    "esse item. As imagem_url são links temporários: use-os logo ao criar o vídeo. "
+    "1) list_awaiting_videos para ver os roteiros aprovados. Cada item traz o `roteiro` (texto falado completo), as `cenas` "
+    "e o `modo_heygen`, que o portal já decidiu e que diz COMO gerar o vídeo. "
+    "2) Para cada item, um de cada vez, gere o vídeo na HeyGen conforme o `modo_heygen`, SEM reescrever, resumir ou "
+    "corrigir nenhum texto: "
+    "  a) \"avatar\": create_video_from_avatar com o `roteiro`, o avatar_id e o voice_id do item. "
+    "  b) \"studio\": o item tem imagens ou várias cenas. Chame create_video_from_studio passando `cenas_heygen` EXATAMENTE "
+    "como veio, como `scenes` (não monte as cenas por conta própria, não troque o tipo de nenhuma cena e não ponha o "
+    "avatar nas cenas de imagem: a cena do tipo image mostra a imagem em tela cheia com a voz, sem avatar, de propósito), "
+    "e use aspectRatio, resolution e title de `parametros_heygen`. Acrescente apenas o que a própria ferramenta exige para "
+    "a voz (voice_settings com engine_settings, conforme get_video_voice_capabilities), igual em todas as cenas. Se a "
+    "HeyGen não aceitar esse formato, NÃO improvise e NÃO gere o vídeo sem as imagens: avise o usuário e pare esse item. "
+    "  c) \"bloqueado\": NÃO gere o vídeo; avise o usuário do `motivo` e pare esse item. "
+    "As imagem_url são links temporários: use-os logo ao criar o vídeo. "
     "3) mark_video_rendering com o video_id da HeyGen. "
     "4) Acompanhe com get_video da HeyGen até 'completed' (nunca recrie o vídeo para verificar). "
     "5) save_generated_video com o link do MP4, o ID da HeyGen e a duração: o portal salva no Drive e publica."
@@ -95,8 +93,48 @@ def _scenes_for_claude(video: TrainingVideo, request) -> list:
     return scenes
 
 
+def _heygen_plan(video: TrainingVideo, scenes: list, params: dict) -> dict:
+    """
+    Como gerar este item na HeyGen, já decidido pelo portal para o Claude só repassar:
+      - modo_heygen "avatar": uma cena só, sem imagem -> create_video_from_avatar com o `roteiro`;
+      - modo_heygen "studio": tem imagem ou várias cenas -> create_video_from_studio com `cenas_heygen` como `scenes`
+        (cena com imagem = cena `image` em tela cheia, narrada, sem avatar; cena sem imagem = `avatar_video`);
+      - modo_heygen "bloqueado": alguma imagem citada não pode ser usada -> não gerar, mostrar o `motivo`.
+    A configuração de voz (voice_settings) fica por conta do Claude, que a consulta na própria HeyGen.
+    """
+    if not any(s["imagem"] for s in scenes) and len(scenes) <= 1:
+        return {"modo_heygen": "avatar", "cenas_heygen": None}
+
+    blocked = [s for s in scenes if s["imagem"] and not s["imagem_url"]]
+    if blocked:
+        return {"modo_heygen": "bloqueado", "cenas_heygen": None,
+                "motivo": " ".join(s["imagem_erro"] for s in blocked)}
+
+    studio = []
+    for scene in scenes:
+        if scene["imagem_url"]:
+            studio.append({
+                "type": "image",
+                "source": {"type": "url", "url": scene["imagem_url"]},
+                "script": scene["texto"],
+                "voice_id": params["voice_id"],
+            })
+        else:
+            studio.append({
+                "type": "avatar_video",
+                "input": {"type": "avatar", "avatar_id": params["avatar_id"],
+                          "script": scene["texto"], "voice_id": params["voice_id"]},
+            })
+    return {
+        "modo_heygen": "studio",
+        "cenas_heygen": studio,
+        "parametros_heygen": {"aspectRatio": "16:9", "resolution": "720p", "title": video.title},
+    }
+
+
 def _describe(video: TrainingVideo, request=None) -> dict:
     params = generation_params(video)
+    scenes = _scenes_for_claude(video, request)
     return {
         "video_id": video.id,
         "setor": video.department.name,
@@ -108,7 +146,8 @@ def _describe(video: TrainingVideo, request=None) -> dict:
         "heygen_video_id": video.heygen_video_id,
         "caracteres": len(video.script_text),
         "roteiro": video.script_text,
-        "cenas": _scenes_for_claude(video, request),
+        "cenas": scenes,
+        **_heygen_plan(video, scenes, params),
     }
 
 
@@ -187,7 +226,9 @@ TOOLS = {
         "description": (
             "Lista os roteiros já aprovados que aguardam a geração do vídeo, com o roteiro exato, o avatar_id e o "
             "voice_id a usar na HeyGen e as `cenas` ({ordem, texto, imagem, imagem_url}): cada cena é um trecho do "
-            "roteiro com uma imagem de fundo opcional (imagem_url é um link temporário para a HeyGen baixar)."
+            "roteiro com uma imagem opcional (imagem_url é um link temporário para a HeyGen baixar). Traz também o "
+            "`modo_heygen` (\"avatar\", \"studio\" ou \"bloqueado\") e, no modo studio, as `cenas_heygen` prontas para "
+            "passar como `scenes` ao create_video_from_studio, com `parametros_heygen`."
         ),
         "inputSchema": {
             "type": "object",

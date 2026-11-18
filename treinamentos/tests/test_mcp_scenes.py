@@ -89,6 +89,61 @@ class McpScenesTests(BaseTestCase):
             items = self.list_items(HTTP_X_FORWARDED_PROTO="https", HTTP_HOST="meu-portal.onrender.com")
         self.assertTrue(items[0]["cenas"][0]["imagem_url"].startswith("https://meu-portal.onrender.com/imagem/"))
 
+    # --- plano pronto para a HeyGen
+    def set_avatar(self):
+        self.rh.avatar_id, self.rh.voice_id = "av-1", "vo-2"
+        self.rh.save()
+
+    def test_item_without_images_uses_the_avatar_mode(self):
+        self.make_waiting()
+        item = self.item()
+        self.assertEqual((item["modo_heygen"], item["cenas_heygen"]), ("avatar", None))
+
+    def test_item_with_images_gets_ready_made_studio_scenes(self):
+        self.set_avatar()
+        self.image("piscina.png")
+        self.make_scenes([
+            {"ordem": 1, "texto": "Abertura.", "imagem": ""},
+            {"ordem": 2, "texto": "A piscina.", "imagem": "piscina.png"},
+        ])
+        item = self.item()
+        self.assertEqual(item["modo_heygen"], "studio")
+        avatar_scene, image_scene = item["cenas_heygen"]
+        self.assertEqual(avatar_scene, {"type": "avatar_video", "input": {
+            "type": "avatar", "avatar_id": "av-1", "script": "Abertura.", "voice_id": "vo-2"}})
+        # cena com imagem: tela cheia, narrada, e SEM avatar
+        self.assertEqual(image_scene["type"], "image")
+        self.assertEqual(image_scene["source"], {"type": "url", "url": item["cenas"][1]["imagem_url"]})
+        self.assertEqual((image_scene["script"], image_scene["voice_id"]), ("A piscina.", "vo-2"))
+        self.assertNotIn("avatar_id", json.dumps(image_scene))
+        self.assertNotIn("input", image_scene)
+        self.assertEqual(item["parametros_heygen"], {"aspectRatio": "16:9", "resolution": "720p", "title": "Tour"})
+
+    def test_studio_scene_text_is_exactly_the_approved_text(self):
+        self.set_avatar()
+        self.image("a.png")
+        exact = "Esta é a piscina principal.\nEla funciona das 8h às 18h."
+        self.make_scenes([{"ordem": 1, "texto": exact, "imagem": "a.png"}])
+        self.assertEqual(self.item()["cenas_heygen"][0]["script"], exact)
+
+    def test_several_scenes_without_images_still_use_studio_with_the_avatar(self):
+        self.set_avatar()
+        self.make_scenes([{"ordem": 1, "texto": "Um.", "imagem": ""}, {"ordem": 2, "texto": "Dois.", "imagem": ""}])
+        item = self.item()
+        self.assertEqual(item["modo_heygen"], "studio")
+        self.assertEqual([s["type"] for s in item["cenas_heygen"]], ["avatar_video", "avatar_video"])
+
+    def test_unusable_image_blocks_the_item_with_the_reason(self):
+        self.image("piscina.png")
+        self.make_scenes([
+            {"ordem": 1, "texto": "Um.", "imagem": "piscina.png"},
+            {"ordem": 2, "texto": "Dois.", "imagem": "sumiu.png"},
+        ])
+        item = self.item()
+        self.assertEqual((item["modo_heygen"], item["cenas_heygen"]), ("bloqueado", None))
+        self.assertIn("sumiu.png", item["motivo"])
+        self.assertNotIn("parametros_heygen", item)
+
     # --- rota da imagem
     def test_signed_link_serves_the_image_without_login_and_without_redirect(self):
         image = self.image("piscina.png", mime_type="image/png")
@@ -141,9 +196,9 @@ class McpScenesTests(BaseTestCase):
 
     # --- prompt
     def test_instructions_tell_claude_to_stop_instead_of_improvising(self):
-        for phrase in ("cenas de imagem narradas", "várias cenas", "NÃO improvise", "NÃO gere o vídeo sem as imagens",
-                       "imagem_erro", "texto EXATO", "tipo image em tela cheia", "o avatar NÃO aparece",
-                       "cena avatar_video"):
+        for phrase in ("modo_heygen", "cenas_heygen", "EXATAMENTE como veio", "não monte as cenas por conta própria",
+                       "sem avatar, de propósito", "NÃO improvise", "NÃO gere o vídeo sem as imagens",
+                       '"bloqueado"', "motivo", "parametros_heygen"):
             self.assertIn(phrase, INSTRUCTIONS)
         # a abordagem antiga (imagem atrás do avatar) ficou para trás: o avatar cobria a imagem
         self.assertNotIn("remove_background", INSTRUCTIONS)
