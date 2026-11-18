@@ -71,6 +71,20 @@ def check_scenes(department: Department, scenes: List[dict]) -> List[dict]:
     ]
 
 
+# Texto de instrução padrão para animar uma imagem: conservador, para a IA não inventar nem deformar nada.
+DEFAULT_ANIMATION_PROMPT = (
+    "Movimento de câmera sutil e movimento natural dos elementos da cena (vento leve, água calma, folhas). "
+    "Não adicione, remova nem deforme objetos, pessoas ou textos; mantenha a imagem fiel à original."
+)
+SPEECH_CHARS_PER_SECOND = 14   # estimativa da fala em português
+MIN_CLIP_SECONDS, MAX_CLIP_SECONDS = 5, 15  # acima de 15 s a HeyGen exige o aprimoramento de texto, que evitamos
+
+
+def animation_seconds(text: str) -> int:
+    """Duração do clipe animado: a da narração estimada, entre 5 e 15 s."""
+    return max(MIN_CLIP_SECONDS, min(MAX_CLIP_SECONDS, -(-len(text or "") // SPEECH_CHARS_PER_SECOND)))
+
+
 TOKEN_SALT = "carmel.scene-image"
 
 
