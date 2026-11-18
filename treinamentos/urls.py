@@ -11,6 +11,8 @@ urlpatterns = [
     path('api/sync-drive/', views.sync_drive_ajax, name='sync_drive'),
     path('video/<int:video_id>/arquivo/', views.stream_video_view, name='stream_video'),
     path('api/video/<int:video_id>/view/', views.register_view, name='register_view'),
+    # imagem de uma cena para a HeyGen baixar: sem login, protegida por token assinado e de curta validade
+    path('imagem/<str:token>/<str:filename>', views.scene_image_view, name='scene_image'),
     path('mcp/', mcp_server.mcp_endpoint, name='mcp'),
     path('mcp/<str:token>/', mcp_server.mcp_endpoint, name='mcp_token'),
     # sem a barra final (POST não pode ser redirecionado pelo APPEND_SLASH)

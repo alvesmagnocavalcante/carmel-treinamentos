@@ -3,10 +3,12 @@ from pathlib import Path
 from typing import List, Optional
 
 from django.conf import settings
+from django.core import signing
+from django.urls import reverse
 
 from treinamentos.models import Department, DriveImage
 from treinamentos.services.document_parser import ALLOWED_IMAGE_EXTENSIONS
-from treinamentos.services.storage import name_key
+from treinamentos.services.storage import name_key, safe_filename
 
 
 def find_image(department: Department, name: str) -> Optional[DriveImage]:
@@ -48,6 +50,38 @@ def scene_image_problems(department: Department, scenes: List[dict]) -> List[str
 def check_scenes(department: Department, scenes: List[dict]) -> List[dict]:
     """As cenas com o campo `problema` preenchido quando a imagem citada não pode ser usada."""
     return [{**scene, "problema": image_problem(department, scene.get("imagem", ""))} for scene in scenes]
+
+
+TOKEN_SALT = "carmel.scene-image"
+
+
+def image_token(image: DriveImage) -> str:
+    """Token assinado (com hora) que dá acesso temporário a UMA imagem, sem login."""
+    return signing.dumps({"i": image.id}, salt=TOKEN_SALT, compress=True)
+
+
+def image_from_token(token: str) -> Optional[DriveImage]:
+    """A imagem do token, ou None se o token é falso, expirou (IMAGE_URL_TTL_MINUTES) ou a imagem não pode ser usada."""
+    try:
+        data = signing.loads(token, salt=TOKEN_SALT, max_age=settings.IMAGE_URL_TTL_MINUTES * 60)
+        image = DriveImage.objects.get(id=int(data["i"]))
+    except (signing.BadSignature, DriveImage.DoesNotExist, KeyError, TypeError, ValueError):
+        return None
+    return None if image.too_large else image
+
+
+def portal_base_url(request) -> str:
+    """Endereço público do portal para os links dados à HeyGen. Atrás de proxy (Render, Cloud Run) vale o X-Forwarded-Proto."""
+    if settings.PORTAL_BASE_URL:
+        return settings.PORTAL_BASE_URL
+    scheme = request.headers.get("X-Forwarded-Proto", request.scheme).split(",")[0].strip() or request.scheme
+    return f"{scheme}://{request.get_host()}"
+
+
+def scene_image_url(image: DriveImage, request) -> str:
+    """Link temporário e público (sem login, sem redirecionamento) para a HeyGen baixar a imagem da cena."""
+    filename = safe_filename(image.name)
+    return f"{portal_base_url(request)}{reverse('scene_image', args=[image_token(image), filename])}"
 
 
 def usable_image_names(department: Department) -> List[str]:

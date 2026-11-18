@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import TrainingVideo
 from .services.pipeline import generation_params, save_generated_video
+from .services.scenes import find_image, image_problem, scene_image_url
 
 logger = logging.getLogger(__name__)
 Status = TrainingVideo.Status
@@ -28,9 +29,19 @@ WAITING = (Status.AWAITING_VIDEO, Status.GENERATING_HEYGEN)
 
 INSTRUCTIONS = (
     "Portal Carmel Treinamentos. Fluxo para gerar os vídeos aprovados: "
-    "1) list_awaiting_videos para ver os roteiros aprovados. "
-    "2) Para cada item, gere o vídeo na HeyGen (create_video_from_avatar) com o roteiro EXATO, o avatar_id e o voice_id "
-    "devolvidos, sem reescrever o texto. "
+    "1) list_awaiting_videos para ver os roteiros aprovados. Cada item traz `roteiro` (o texto falado completo) e "
+    "`cenas` (lista de {ordem, texto, imagem, imagem_url}: cada cena é um trecho do roteiro, com uma imagem de fundo opcional). "
+    "2) Para cada item, gere o vídeo na HeyGen com o texto EXATO, o avatar_id e o voice_id devolvidos, sem reescrever, "
+    "resumir ou corrigir nada. "
+    "  a) Item SEM imagens (nenhuma cena tem imagem_url): create_video_from_avatar com o `roteiro`, como sempre. "
+    "  b) Item COM imagens (alguma cena tem imagem_url) ou com mais de uma cena: ANTES de criar o vídeo, confira se o "
+    "conector HeyGen aceita imagem de fundo e várias cenas (por exemplo create_video_from_studio, com uma cena avatar_video "
+    "por bloco: script = texto da cena, avatar_id e voice_id do item, e o fundo em imagem com a imagem_url da cena; um item "
+    "de uma cena só com imagem também pode usar create_video_from_avatar com `background`). Se aceitar, gere UM vídeo com uma "
+    "cena por bloco, na ordem das cenas, a imagem como fundo e o texto EXATO de cada cena. Se NÃO aceitar, NÃO improvise e "
+    "NÃO gere o vídeo sem as imagens: avise o usuário do que faltou e pare esse item. "
+    "  c) Se uma cena citar uma imagem mas vier sem imagem_url (veja imagem_erro), NÃO gere o vídeo: avise o usuário e pare "
+    "esse item. As imagem_url são links temporários: use-os logo ao criar o vídeo. "
     "3) mark_video_rendering com o video_id da HeyGen. "
     "4) Acompanhe com get_video da HeyGen até 'completed' (nunca recrie o vídeo para verificar). "
     "5) save_generated_video com o link do MP4, o ID da HeyGen e a duração: o portal salva no Drive e publica."
@@ -61,7 +72,28 @@ def _validate_video_url(url) -> str:
     return str(url)
 
 
-def _describe(video: TrainingVideo) -> dict:
+def _scenes_for_claude(video: TrainingVideo, request) -> list:
+    """
+    As cenas do item: {ordem, texto, imagem, imagem_url}. `imagem_url` é um link temporário e público (sem login)
+    para a HeyGen baixar a imagem; fica null quando a cena não tem imagem ou a imagem não pode ser usada (e então
+    vem `imagem_erro` com o motivo).
+    """
+    scenes = []
+    for scene in video.scene_list:
+        name = scene.get("imagem") or ""
+        item = {"ordem": scene["ordem"], "texto": scene["texto"], "imagem": name, "imagem_url": None}
+        if name:
+            problem = image_problem(video.department, name)
+            image = None if problem else find_image(video.department, name)
+            if image is not None:
+                item["imagem_url"] = scene_image_url(image, request)
+            else:
+                item["imagem_erro"] = problem or f"Imagem '{name}' não encontrada."
+        scenes.append(item)
+    return scenes
+
+
+def _describe(video: TrainingVideo, request=None) -> dict:
     params = generation_params(video)
     return {
         "video_id": video.id,
@@ -74,14 +106,15 @@ def _describe(video: TrainingVideo) -> dict:
         "heygen_video_id": video.heygen_video_id,
         "caracteres": len(video.script_text),
         "roteiro": video.script_text,
+        "cenas": _scenes_for_claude(video, request),
     }
 
 
-def tool_list_awaiting_videos(args: dict) -> dict:
+def tool_list_awaiting_videos(args: dict, request=None) -> dict:
     videos = TrainingVideo.objects.filter(status__in=WAITING).select_related("department").order_by("created_at")
     if args.get("setor"):
         videos = videos.filter(department__code=str(args["setor"]))
-    items = [_describe(v) for v in videos]
+    items = [_describe(v, request) for v in videos]
     return {"total": len(items), "videos": items}
 
 
@@ -148,9 +181,11 @@ _ID = {"type": "integer", "description": "Número do item na fila do portal (vid
 TOOLS = {
     "list_awaiting_videos": {
         "handler": tool_list_awaiting_videos,
+        "wants_request": True,  # precisa do endereço do portal para montar os links das imagens
         "description": (
             "Lista os roteiros já aprovados que aguardam a geração do vídeo, com o roteiro exato, o avatar_id e o "
-            "voice_id a usar na HeyGen."
+            "voice_id a usar na HeyGen e as `cenas` ({ordem, texto, imagem, imagem_url}): cada cena é um trecho do "
+            "roteiro com uma imagem de fundo opcional (imagem_url é um link temporário para a HeyGen baixar)."
         ),
         "inputSchema": {
             "type": "object",
@@ -207,7 +242,7 @@ def _rpc_error(msg_id, code: int, message: str) -> dict:
     return {"jsonrpc": "2.0", "id": msg_id, "error": {"code": code, "message": message}}
 
 
-def _handle(msg):
+def _handle(msg, request=None):
     """Trata uma mensagem JSON-RPC. Devolve a resposta, ou None quando não há resposta (notificações)."""
     if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0":
         return _rpc_error(None, -32600, "Requisição inválida.")
@@ -241,7 +276,7 @@ def _handle(msg):
             return _rpc_error(msg_id, -32602, f"Ferramenta desconhecida: {name}")
         logger.info("MCP tools/call %s item=%s", name, args.get("video_id", "-"))
         try:
-            data = tool["handler"](args)
+            data = tool["handler"](args, request) if tool.get("wants_request") else tool["handler"](args)
             is_error = False
         except ToolError as exc:
             data, is_error = {"erro": str(exc)}, True
@@ -282,7 +317,7 @@ def mcp_endpoint(request, token=None):
         return JsonResponse(_rpc_error(None, -32700, "JSON inválido."), status=400)
 
     if isinstance(payload, list):
-        replies = [r for r in (_handle(m) for m in payload) if r is not None]
+        replies = [r for r in (_handle(m, request) for m in payload) if r is not None]
         return JsonResponse(replies, safe=False) if replies else HttpResponse(status=202)
-    reply = _handle(payload)
+    reply = _handle(payload, request)
     return JsonResponse(reply) if reply is not None else HttpResponse(status=202)

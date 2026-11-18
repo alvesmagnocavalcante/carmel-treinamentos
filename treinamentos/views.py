@@ -13,7 +13,7 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonRespons
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_safe
 
 from .context_processors import get_profile
 from .models import TrainingVideo, VideoProgress
@@ -23,7 +23,7 @@ from .services.pipeline import (
     MAX_SCRIPT_CHARS, attach_uploaded_video, generation_params, mark_awaiting_video,
     start_pipeline_async, store_scenes, validate_scenes,
 )
-from .services.scenes import check_scenes, scene_image_problems, usable_image_names
+from .services.scenes import check_scenes, image_from_token, scene_image_problems, usable_image_names
 
 Status = TrainingVideo.Status
 logger = logging.getLogger(__name__)
@@ -294,6 +294,50 @@ def stream_video_view(request, video_id):
             response[header] = upstream.headers[header]
     response["Accept-Ranges"] = "bytes"
     response["Cache-Control"] = "private, max-age=3600"
+    return response
+
+
+IMAGE_CONTENT_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+
+
+@require_safe
+def scene_image_view(request, token, filename):
+    """
+    Entrega a imagem de uma cena à HeyGen, sem login: quem tem o token assinado (curta validade) pode baixá-la.
+    O Drive é privado, então o portal faz a ponte. Responde direto, sem redirecionar (a HeyGen não segue redirecionamentos).
+    O `filename` da URL é só enfeite para o link terminar na extensão da imagem; o arquivo vem do token.
+    """
+    image = image_from_token(token)
+    if image is None:
+        raise Http404("Link inválido ou expirado.")
+    content_type = IMAGE_CONTENT_TYPES.get(Path(image.name).suffix.lower()) or image.mime_type
+    if content_type not in IMAGE_CONTENT_TYPES.values():
+        raise Http404("Imagem sem formato suportado.")
+
+    try:
+        client, upstream = GoogleDriveService.open_file_stream(image.drive_file_id)
+    except Exception:  # noqa: BLE001
+        logger.exception("Falha ao abrir a imagem %s no Drive", image.id)
+        return HttpResponse("Imagem indisponível.", status=502)
+    if upstream.status_code != 200:
+        status = upstream.status_code
+        upstream.close()
+        client.close()
+        logger.error("Drive respondeu %s para a imagem %s", status, image.id)
+        return HttpResponse("Imagem indisponível.", status=404 if status == 404 else 502)
+
+    def body():
+        try:
+            yield from upstream.iter_bytes(256 * 1024)
+        finally:
+            upstream.close()
+            client.close()
+
+    response = StreamingHttpResponse(body(), content_type=content_type)
+    if "Content-Length" in upstream.headers:
+        response["Content-Length"] = upstream.headers["Content-Length"]
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
     return response
 
 
