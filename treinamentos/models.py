@@ -4,6 +4,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
+from .services.storage import name_key as normalize_name
+
 
 class Resort(models.Model):
     """
@@ -107,6 +109,37 @@ def ensure_user_profile(sender, instance, created, **kwargs):
         UserProfile.objects.get_or_create(user=instance)
 
 
+class DriveImage(models.Model):
+    """
+    Imagem encontrada na subpasta Imagens do setor no Drive (preenchida pela sincronização).
+    O roteiro cita a imagem pelo nome; aqui ficam o arquivo do Drive e se ele pode ser usado.
+    """
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='images', verbose_name="Setor")
+    name = models.CharField("Nome do arquivo", max_length=250)
+    name_key = models.CharField("Nome normalizado", max_length=250, db_index=True)
+    drive_file_id = models.CharField("ID da imagem no Google Drive", max_length=200, unique=True)
+    mime_type = models.CharField("Tipo", max_length=100, blank=True)
+    size_bytes = models.BigIntegerField("Tamanho em bytes", default=0)
+    too_large = models.BooleanField("Grande demais", default=False, help_text="Passou do limite de tamanho: não é usada nos vídeos.")
+    modified_at = models.CharField("Última alteração no Drive", max_length=40, blank=True)
+    updated_at = models.DateTimeField("Atualizada em", auto_now=True)
+
+    class Meta:
+        verbose_name = "Imagem do Drive"
+        verbose_name_plural = "Imagens do Drive"
+        ordering = ['department', 'name']
+
+    def __str__(self):
+        return f"[{self.department.name}] {self.name}"
+
+    def save(self, *args, **kwargs):
+        self.name_key = normalize_name(self.name)
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None and 'name' in update_fields:
+            kwargs['update_fields'] = {*update_fields, 'name_key'}
+        super().save(*args, **kwargs)
+
+
 class TrainingVideoQuerySet(models.QuerySet):
     def visible_to(self, profile):
         """
@@ -149,6 +182,10 @@ class TrainingVideo(models.Model):
     status_message = models.TextField("Mensagem de Status", blank=True)
 
     script_text = models.TextField("Roteiro (texto narrado pelo avatar)", blank=True)
+    scenes = models.JSONField(
+        "Cenas", default=list, blank=True,
+        help_text="Lista de {ordem, texto, imagem}. Vazio = uma cena só, sem imagem (o próprio roteiro).",
+    )
 
     heygen_video_id = models.CharField("ID do Vídeo no HeyGen", max_length=150, blank=True)
     video_url = models.URLField("URL do Vídeo MP4", max_length=1000, blank=True)
@@ -175,6 +212,18 @@ class TrainingVideo(models.Model):
         if self.drive_video_id:
             return reverse('stream_video', args=[self.id])
         return self.video_url
+
+    @property
+    def scene_list(self) -> list:
+        """Cenas do vídeo. Sem cenas gravadas (vídeos antigos ou sem marcação), é uma cena só, sem imagem."""
+        if self.scenes:
+            return self.scenes
+        text = (self.script_text or "").strip()
+        return [{"ordem": 1, "texto": self.script_text, "imagem": ""}] if text else []
+
+    @property
+    def has_images(self) -> bool:
+        return any(scene.get("imagem") for scene in self.scenes or [])
 
     @property
     def is_in_progress(self) -> bool:

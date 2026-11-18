@@ -1,4 +1,5 @@
 """Armazenamento seguro dos documentos-fonte do pipeline."""
+import unicodedata
 import uuid
 from pathlib import Path
 
@@ -18,6 +19,11 @@ def new_source_path(prefix: str, original_name: str) -> Path:
     temp_dir = Path(settings.TEMP_DOCS_DIR)
     temp_dir.mkdir(parents=True, exist_ok=True)
     return temp_dir / f"{prefix}_{uuid.uuid4().hex[:10]}_{safe_filename(original_name)}"
+
+
+def name_key(name: str) -> str:
+    """Chave para comparar nomes de arquivo ou pasta sem diferenciar acento nem maiúscula ('Vídeos' == 'videos')."""
+    return unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode().strip().casefold()
 
 
 def is_allowed_extension(name: str) -> bool:
