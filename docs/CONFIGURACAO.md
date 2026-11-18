@@ -223,6 +223,8 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 | A marcação | Não é narrada e não conta para o limite de 5.000 caracteres (conta só o texto falado, somando as cenas) |
 | Cena sem texto | É ignorada (a revisão avisa na mensagem do item) |
 | Marcação dentro de uma frase | É texto comum: só vale a linha sozinha |
+| Espaços especiais | Os espaços que o Google Docs e o Word inserem sem avisar (espaço que não quebra, caracteres invisíveis, colchetes largos) são aceitos |
+| Marcação com defeito | Uma linha que **parece** marcação mas não foi reconhecida (por exemplo `[IMAGEM piscina.png]`, sem os dois-pontos) **bloqueia a aprovação** e aparece no aviso do item, para o avatar não ler a marcação em voz alta |
 | Nome do arquivo | Não diferencia maiúscula nem acento. Formatos: png, jpg, webp |
 
 **No Drive.** Coloque as imagens em `<Setor>/Imagens` (a pasta é criada junto com as outras) e clique em **Sincronizar Drive**. O portal cadastra o arquivo pelo nome. Imagem acima de `MAX_IMAGE_MB` (padrão 10) fica marcada como "grande demais" e não é usada; imagem que sai da pasta deixa de existir para o portal.

@@ -16,7 +16,7 @@ from django.utils import timezone
 
 from treinamentos.models import TrainingVideo
 from treinamentos.services.drive_service import GoogleDriveService
-from treinamentos.services.document_parser import DocumentParser, parse_scenes, scenes_text, spoken_chars
+from treinamentos.services.document_parser import DocumentParser, parse_scenes, scenes_text, spoken_chars, stray_marker
 from treinamentos.services.scenes import scene_image_problems
 
 logger = logging.getLogger(__name__)
@@ -66,9 +66,21 @@ def _load(video_id: int) -> Optional[TrainingVideo]:
         return None
 
 
+def _refuse_stray_markers(texts) -> None:
+    """Uma linha parecida com [IMAGEM: ...] que sobrou no texto falado seria LIDA EM VOZ ALTA pelo avatar: não passa."""
+    for number, text in enumerate(texts, start=1):
+        stray = stray_marker(text)
+        if stray:
+            raise ValueError(
+                f"A cena {number} tem uma linha que parece marcação de imagem mas não foi reconhecida (“{stray}”) "
+                "e seria lida em voz alta. Deixe a marcação sozinha numa linha, assim: [IMAGEM: arquivo.jpg]."
+            )
+
+
 def validate_script(script: str) -> None:
     if not script.strip():
         raise ValueError("O roteiro está vazio.")
+    _refuse_stray_markers([script])
     if len(script) > MAX_SCRIPT_CHARS:
         raise ValueError(
             f"Roteiro com {len(script)} caracteres; o limite da HeyGen é {MAX_SCRIPT_CHARS}. "
@@ -83,6 +95,7 @@ def validate_scenes(scenes: list) -> None:
     for scene in scenes:
         if not scene["texto"].strip():
             raise ValueError(f"A cena {scene['ordem']} está sem texto.")
+    _refuse_stray_markers([s["texto"] for s in scenes])
     animated = [s for s in scenes if s.get("animar")]
     for scene in animated:
         if not scene.get("imagem"):

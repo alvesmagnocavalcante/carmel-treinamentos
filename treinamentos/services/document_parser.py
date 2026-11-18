@@ -59,11 +59,33 @@ class DocumentParser:
 
 # Marcação de imagem: uma linha sozinha, ex.: [IMAGEM: piscina.png] ou [IMAGEM: piscina.png | animar: brisa leve].
 # Tolera marcador de lista e negrito ao redor. Depois do "|" vem um modificador opcional (hoje só "animar").
+# Espaço = qualquer espaço menos quebra de linha (`[^\S\r\n]`): inclui o espaço que não quebra (U+00A0) que o
+# Google Docs e o Word colocam sem avisar.
 IMAGE_MARKER_RE = re.compile(
-    r"^[ \t]*(?:[-*•>][ \t]+)?(?:\*\*|__)?\[[ \t]*IMAGEM[ \t]*:[ \t]*(?P<name>[^\]\r\n|]*?)[ \t]*"
-    r"(?:\|[ \t]*(?P<mod>[^\]\r\n]*?)[ \t]*)?\](?:\*\*|__)?[ \t]*$",
+    r"^[^\S\r\n]*(?:[-*•>][^\S\r\n]+)?(?:\*\*|__)?\[[^\S\r\n]*IMAGEM[^\S\r\n]*:[^\S\r\n]*(?P<name>[^\]\r\n|]*?)[^\S\r\n]*"
+    r"(?:\|[^\S\r\n]*(?P<mod>[^\]\r\n]*?)[^\S\r\n]*)?\](?:\*\*|__)?[^\S\r\n]*$",
     flags=re.IGNORECASE | re.MULTILINE,
 )
+# Qualquer coisa que COMECE como uma marcação ("[IMAGEM", "[ imagem"): se sobrar no texto falado, é marcação com defeito.
+STRAY_MARKER_RE = re.compile(r"\[[^\S\r\n]*IMAGEM\b", flags=re.IGNORECASE)
+_INVISIBLE_RE = re.compile("[​‌‍⁠﻿]")  # espaços de largura zero e BOM
+_FULLWIDTH = str.maketrans({"［": "[", "］": "]", "：": ":", "｜": "|"})  # ［ ］ ： ｜
+
+
+def normalize_markup(text: str) -> str:
+    """Tira caracteres invisíveis e troca colchetes, dois-pontos e barra "largos" pelos comuns, para a marcação ser achada."""
+    return _INVISIBLE_RE.sub("", text).translate(_FULLWIDTH)
+
+
+def stray_marker(text: str) -> str:
+    """O trecho do texto falado que parece uma marcação de imagem não reconhecida, ou '' se não há."""
+    text = normalize_markup(text or "")
+    match = STRAY_MARKER_RE.search(text)
+    if not match:
+        return ""
+    line_start = text.rfind("\n", 0, match.start()) + 1
+    line_end = text.find("\n", match.start())
+    return text[line_start: line_end if line_end != -1 else len(text)].strip()[:80]
 ALLOWED_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
 MAX_MOVEMENT_CHARS = 500  # tamanho máximo do texto "como animar" de uma cena
 
@@ -97,6 +119,7 @@ def parse_scenes(raw_text: str, warnings: Optional[List[str]] = None) -> List[di
     chaves, então o formato antigo não muda.
     """
     warn = warnings if warnings is not None else []
+    raw_text = normalize_markup(raw_text)
     matches = list(IMAGE_MARKER_RE.finditer(raw_text))
 
     pieces = []  # (imagem, animar, movimento, texto bruto)
@@ -121,6 +144,10 @@ def parse_scenes(raw_text: str, warnings: Optional[List[str]] = None) -> List[di
         if animate:
             scene.update({"animar": True, "movimento": movement})
         scenes.append(scene)
+        stray = stray_marker(text)
+        if stray:
+            warn.append(f"A cena {scene['ordem']} tem uma linha que parece marcação de imagem mas não foi reconhecida: "
+                        f"“{stray}”. Use uma linha sozinha, como [IMAGEM: arquivo.jpg].")
     return scenes
 
 
