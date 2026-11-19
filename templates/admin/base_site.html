@@ -6,7 +6,6 @@
 <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
 {% include 'partials/fonts.html' %}
 <link rel="stylesheet" href="{% static 'css/carmel_admin.css' %}">
-<link rel="stylesheet" href="{% static 'css/carmel_admin_motion.css' %}">
 {% endblock %}
 
 {% block branding %}
@@ -14,22 +13,15 @@
 <button type="button" class="menu-btn" id="carmel-menu-btn" aria-label="Abrir menu" aria-controls="carmel-nav" aria-expanded="false"><i data-lucide="menu"></i></button>
 {% endif %}
 <div id="site-name">
-    <a href="{% url 'admin:index' %}"><span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span> <small>Administração</small></a>
+    <a href="{% url 'admin:index' %}"><span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span></a>
 </div>
-{% if user.is_authenticated %}<a class="portal-link" href="{% url 'home' %}"><i data-lucide="arrow-left"></i> Voltar ao portal</a>
-<span class="header-theme">{% include "admin/color_theme_toggle.html" %}</span>{% endif %}
-{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
 {% endblock %}
 
 {% block usertools %}
-{% if has_permission %}
-{% firstof user.first_name user.get_username as who %}
-<div id="user-tools">
-    <span class="user-chip"><span class="user-avatar" aria-hidden="true">{{ who|slice:":1"|upper }}</span><span class="user-name">{{ who }}</span></span>
-    {% if user.has_usable_password %}<a href="{% url 'admin:password_change' %}">Alterar senha</a>{% endif %}
-    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+<div class="header-tools">
+    {% if user.is_authenticated %}<a class="portal-link" href="{% url 'home' %}"><i data-lucide="arrow-left"></i> Voltar ao portal</a>{% endif %}
+    <span class="header-theme">{% include "admin/color_theme_toggle.html" %}</span>
 </div>
-{% endif %}
 {% endblock %}
 
 {% block footer %}
@@ -96,27 +88,6 @@
             });
             table.querySelectorAll('tbody tr').forEach(function (tr) {
                 Array.prototype.forEach.call(tr.children, function (cell, i) { if (heads[i]) cell.setAttribute('data-label', heads[i]); });
-            });
-        }
-
-        // Filtros: viram uma barra de menus ao lado da busca; clicar fora (ou em outro menu) fecha o aberto.
-        var filter = document.getElementById('changelist-filter');
-        var toolbar = document.getElementById('toolbar');
-        if (filter && toolbar) {
-            toolbar.appendChild(filter);
-            filter.classList.add('filter-bar');
-            var menus = filter.querySelectorAll('details');
-            menus.forEach(function (menu) {
-                menu.removeAttribute('open');
-                menu.addEventListener('toggle', function () {
-                    if (menu.open) menus.forEach(function (other) { if (other !== menu) other.removeAttribute('open'); });
-                });
-            });
-            document.addEventListener('click', function (e) {
-                menus.forEach(function (menu) { if (menu.open && !menu.contains(e.target)) menu.removeAttribute('open'); });
-            });
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') menus.forEach(function (menu) { menu.removeAttribute('open'); });
             });
         }
     })();

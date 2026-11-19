@@ -1,30 +1,44 @@
 {% load i18n %}
 <nav id="carmel-nav" aria-label="Menu principal">
-    <a href="{% url 'admin:index' %}" class="nav-link{% if request.path == '/admin/' %} active{% endif %}">
-        <i data-lucide="layout-dashboard" class="nav-ico"></i> Painel inicial
+    <a class="nav-brand" href="{% url 'admin:index' %}">
+        <span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span>
+        <small>Administração</small>
     </a>
-    {% for group in carmel_nav %}
-    <div class="nav-group">
-        <h3>{{ group.title }}</h3>
-        {% for item in group.items %}
-        <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}"{% if item.active %} aria-current="page"{% endif %}>
-            <i data-lucide="{{ item.icon }}" class="nav-ico"></i> {{ item.name }}
+    <div class="nav-scroll">
+        <a href="{% url 'admin:index' %}" class="nav-link{% if request.path == '/admin/' %} active{% endif %}">
+            <i data-lucide="layout-dashboard" class="nav-ico"></i> Painel inicial
         </a>
+        {% for group in carmel_nav %}
+        <div class="nav-group">
+            <h3>{{ group.title }}</h3>
+            {% for item in group.items %}
+            <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}"{% if item.active %} aria-current="page"{% endif %}>
+                <i data-lucide="{{ item.icon }}" class="nav-ico"></i> {{ item.name }}
+            </a>
+            {% endfor %}
+        </div>
         {% endfor %}
+        <div class="nav-group">
+            <h3>Portal</h3>
+            <a href="{% url 'home' %}" class="nav-link nav-portal"><i data-lucide="arrow-left-circle" class="nav-ico"></i> Voltar ao portal</a>
+            <a href="{% url 'queue' %}" class="nav-link"><i data-lucide="list-checks" class="nav-ico"></i> Fila de vídeos</a>
+        </div>
     </div>
-    {% endfor %}
-    <div class="nav-group">
-        <h3>Portal</h3>
-        <a href="{% url 'home' %}" class="nav-link nav-portal"><i data-lucide="arrow-left-circle" class="nav-ico"></i> Voltar ao portal</a>
-        <a href="{% url 'queue' %}" class="nav-link"><i data-lucide="list-checks" class="nav-ico"></i> Fila de vídeos</a>
-    </div>
-    <div class="nav-group nav-account">
-        <h3>Minha conta</h3>
-        <div class="nav-user">{{ user.get_full_name|default:user.get_username }}</div>
-        <a href="{% url 'admin:password_change' %}" class="nav-link"><i data-lucide="key-round" class="nav-ico"></i> Alterar senha</a>
-        <form method="post" action="{% url 'admin:logout' %}">{% csrf_token %}
-            <button type="submit" class="nav-link nav-logout"><i data-lucide="log-out" class="nav-ico"></i> Encerrar sessão</button>
-        </form>
+    <div class="nav-account">
+        {% firstof user.first_name user.get_username as who %}
+        <div class="nav-user">
+            <span class="nav-avatar" aria-hidden="true">{{ who|slice:":1"|upper }}</span>
+            <span class="nav-who">
+                <strong>{{ user.get_full_name|default:user.get_username }}</strong>
+                <span>{% if user.is_superuser or user.profile.is_global %}Administrador{% else %}Gestor de setor{% endif %}</span>
+            </span>
+        </div>
+        <div class="nav-actions">
+            <a href="{% url 'admin:password_change' %}" class="nav-link"><i data-lucide="key-round" class="nav-ico"></i> Senha</a>
+            <form method="post" action="{% url 'admin:logout' %}">{% csrf_token %}
+                <button type="submit" class="nav-link nav-logout"><i data-lucide="log-out" class="nav-ico"></i> Sair</button>
+            </form>
+        </div>
     </div>
 </nav>
 <div id="carmel-nav-backdrop" hidden></div>

@@ -9,15 +9,17 @@
 
 {% block content %}
 <div class="dash">
-    <header class="dash-hello">
-        <h1>Olá, {{ user.first_name|default:user.get_username }}!</h1>
-        <p>Veja como estão os treinamentos e acesse o que precisar.</p>
+    <header class="dash-hero">
+        <div>
+            <h1>Olá, {{ user.first_name|default:user.get_username }}!</h1>
+            <p>Veja como estão os treinamentos e acesse o que precisar.</p>
+        </div>
+        <div class="dash-actions">
+            {% if perms.auth.add_user %}<a class="dash-btn" href="{% url 'admin:auth_user_add' %}"><i data-lucide="user-plus"></i> Novo usuário</a>{% endif %}
+            {% if perms.treinamentos.add_department %}<a class="dash-btn" href="{% url 'admin:treinamentos_department_add' %}"><i data-lucide="building-2"></i> Novo setor</a>{% endif %}
+            <a class="dash-btn" href="{% url 'queue' %}"><i data-lucide="list-checks"></i> Fila de vídeos</a>
+        </div>
     </header>
-
-    <div class="dash-actions">
-        {% if perms.auth.add_user %}<a class="dash-btn" href="{% url 'admin:auth_user_add' %}"><i data-lucide="user-plus"></i> Novo usuário</a>{% endif %}
-        {% if perms.treinamentos.add_department %}<a class="dash-btn" href="{% url 'admin:treinamentos_department_add' %}"><i data-lucide="building-2"></i> Novo setor</a>{% endif %}
-        <a class="dash-btn" href="{% url 'queue' %}"><i data-lucide="list-checks"></i> Fila de vídeos</a>    </div>
 
     {% if sectors_without_drive %}
     <div class="dash-alert" role="status">
@@ -45,67 +47,66 @@
     </section>
     {% endif %}
 
-    {% if sectors %}
-    <section class="dash-section">
-        <h2>Setores</h2>
-        <div class="sectors">
-            {% for s in sectors %}
-            <a class="sector" href="{{ s.url }}">
-                <span class="sector-name">{{ s.name }}</span>
-                <span class="sector-stats">
-                    <span><strong>{{ s.published }}</strong> publicado{{ s.published|pluralize }}</span>
-                    {% if s.waiting %}<span><strong>{{ s.waiting }}</strong> em espera</span>{% endif %}
-                </span>
-                {% if s.has_drive %}
-                <span class="pill pill-ok">Drive configurado</span>
-                {% else %}
-                <span class="pill pill-warn">Sem pasta do Drive</span>
-                {% endif %}
-            </a>
-            {% endfor %}
-        </div>
-    </section>
-    {% endif %}
+    <div class="dash-cols">
+        {% if sectors %}
+        <section class="dash-card">
+            <h2>Setores</h2>
+            <table class="sector-table">
+                <thead><tr><th>Setor</th><th class="num">Publicados</th><th class="num">Em espera</th><th>Drive</th></tr></thead>
+                <tbody>
+                {% for s in sectors %}
+                <tr>
+                    <td><a href="{{ s.url }}">{{ s.name }}</a></td>
+                    <td class="num">{{ s.published }}</td>
+                    <td class="num">{{ s.waiting|default:"–" }}</td>
+                    <td>{% if s.has_drive %}<span class="pill pill-ok">Configurado</span>{% else %}<span class="pill pill-warn">Sem pasta</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
 
-    <section class="dash-section">
-        <h2>Atalhos</h2>
-        <div class="groups">
-            {% for group in carmel_nav %}
-            <div class="group">
-                <h3>{{ group.title }}</h3>
-                {% for item in group.items %}
-                <div class="shortcut">
-                    <a class="shortcut-main" href="{{ item.url }}">
-                        <span class="shortcut-ico"><i data-lucide="{{ item.icon }}"></i></span>
-                        <span><strong>{{ item.name }}</strong><small>{{ item.description }}</small></span>
-                    </a>
-                    {% if item.add_url %}<a class="shortcut-add" href="{{ item.add_url }}" title="Adicionar" aria-label="Adicionar em {{ item.name }}"><i data-lucide="plus"></i></a>{% endif %}
+        <div class="dash-side">
+            <section class="dash-card" style="margin-bottom:24px">
+                <h2>Atividade recente</h2>
+                {% get_admin_log 8 as admin_log for_user user %}
+                {% if not admin_log %}
+                <p class="dash-empty">Nada por aqui ainda. As alterações que você fizer aparecem nesta lista.</p>
+                {% else %}
+                <ul class="activity">
+                    {% for entry in admin_log %}
+                    <li>
+                        <span class="activity-dot {% if entry.is_addition %}add{% elif entry.is_deletion %}del{% else %}chg{% endif %}"></span>
+                        <span>
+                            {% if entry.is_addition %}Adicionou{% elif entry.is_deletion %}Removeu{% else %}Alterou{% endif %}
+                            {% if entry.is_deletion or not entry.get_admin_url %}<strong>{{ entry.object_repr }}</strong>{% else %}<a href="{{ entry.get_admin_url }}"><strong>{{ entry.object_repr }}</strong></a>{% endif %}
+                            {% if entry.content_type %}<small>{{ entry.content_type.name|capfirst }}</small>{% endif %}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </section>
+
+            <section class="dash-card">
+                <h2>Atalhos</h2>
+                {% for group in carmel_nav %}
+                <h3 class="group-title">{{ group.title }}</h3>
+                <div class="shortcut-list">
+                    {% for item in group.items %}
+                    <div class="shortcut">
+                        <a class="shortcut-main" href="{{ item.url }}">
+                            <span class="shortcut-ico"><i data-lucide="{{ item.icon }}"></i></span>
+                            <span><strong>{{ item.name }}</strong><small>{{ item.description }}</small></span>
+                        </a>
+                        {% if item.add_url %}<a class="shortcut-add" href="{{ item.add_url }}" title="Adicionar" aria-label="Adicionar em {{ item.name }}"><i data-lucide="plus"></i></a>{% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
                 {% endfor %}
-            </div>
-            {% endfor %}
+            </section>
         </div>
-    </section>
-
-    <section class="dash-section">
-        <h2>Atividade recente</h2>
-        {% get_admin_log 8 as admin_log for_user user %}
-        {% if not admin_log %}
-        <p class="muted">Nada por aqui ainda. As alterações que você fizer aparecem nesta lista.</p>
-        {% else %}
-        <ul class="activity">
-            {% for entry in admin_log %}
-            <li>
-                <span class="activity-dot {% if entry.is_addition %}add{% elif entry.is_deletion %}del{% else %}chg{% endif %}"></span>
-                <span>
-                    {% if entry.is_addition %}Adicionou{% elif entry.is_deletion %}Removeu{% else %}Alterou{% endif %}
-                    {% if entry.is_deletion or not entry.get_admin_url %}<strong>{{ entry.object_repr }}</strong>{% else %}<a href="{{ entry.get_admin_url }}"><strong>{{ entry.object_repr }}</strong></a>{% endif %}
-                    {% if entry.content_type %}<small>{{ entry.content_type.name|capfirst }}</small>{% endif %}
-                </span>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    </section>
+    </div>
 </div>
 {% endblock %}

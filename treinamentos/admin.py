@@ -50,7 +50,7 @@ def user_resorts(obj):
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
     list_display = ('username', 'first_name', 'last_name', 'email', user_department, user_role, user_resorts, 'is_active')
-    list_filter = ('profile__self_declared', 'profile__department', 'profile__role', 'profile__resorts', 'is_active', 'is_staff')
+    list_filter = ()  # sem painel de filtros (a busca basta); sem isso o Django traz o dele
     list_select_related = ('profile__department',)
     list_per_page = 25
 
@@ -118,7 +118,6 @@ class DepartmentAdmin(admin.ModelAdmin):
 class TrainingVideoAdmin(admin.ModelAdmin):
     list_display = ('title', 'department', 'status_badge', 'duration')
     ordering = ('-created_at',)
-    list_filter = ('status', 'department', 'resorts', 'created_at')
     filter_horizontal = ('resorts',)
     search_fields = ('title', 'file_name', 'script_text')
     list_select_related = ('department', 'created_by')
@@ -160,7 +159,6 @@ class TrainingVideoAdmin(admin.ModelAdmin):
 @admin.register(VideoProgress)
 class VideoProgressAdmin(admin.ModelAdmin):
     list_display = ('user', 'video', 'watched_at', 'completed')
-    list_filter = ('video__department', 'completed', 'watched_at')
     search_fields = ('user__username', 'video__title')
     list_select_related = ('user', 'video')
     list_per_page = 25
