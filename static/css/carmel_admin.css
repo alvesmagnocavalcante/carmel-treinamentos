@@ -90,7 +90,7 @@ a:hover { text-decoration: none; }
 #header, div.breadcrumbs, #footer { flex-shrink: 0; }  /* o contêiner do Django tem altura fixa: nada pode encolher */
 .main { display: block; min-height: 0; background: none; }
 .main::before { display: none; }
-.main > .content, .content { max-width: 1320px; min-width: 0; }
+.main > .content, .content { max-width: none; min-width: 0; }
 
 @media (min-width: 1025px) {
     body:not(.login):not(.popup) #container { margin-left: var(--side-w); }
@@ -554,7 +554,7 @@ select[multiple] { min-width: 260px; max-width: 100%; }
 /* ---- 12. Espaçamento enxuto e controles com a mesma altura ----------------------------------------------------------- */
 #header { height: 56px; padding: 0 32px; }
 div.breadcrumbs { padding: 4px 32px 0; }
-#content { padding: 6px 32px 48px; max-width: 1640px; }
+#content { padding: 6px 32px 48px; max-width: none; }
 #content h1 { font-size: 26px; margin: 4px 0 16px; }
 #content > h2 { margin: -8px 0 14px; }
 #content .object-tools { top: 8px; right: 32px; }
@@ -625,3 +625,12 @@ fieldset.module { margin-bottom: 16px; }
 #result_list thead th.action-checkbox-column { width: auto; min-width: 34px; margin-right: 6px; flex: none; }
 #result_list thead th.action-checkbox-column .text { width: auto; padding: 0; }
 #result_list thead tr { padding-left: 7px; }
+
+/* ---- 14. Cartões em linha: título à esquerda e campos ao lado, sem sobras de espaço --------------------------------- */
+#result_list tbody { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+#result_list tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 10px 16px; }
+#changelist #result_list tbody th { flex: 0 0 200px; grid-column: auto; margin: 0; }
+#changelist #result_list tbody td { flex: 1 1 110px; min-width: 70px; }
+#changelist #result_list tbody td.field-email { flex: 3 1 250px; overflow-wrap: break-word; }
+#changelist #result_list tbody td.action-checkbox { position: static; transform: none; flex: 0 0 auto; min-width: 0; margin-right: -6px; display: flex; align-items: center; }
+@media (max-width: 767px) { #result_list tbody tr { gap: 8px 18px; padding: 12px; } #changelist #result_list tbody th { flex: 1 0 100%; } }
