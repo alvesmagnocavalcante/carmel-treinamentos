@@ -38,7 +38,9 @@ class AdminPanelTests(BaseTestCase):
         self.assertNotIn("Grupos", items)
         self.assertNotIn("Configurações", items)
         self.assertContains(resp, 'id="carmel-nav"')
-        self.assertContains(resp, "Encerrar sessão")  # conta no menu (no celular o cabeçalho não mostra o usuário)
+        self.assertContains(resp, "nav-account")  # a conta fica no rodapé do menu, com o botão de sair
+        self.assertContains(resp, "nav-logout")
+        self.assertContains(resp, 'action="/admin/logout/"')
         self.assertContains(resp, "header-theme")
         self.assertContains(resp, "stopImmediatePropagation")  # tema só claro/escuro, sem o ciclo "automático" do Django
         # a página de uma lista marca o item ativo do menu

@@ -507,3 +507,44 @@ select[multiple] { min-width: 260px; max-width: 100%; }
     #carmel-nav { box-shadow: none; }
     body.menu-open #carmel-nav { box-shadow: 14px 0 34px -12px rgba(0, 0, 0, .5); }
 }
+
+/* ---- 11. Listas em cartões (sem tabela) ------------------------------------------------------------------------- */
+/* Cada registro é um cartão: título em cima e os campos numa grade, cada um com o nome (data-label, posto pelo JavaScript) acima do valor.
+   O cabeçalho vira uma linha de botões de ordenação. */
+#changelist .results { background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+#result_list, #result_list tbody, #result_list thead { display: block; width: 100%; border: 0; background: transparent; }
+#result_list thead tr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; background: transparent; }
+#result_list thead th {
+    position: static; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); box-shadow: var(--shadow-sm); font-size: 11px; letter-spacing: .06em;
+}
+#result_list thead th.action-checkbox-column { width: auto; height: auto; padding: 8px 12px; }
+#result_list thead th.action-checkbox-column .text { display: flex; align-items: center; width: auto; }
+#result_list thead th.action-checkbox-column input { margin: 0; }
+#result_list thead th.sorted { border-color: var(--accent); background: var(--accent-soft); }
+#result_list thead th.sorted a { color: var(--accent); }
+#result_list thead th .sortoptions { display: inline-flex; align-items: center; gap: 2px; margin: 0; float: none; }
+#result_list thead th .text { padding: 0; }
+#result_list tbody tr {
+    position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px 24px; align-items: start;
+    padding: 20px 22px 22px 60px; margin: 0 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .2s, transform .2s;
+}
+#result_list tbody tr:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+#changelist #result_list tbody tr:hover td, #changelist #result_list tbody tr:hover th,
+#changelist #result_list tbody tr.selected td, #changelist #result_list tbody tr.selected th { background: transparent; }
+#result_list tbody tr.selected { background: var(--accent-soft); border-color: var(--accent); }
+#changelist #result_list tbody td, #changelist #result_list tbody th { display: block; padding: 0; border: 0; min-width: 0; font-size: 14px; }
+#changelist #result_list tbody td.action-checkbox { position: absolute; left: 22px; top: 23px; padding: 0; }
+#changelist #result_list tbody th { grid-column: 1 / -1; font-size: 17px; font-weight: 700; color: var(--ink); }
+#result_list tbody td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+#result_list tbody td.field-email { grid-column: span 2; }
+#result_list tbody td:empty { display: none; }
+#result_list tbody td input[type=number], #result_list tbody td input[type=text] { width: 90px; }
+@media (max-width: 767px) {
+    #result_list tbody tr { grid-template-columns: minmax(0, 1fr); padding: 16px 16px 16px 52px; gap: 8px; }
+    #result_list tbody tr:hover { transform: none; }
+    #changelist #result_list tbody td.action-checkbox { left: 16px; top: 18px; }
+}
