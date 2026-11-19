@@ -42,7 +42,7 @@ Use o **PowerShell**, dentro da pasta do projeto.
    .venv\Scripts\python.exe manage.py migrate
    .venv\Scripts\python.exe manage.py seed_carmel
    ```
-   O `seed_carmel` cria os 6 setores (RH, Recepção, Governança, Alimentos & Bebidas, Lazer & Experiências, Manutenção) e 3 usuários de teste. Pode repetir sem problema.
+   O `seed_carmel` cria os 21 setores (os mesmos nomes da Humand, mais o RH) e, se `SEED_DEMO_USERS=true`, 3 usuários de teste. Pode repetir sem problema.
 4. Suba o portal:
    ```
    .venv\Scripts\python.exe manage.py runserver 8008

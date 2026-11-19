@@ -8,13 +8,29 @@ from treinamentos.models import Department, UserProfile
 
 DEFAULT_PASSWORD = "carmel2026"
 
+# Os mesmos setores da Humand (e das pastas do Drive); o RH mantém o nome antigo, já configurado em produção.
 DEPARTMENTS = [
     ("rh", "Recursos Humanos & Cultura"),
-    ("recepcao", "Recepção & Concierge"),
-    ("governanca", "Governança & Rouparia"),
-    ("alimentos_bebidas", "Alimentos & Bebidas"),
-    ("experiencias", "Lazer & Experiências"),
-    ("manutencao", "Manutenção & Engenharia"),
+    ("administracao", "Administração"),
+    ("almoxarifado", "Almoxarifado"),
+    ("bar-e-restaurante", "Bar e Restaurante"),
+    ("comercial", "Comercial"),
+    ("compras", "Compras"),
+    ("contabilidade", "Contabilidade"),
+    ("controladoria", "Controladoria"),
+    ("cozinha", "Cozinha"),
+    ("financeiro", "Financeiro"),
+    ("governanca", "Governança"),
+    ("logistica", "Logística"),
+    ("manutencao", "Manutenção"),
+    ("marketing", "Marketing"),
+    ("portaria", "Portaria"),
+    ("qualidade", "Qualidade"),
+    ("recepcao", "Recepção"),
+    ("reservas", "Reservas"),
+    ("rm", "RM"),
+    ("setor-pessoal", "Setor pessoal"),
+    ("tecnologia-da-informacao", "Tecnologia da Informação"),
 ]
 
 USERS = [

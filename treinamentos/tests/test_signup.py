@@ -164,19 +164,12 @@ class SignupTests(BaseTestCase):
         self.assertIn("Vídeo da Governança", page)  # o do setor dele
         self.assertNotIn("Vídeo RH", page)          # e só ele
 
-    def test_humand_sector_names_are_linked_to_portal_sectors_out_of_the_box(self):
+    def test_humand_sector_with_the_same_name_links_by_itself(self):
         from ..models import Department
-        # em banco com os setores do seed, os nomes da Humand já apontam para o setor certo
-        for code, name in (("alimentos_bebidas", "Alimentos & Bebidas"), ("recepcao", "Recepção & Concierge")):
-            Department.objects.get_or_create(code=code, defaults={"name": name})
-        from importlib import import_module
-        migration = import_module("treinamentos.migrations.0015_correspondencias_setores_humand")
-        from django.apps import apps
-        migration.seed(apps, None)
-        for humand_name, code in (("Cozinha", "alimentos_bebidas"), ("Portaria", "recepcao"), ("Bar e Restaurante", "alimentos_bebidas")):
-            alias = HumandAlias.objects.get(name=humand_name)
-            self.assertEqual(alias.department.code, code)
-        self.assertFalse(HumandAlias.objects.filter(name="Comercial").exists())  # sem equivalente: de fora
+        cozinha = Department.objects.create(code="cozinha", name="Cozinha")
+        FakeHumand(self, person(segmentations=[{"group": "Carmel Taíba", "item": "Cozinha"}]))
+        self.register()
+        self.assertEqual(User.objects.get(username=CPF_DIGITS).profile.department, cozinha)
 
     def test_unknown_department_still_creates_the_account_without_sector(self):
         FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"}, {"group": "X", "item": "Setor Novo"}]))
@@ -274,3 +267,68 @@ class SignupTests(BaseTestCase):
             self.assertContains(login, "<label for=\"username\">CPF</label>")
             self.client.force_login(self.colab)
             self.assertRedirects(self.client.get(reverse("signup")), reverse("home"), fetch_redirect_response=False)
+
+
+class SectorsMigrationTests(BaseTestCase):
+    """Migração 0016: setores do portal passam a ter os nomes da Humand, sem mexer no RH nem perder dados."""
+
+    def run_migration(self):
+        from importlib import import_module
+        from django.apps import apps
+        import_module("treinamentos.migrations.0016_setores_da_humand").apply(apps, None)
+
+    def setUp(self):
+        super().setUp()
+        from ..models import Department
+        self.rh.name, self.rh.code, self.rh.drive_folder_id = "Recursos Humanos & Cultura", "rh", "pasta-rh"
+        self.rh.save()
+        self.gov.delete()
+        Department.objects.create(code="governanca", name="Governança & Rouparia", drive_folder_id="pasta-gov")
+        Department.objects.create(code="alimentos_bebidas", name="Alimentos & Bebidas")
+        Department.objects.create(code="experiencias", name="Lazer & Experiências")
+
+    def test_rh_is_untouched_and_existing_sectors_keep_their_data(self):
+        from ..models import Department
+        self.run_migration()
+        rh = Department.objects.get(code="rh")
+        self.assertEqual((rh.name, rh.drive_folder_id), ("Recursos Humanos & Cultura", "pasta-rh"))
+        gov = Department.objects.get(code="governanca")
+        self.assertEqual((gov.name, gov.drive_folder_id), ("Governança", "pasta-gov"))  # só o nome muda
+
+    def test_all_humand_sectors_exist_afterwards_and_the_unused_one_is_gone(self):
+        from ..models import Department
+        from importlib import import_module
+        self.run_migration()
+        names = set(Department.objects.values_list("name", flat=True))
+        for wanted in import_module("treinamentos.migrations.0016_setores_da_humand").HUMAND_SECTORS:
+            self.assertIn(wanted, names)
+        self.assertTrue(Department.objects.filter(code="bar-e-restaurante", name="Bar e Restaurante").exists())
+        self.assertFalse(Department.objects.filter(code__in=("alimentos_bebidas", "experiencias")).exists())
+
+    def test_sector_with_content_is_never_deleted(self):
+        from ..models import Department
+        Department.objects.filter(code="experiencias").update(drive_folder_id="pasta-lazer")
+        self.run_migration()
+        self.assertTrue(Department.objects.filter(code="experiencias").exists())
+
+    def test_old_aliases_go_away_and_rh_stays_linked_to_recursos_humanos(self):
+        from ..models import Department
+        magna = HumandAlias.objects.filter(resort__isnull=False).count()
+        HumandAlias.objects.create(name="Cozinha", department=Department.objects.get(code="governanca"))  # erro antigo
+        self.run_migration()
+        self.assertFalse(HumandAlias.objects.filter(name="Cozinha").exists())
+        self.assertEqual(HumandAlias.objects.get(name="Recursos Humanos").department.code, "rh")
+        self.assertEqual(HumandAlias.objects.filter(resort__isnull=False).count(), magna)  # resorts intactos
+
+    def test_running_twice_changes_nothing_more(self):
+        from ..models import Department
+        self.run_migration()
+        total = Department.objects.count()
+        self.run_migration()
+        self.assertEqual(Department.objects.count(), total)
+
+    def test_fresh_database_without_the_seed_is_left_alone(self):
+        from ..models import Department
+        Department.objects.all().delete()
+        self.run_migration()
+        self.assertEqual(Department.objects.count(), 0)
