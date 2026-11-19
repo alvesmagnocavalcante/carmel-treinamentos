@@ -310,6 +310,18 @@ class SignupTests(BaseTestCase):
         self.assertFalse(user.is_superuser)
         self.assertEqual(user.profile.department, self.gov)  # setor vem da Humand, não do formulário
 
+    def test_password_fields_have_a_show_hide_button(self):
+        FakeHumand(self, person())
+        self.identify()
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        self.assertEqual(page.count("data-pw-toggle"), 2)  # senha e confirmação
+        self.assertEqual(page.count('type="password"'), 2)  # começam ocultas
+        self.assertIn("password-toggle.js", page)
+        with override_settings(HUMAND_API_KEY="k"):
+            login = self.client.get(reverse("login")).content.decode()
+        self.assertEqual(login.count("data-pw-toggle"), 1)
+        self.assertIn("password-toggle.js", login)
+
     def test_signup_is_off_without_key_or_when_disabled(self):
         for name in ("signup", "signup_confirm"):
             with override_settings(HUMAND_API_KEY=""):

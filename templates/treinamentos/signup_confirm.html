@@ -76,7 +76,11 @@
                 <label for="id_password">Crie uma senha</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='lock' %}
-                    <input id="id_password" type="password" name="password" class="input" autocomplete="new-password" required>
+                    <input id="id_password" type="password" name="password" class="input has-toggle" autocomplete="new-password" required>
+                    <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha" aria-pressed="false">
+                        <span data-pw-show>{% include 'partials/icon.html' with name='eye' %}</span>
+                        <span data-pw-hide hidden>{% include 'partials/icon.html' with name='eye-off' %}</span>
+                    </button>
                 </div>
                 {% for e in form.password.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
             </div>
@@ -84,7 +88,11 @@
                 <label for="id_password2">Confirmar senha</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='lock' %}
-                    <input id="id_password2" type="password" name="password2" class="input" autocomplete="new-password" required>
+                    <input id="id_password2" type="password" name="password2" class="input has-toggle" autocomplete="new-password" required>
+                    <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha" aria-pressed="false">
+                        <span data-pw-show>{% include 'partials/icon.html' with name='eye' %}</span>
+                        <span data-pw-hide hidden>{% include 'partials/icon.html' with name='eye-off' %}</span>
+                    </button>
                 </div>
                 {% for e in form.password2.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
             </div>
@@ -96,5 +104,6 @@
 </main>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
+<script src="{% static 'js/password-toggle.js' %}"></script>
 </body>
 </html>

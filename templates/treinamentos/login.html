@@ -52,7 +52,11 @@
                 <label for="password">Senha</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='lock' %}
-                    <input id="password" type="password" name="password" class="input" autocomplete="current-password" required>
+                    <input id="password" type="password" name="password" class="input has-toggle" autocomplete="current-password" required>
+                    <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha" aria-pressed="false">
+                        <span data-pw-show>{% include 'partials/icon.html' with name='eye' %}</span>
+                        <span data-pw-hide hidden>{% include 'partials/icon.html' with name='eye-off' %}</span>
+                    </button>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary btn-lg">Acessar plataforma</button>
@@ -65,5 +69,6 @@
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
 <script src="{% static 'js/cpf-mask.js' %}"></script>
+<script src="{% static 'js/password-toggle.js' %}"></script>
 </body>
 </html>

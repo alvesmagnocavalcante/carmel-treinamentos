@@ -409,3 +409,11 @@ textarea.script-box { width: 100%; max-width: 100%; }
 .confirm-row + .confirm-row { border-top: 1px solid var(--border, rgba(128,128,128,.2)); }
 .confirm-row span { opacity: .7; }
 .confirm-row strong { text-align: right; font-weight: 600; }
+
+/* Botão de olho (mostrar/ocultar senha) */
+.input-icon .input.has-toggle { padding-right: 46px; }
+.pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--text-3); cursor: pointer; transition: color .15s ease, background .15s ease; }
+.pw-toggle:hover { color: var(--text); background: rgba(128, 128, 128, .12); }
+.pw-toggle:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 1px; }
+.pw-toggle [hidden] { display: none; }
+.pw-toggle .icon { position: static; transform: none; pointer-events: none; }
