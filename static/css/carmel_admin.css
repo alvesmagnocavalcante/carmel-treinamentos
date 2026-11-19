@@ -512,16 +512,6 @@ fieldset .description { color: var(--body-quiet-color); font-size: 13px; padding
     }
     #user-tools::-webkit-scrollbar { display: none; }
 
-    /* Filtro das listas: fica acima da tabela e recolhido até o usuário tocar em "Filtro" */
-    #changelist .changelist-form-container { flex-direction: column; }
-    #changelist-filter {
-        order: -1; width: 100%; min-width: 0; margin: 0 0 14px; float: none; position: static; padding-bottom: 0;
-    }
-    #changelist-filter h2 { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; margin: 0; }
-    #changelist-filter h2::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s; }
-    #changelist-filter.open h2::after { transform: rotate(-135deg); }
-    #changelist-filter:not(.open) > *:not(h2) { display: none; }
-    #changelist-filter.open { padding-bottom: 8px; }
 }
 @media (max-width: 767px) {
     .portal-link { display: none; }
@@ -565,14 +555,6 @@ fieldset.module > h2.fieldset-heading, fieldset.module > h2 {
 }
 fieldset.collapse > h2 { cursor: pointer; }
 
-/* Filtro das listas em telas pequenas: acima da tabela e recolhido */
-@media (max-width: 1024px) {
-    #changelist .changelist-form-container #changelist-filter { order: -1 !important; width: 100%; margin: 0 0 14px; }
-}
-@media (max-width: 1024px) {
-    #changelist .changelist-form-container #changelist-filter { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; }
-    #header { gap: 12px; padding-bottom: 12px; }
-}
 
 /* ==========================================================================
    Celular e tablet: cabeçalho de uma linha, conta no menu, listas em cartões
@@ -710,3 +692,89 @@ body.login #container { height: auto !important; min-height: 0 !important; displ
     body .aligned .form-row > div, body fieldset.module .form-row > div { width: 100% !important; max-width: 100% !important; }
     body .aligned .form-row, body .aligned .form-row.field-box { max-width: 100%; }
 }
+
+
+/* ==== Melhorias do painel (listas, topo, mensagens, formulários) ================================================ */
+
+/* Lista: a caixa "module" do Django não pode virar um cartão que corta a tabela e prende o filtro */
+#changelist.module { border: 0; border-radius: 0; box-shadow: none; background: transparent; overflow: visible; }
+#changelist { display: flex; gap: 24px; align-items: flex-start; }
+#changelist .changelist-form-container { flex: 1 1 auto; min-width: 0; }
+
+/* Filtros: barra de menus ao lado da busca (a tabela usa a largura toda). Sem JavaScript, volta a ser o painel lateral. */
+#changelist-filter { flex: 0 0 236px; min-width: 0; position: sticky; top: 84px; max-height: calc(100vh - 108px); overflow-y: auto; order: 1; }
+#changelist-filter summary { cursor: pointer; list-style: none; font: 600 13px 'Inter', system-ui, sans-serif; color: var(--body-medium-color); }
+#changelist-filter summary::-webkit-details-marker, #changelist-filter summary::before { display: none; }
+#changelist-filter h3 { margin: 0; font-size: inherit; text-transform: none; letter-spacing: 0; padding: 0; color: inherit; }
+#toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+#toolbar > form { flex: 1 1 340px; min-width: 0; }
+#changelist-filter.filter-bar { position: static; flex: 0 1 auto; max-height: none; overflow: visible; background: transparent; border: 0; padding: 0; order: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filter-bar > h2, .filter-bar #changelist-filter-extra-actions { display: none; }
+.filter-bar details { position: relative; border: 1px solid var(--border-color); border-radius: 999px; background: var(--body-bg); transition: border-color .15s, background .15s; }
+.filter-bar details:hover, .filter-bar details[open] { border-color: var(--primary); }
+.filter-bar details:has(li.selected:not(:first-child)) { border-color: var(--primary); background: var(--selected-bg); }
+.filter-bar summary { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; }
+.filter-bar summary::after { content: ""; width: 6px; height: 6px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); opacity: .65; }
+.filter-bar details > ul { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 220px; max-height: 320px; overflow: auto; margin: 0; padding: 8px; list-style: none; background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 28px rgba(0, 0, 0, .28); }
+.filter-bar details > ul li a { white-space: nowrap; }
+
+/* Busca e ações */
+#toolbar { margin-bottom: 14px; }
+#changelist-search > div { display: flex; align-items: center; gap: 10px; }
+#changelist-search label { display: none; }
+#changelist-search #searchbar { flex: 1 1 280px; max-width: 420px; height: 38px; padding: 0 14px; }
+#changelist-search input[type=submit] { height: 38px; background: var(--primary); color: var(--primary-fg); padding: 0 18px; }
+#changelist-search input[type=submit]:hover { background: var(--link-hover-color); }
+#changelist .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+#changelist .actions label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--body-medium-color); }
+#changelist .actions select { height: 36px; }
+#changelist .actions .button { height: 36px; padding: 0 16px; background: var(--primary); color: var(--primary-fg); }
+#changelist .actions span.action-counter { color: var(--body-quiet-color); font-size: 13px; }
+#changelist .results { box-shadow: 0 1px 2px rgba(35, 29, 24, .05); }
+
+/* Topo: nome, trocar senha e sair */
+#user-tools { display: flex; align-items: center; gap: 4px; }
+#user-tools .user-chip { display: inline-flex; align-items: center; gap: 9px; padding: 4px 12px 4px 4px; margin-right: 6px; border-radius: 999px; background: var(--darkened-bg); border: 1px solid var(--border-color); color: var(--header-color); font-weight: 600; }
+#user-tools .user-avatar { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: var(--primary-fg); font: 700 12px 'Inter', system-ui, sans-serif; }
+#user-tools .user-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#user-tools a, #user-tools button { padding: 7px 12px; border-radius: 8px; font: 600 12.5px 'Inter', system-ui, sans-serif; text-transform: none; letter-spacing: 0; background: transparent; border: 0; cursor: pointer; }
+#user-tools a:hover, #user-tools button:hover { background: var(--darkened-bg); }
+#logout-form { display: inline; margin: 0; }
+
+/* Mensagens (ex.: "Removido 1 usuário com sucesso") */
+ul.messagelist { padding: 0; margin: 0 0 18px; }
+ul.messagelist li { position: relative; border: 1px solid var(--border-color); border-left-width: 4px; background: var(--darkened-bg); color: var(--body-fg); padding: 13px 16px; font-size: 13.5px; box-shadow: 0 1px 2px rgba(35, 29, 24, .05); }
+ul.messagelist li.success { border-left-color: #3F9B5F; background: color-mix(in srgb, #3F9B5F 10%, var(--body-bg)); }
+ul.messagelist li.warning { border-left-color: #D69A2D; background: color-mix(in srgb, #D69A2D 12%, var(--body-bg)); }
+ul.messagelist li.error { border-left-color: #D2493F; background: color-mix(in srgb, #D2493F 10%, var(--body-bg)); }
+ul.messagelist li::before { display: none; }
+
+/* Botões de salvar: um principal e os outros secundários, todos com o mesmo tamanho e sem caixa alta */
+.submit-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.submit-row input[type=submit], .submit-row a.deletelink { height: 40px; margin: 0; text-transform: none; letter-spacing: 0; font: 600 13px 'Inter', system-ui, sans-serif; line-height: 40px; padding: 0 20px; }
+.submit-row input[type=submit]:not(.default) { background: transparent; color: var(--body-medium-color); border: 1px solid var(--border-color); line-height: 38px; }
+.submit-row input[type=submit]:not(.default):hover { border-color: var(--primary); color: var(--link-hover-color); background: var(--darkened-bg); }
+.submit-row p.deletelink-box { margin: 0 0 0 auto; }
+
+/* Campo de senha do usuário: sem o resumo técnico do hash */
+.password-note { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.password-dots { letter-spacing: 3px; color: var(--body-quiet-color); font-size: 18px; line-height: 1; }
+.password-hint { color: var(--body-quiet-color); font-size: 12.5px; }
+.password-note .button { height: 34px; line-height: 34px; padding: 0 16px; background: var(--darkened-bg); color: var(--body-medium-color); border: 1px solid var(--border-color); }
+.password-note .button:hover { border-color: var(--primary); color: var(--link-hover-color); }
+
+    #changelist-filter { position: static; max-height: none; flex-basis: auto; width: 100%; order: 0; }
+}
+@media (max-width: 1024px) { #header { gap: 12px; padding-bottom: 12px; } }
+
+/* Acabamento da barra de busca, filtros e ações (vence os valores do CSS base do Django) */
+#changelist #toolbar { background: transparent; border: 0; padding: 0; margin: 0 0 14px; }
+#changelist #toolbar > form { flex: 0 1 460px; }
+#changelist .filtered #toolbar, .filtered #toolbar { margin-right: 0; }
+#changelist #changelist-filter.filter-bar { margin: 0; padding: 0; width: auto; }
+#changelist .actions, .filtered .actions { margin: 0 0 12px; }
+.submit-row input[type=submit].default { text-transform: none; }
+#changelist .actions, .filtered .actions { border: 1px solid var(--border-color); border-radius: 12px; box-sizing: border-box; width: auto; max-width: 100%; }
+#changelist #toolbar form input[type=submit], #changelist .actions .button { background: var(--primary); color: var(--primary-fg); border: 0; }
+#changelist #toolbar form input[type=submit]:hover, #changelist .actions .button:hover { background: var(--link-hover-color); }
+#changelist #toolbar #searchbar { height: 38px; border: 1px solid var(--border-color); background: var(--body-bg); }

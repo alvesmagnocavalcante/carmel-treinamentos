@@ -49,6 +49,7 @@ if not DEBUG:
 # ---------------------------------------------------------------------------
 INSTALLED_APPS = [
     "treinamentos.apps.CarmelAdminConfig",  # Admin do Django com o painel da Carmel
+    "django.forms",  # permite trocar modelos de campos de formulário (ex.: o campo de senha do admin)
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -131,6 +132,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "data" / "staticfiles"
+
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 AUTHENTICATION_BACKENDS = ["treinamentos.backends.CpfModelBackend"]
 

@@ -21,6 +21,17 @@
 {% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
 {% endblock %}
 
+{% block usertools %}
+{% if has_permission %}
+{% firstof user.first_name user.get_username as who %}
+<div id="user-tools">
+    <span class="user-chip"><span class="user-avatar" aria-hidden="true">{{ who|slice:":1"|upper }}</span><span class="user-name">{{ who }}</span></span>
+    {% if user.has_usable_password %}<a href="{% url 'admin:password_change' %}">Alterar senha</a>{% endif %}
+    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block footer %}
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>
@@ -88,17 +99,25 @@
             });
         }
 
-        // Filtro das listas: recolhido em telas pequenas; toque em "Filtro" para abrir.
+        // Filtros: viram uma barra de menus ao lado da busca; clicar fora (ou em outro menu) fecha o aberto.
         var filter = document.getElementById('changelist-filter');
-        if (filter) {
-            var title = filter.querySelector('h2');
-            if (title) {
-                title.setAttribute('role', 'button');
-                title.tabIndex = 0;
-                var toggle = function () { filter.classList.toggle('open'); };
-                title.addEventListener('click', toggle);
-                title.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
-            }
+        var toolbar = document.getElementById('toolbar');
+        if (filter && toolbar) {
+            toolbar.appendChild(filter);
+            filter.classList.add('filter-bar');
+            var menus = filter.querySelectorAll('details');
+            menus.forEach(function (menu) {
+                menu.removeAttribute('open');
+                menu.addEventListener('toggle', function () {
+                    if (menu.open) menus.forEach(function (other) { if (other !== menu) other.removeAttribute('open'); });
+                });
+            });
+            document.addEventListener('click', function (e) {
+                menus.forEach(function (menu) { if (menu.open && !menu.contains(e.target)) menu.removeAttribute('open'); });
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') menus.forEach(function (menu) { menu.removeAttribute('open'); });
+            });
         }
     })();
 </script>
