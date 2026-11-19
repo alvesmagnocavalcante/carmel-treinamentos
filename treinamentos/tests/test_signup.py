@@ -386,7 +386,8 @@ class SignupTests(BaseTestCase):
             self.assertContains(self.client.get(reverse("signup")), 'name="birthdate"')
             login = self.client.get(reverse("login"))
             self.assertContains(login, "Criar cadastro")
-            self.assertContains(login, "CPF ou usuário")
+            self.assertContains(login, '<label for="username">CPF</label>')
+            self.assertContains(login, 'data-cpf="mixed"')  # a máscara não bloqueia usuários em texto, como "admin"
             self.assertContains(login, "cpf-mask.js")
             self.assertContains(self.client.get(reverse("signup")), 'maxlength="14"')
             self.client.force_login(self.colab)
