@@ -42,10 +42,10 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
             <div class="field">
-                <label for="username">CPF</label>
+                <label for="username">CPF ou usuário</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='user' %}
-                    <input id="username" type="text" name="username" class="input" autocomplete="username" inputmode="numeric" placeholder="000.000.000-00" value="{{ request.POST.username|default:'' }}" required autofocus>
+                    <input id="username" type="text" name="username" class="input" autocomplete="username" data-cpf="mixed" placeholder="CPF ou usuário" value="{{ request.POST.username|default:'' }}" required autofocus>
                 </div>
             </div>
             <div class="field">
@@ -64,5 +64,6 @@
 </main>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
+<script src="{% static 'js/cpf-mask.js' %}"></script>
 </body>
 </html>

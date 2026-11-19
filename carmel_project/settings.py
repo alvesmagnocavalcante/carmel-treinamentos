@@ -132,6 +132,8 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "data" / "staticfiles"
 
+AUTHENTICATION_BACKENDS = ["treinamentos.backends.CpfModelBackend"]
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"

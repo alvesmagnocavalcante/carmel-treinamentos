@@ -28,6 +28,25 @@ def person(**extra):
     return data
 
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def override_env(**values):
+    """Define variáveis de ambiente só durante o bloco."""
+    import os
+    old = {k: os.environ.get(k) for k in values}
+    os.environ.update(values)
+    try:
+        yield
+    finally:
+        for k, v in old.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 class FakeHumand:
     """
     Troca a consulta HTTP por respostas prontas e registra o que foi pedido (só GET).
@@ -305,7 +324,9 @@ class SignupTests(BaseTestCase):
             self.assertContains(self.client.get(reverse("signup")), 'name="birthdate"')
             login = self.client.get(reverse("login"))
             self.assertContains(login, "Criar cadastro")
-            self.assertContains(login, "<label for=\"username\">CPF</label>")
+            self.assertContains(login, "CPF ou usuário")
+            self.assertContains(login, "cpf-mask.js")
+            self.assertContains(self.client.get(reverse("signup")), 'maxlength="14"')
             self.client.force_login(self.colab)
             self.assertRedirects(self.client.get(reverse("signup")), reverse("home"), fetch_redirect_response=False)
 
@@ -464,3 +485,61 @@ class SectorsMigrationTests(BaseTestCase):
         Department.objects.all().delete()
         self.run_migration()
         self.assertEqual(Department.objects.count(), 0)
+
+
+class AdminAccessTests(BaseTestCase):
+    """Login por CPF (com ou sem pontuação) vale também no /admin/login/, e promote_admin dá acesso de administrador."""
+
+    def make_person(self, cpf=CPF_DIGITS, **flags):
+        user = User.objects.create_user(cpf, password="segredo123", first_name="Maria", **flags)
+        return user
+
+    def test_admin_login_accepts_cpf_with_punctuation(self):
+        user = self.make_person(is_staff=True, is_superuser=True)
+        resp = self.client.post("/admin/login/", {"username": CPF, "password": "segredo123", "next": "/admin/"})
+        self.assertRedirects(resp, "/admin/", fetch_redirect_response=False)
+        self.assertEqual(self.client.session["_auth_user_id"], str(user.id))
+
+    def test_plain_usernames_still_work_in_both_logins(self):
+        self.assertEqual(self.client.post("/admin/login/", {"username": "admin", "password": "x123456"}).status_code, 302)
+        self.client.logout()
+        self.assertEqual(self.client.post(reverse("login"), {"username": "gestor", "password": "x123456"}).status_code, 302)
+
+    def test_promote_admin_gives_staff_superuser_and_global_role(self):
+        from django.core.management import call_command
+        user = self.make_person()
+        self.assertFalse(user.is_staff)
+        call_command("promote_admin", CPF)  # aceita o CPF formatado
+        user.refresh_from_db()
+        self.assertTrue(user.is_staff and user.is_superuser and user.is_active)
+        self.assertEqual(user.profile.role, UserProfile.ROLE_ADMIN)
+        self.assertTrue(user.profile.is_global)
+        self.client.force_login(user)
+        self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+    def test_promote_admin_reads_the_env_var_and_ignores_unknown_people(self):
+        from django.core.management import call_command
+        user = self.make_person()
+        with override_env(ADMIN_LOGINS=f"{CPF}; 00000000000 , colab"):
+            call_command("promote_admin")  # quem ainda não existe é só avisado, sem erro
+        user.refresh_from_db()
+        self.colab.refresh_from_db()
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(self.colab.is_superuser)   # nome de usuário comum também vale
+        self.assertFalse(User.objects.get(username="semsetor").is_staff)  # ninguém além dos citados
+
+    def test_promote_admin_without_arguments_or_env_changes_nothing(self):
+        from django.core.management import call_command
+        before = list(User.objects.filter(is_staff=True).values_list("id", flat=True))
+        with override_env(ADMIN_LOGINS=""):
+            call_command("promote_admin")
+        self.assertEqual(list(User.objects.filter(is_staff=True).values_list("id", flat=True)), before)
+
+    def test_signup_alone_never_grants_admin(self):
+        FakeHumand(self, person())
+        self.client.post(reverse("signup"), {"cpf": CPF, "birthdate": "17/05/1990", "website": ""})
+        self.client.post(reverse("signup_confirm"), {"password": "segredo123", "password2": "segredo123",
+                                                     "department": self.rh.id, "resort": 1})
+        user = User.objects.get(username=CPF_DIGITS)
+        self.assertFalse(user.is_staff or user.is_superuser)
+        self.assertEqual(self.client.get("/admin/").status_code, 302)  # vai para o login do admin

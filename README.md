@@ -85,6 +85,7 @@ Tudo fica no `.env` (veja `.env.example`). Os pontos principais:
 | `IMAGE_URL_TTL_MINUTES` | Validade, em minutos, do link temporário que o portal dá à HeyGen para baixar a imagem de uma cena (padrão 120). |
 | `MAX_ANIMATED_SCENES` | Máximo de cenas com imagem animada por IA em um vídeo (padrão 4). Cada uma gasta crédito extra da HeyGen. |
 | `PORTAL_BASE_URL` | Endereço público do portal (`https://...`) usado nesses links. Vazio = usa o endereço da própria requisição do conector. |
+| `ADMIN_LOGINS` | CPFs ou usuários (separados por vírgula) que viram **administradores** ao iniciar o servidor: acesso ao `/admin` e a todos os setores. A pessoa precisa já ter conta (cadastro pelo portal); depois é só reiniciar ou publicar de novo. Também dá para rodar `python manage.py promote_admin <cpf>`. |
 | `REQUIRE_SCRIPT_REVIEW` | `true` (padrão): o gestor aprova o roteiro antes de gerar o vídeo. `false`: envio automático. |
 | `DEFAULT_AVATAR_ID` / `DEFAULT_VOICE_ID` | Avatar e voz padrão. Cada setor pode ter os seus em **Admin → Setores**. |
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | JSON da Service Account. Ela precisa de permissão de **Editor/Gerente de conteúdo** nas pastas dos setores (lê Roteiros e grava em Vídeos). |

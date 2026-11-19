@@ -41,7 +41,7 @@
                 <label for="id_cpf">CPF</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='id-card' %}
-                    <input id="id_cpf" type="text" name="cpf" class="input" autocomplete="off" inputmode="numeric" placeholder="000.000.000-00" value="{{ form.cpf.value|default:'' }}" required>
+                    <input id="id_cpf" type="text" name="cpf" class="input" autocomplete="off" inputmode="numeric" maxlength="14" data-cpf="only" placeholder="000.000.000-00" value="{{ form.cpf.value|default:'' }}" required>
                 </div>
                 {% for e in form.cpf.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
             </div>
@@ -61,5 +61,6 @@
 </main>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
+<script src="{% static 'js/cpf-mask.js' %}"></script>
 </body>
 </html>

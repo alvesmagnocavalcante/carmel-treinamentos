@@ -383,9 +383,8 @@ def login_view(request):
         return redirect(next_url or 'home')
 
     if request.method == 'POST':
-        username, password = (request.POST.get('username') or '').strip(), request.POST.get('password')
-        # o login do colaborador é o CPF: aceita com ou sem pontos e traço
-        user = authenticate(request, username=humand.clean_cpf(username) or username, password=password)
+        # o login do colaborador é o CPF; o backend aceita com ou sem pontos e traço
+        user = authenticate(request, username=request.POST.get('username'), password=request.POST.get('password'))
         if user is not None:
             login(request, user)
             return redirect(next_url or 'home')
