@@ -513,7 +513,7 @@ select[multiple] { min-width: 260px; max-width: 100%; }
    posto pelo JavaScript) acima do valor. O cabeçalho da tabela vira uma linha de botões de ordenação. */
 #changelist .results { background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
 #result_list, #result_list thead { display: block; width: 100%; border: 0; background: transparent; }
-#result_list tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 10px; width: 100%; border: 0; }
+#result_list tbody { display: grid; grid-template-columns: repeat(auto-fill, minmax(620px, 1fr)); gap: 10px; width: 100%; border: 0; }
 #result_list thead tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; background: transparent; }
 #result_list thead th {
     position: static; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
@@ -529,7 +529,7 @@ select[multiple] { min-width: 260px; max-width: 100%; }
 #result_list thead th.action-checkbox-column .text { display: flex; align-items: center; }
 #result_list thead th.action-checkbox-column input { margin: 0; }
 #result_list tbody tr {
-    position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px 18px; align-items: start; min-width: 0;
+    position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px 18px; align-items: start; min-width: 0;
     padding: 14px 16px 14px 46px; margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .2s;
 }
@@ -541,7 +541,7 @@ select[multiple] { min-width: 260px; max-width: 100%; }
 #changelist #result_list tbody td.action-checkbox { position: absolute; left: 16px; top: 16px; padding: 0; }
 #changelist #result_list tbody th { grid-column: 1 / -1; font-size: 15.5px; font-weight: 700; color: var(--ink); }
 #result_list tbody td[data-label]::before {
-    content: attr(data-label); display: block; margin-bottom: 2px; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+    content: attr(data-label); display: block; margin-bottom: 2px; white-space: nowrap; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
 }
 #result_list tbody td.field-email { grid-column: span 2; }
 #result_list tbody td:empty { display: none; }
@@ -616,3 +616,12 @@ fieldset.module { margin-bottom: 16px; }
 }
 @media (max-width: 1024px) { #carmel-nav .nav-collapse { display: none; } }
 #container .submit-row .deletelink-box { float: none; margin: 0 0 0 auto; }
+
+/* Linha de ordenação: "selecionar todos" alinhado com as caixas dos cartões e botões com a mesma altura */
+#result_list thead tr { padding-left: 17px; box-sizing: border-box; }
+#result_list thead th { box-sizing: border-box; min-height: 30px; }
+#result_list thead th.action-checkbox-column { padding: 0 8px 0 0; min-height: 0; }
+#result_list thead th.sorted { font-weight: 700; }
+#result_list thead th.action-checkbox-column { width: auto; min-width: 34px; margin-right: 6px; flex: none; }
+#result_list thead th.action-checkbox-column .text { width: auto; padding: 0; }
+#result_list thead tr { padding-left: 7px; }
