@@ -1,27 +1,32 @@
 {% load i18n %}
 <nav id="carmel-nav" aria-label="Menu principal">
-    <a class="nav-brand" href="{% url 'admin:index' %}">
-        <span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span>
-        <small>Administração</small>
-    </a>
+    <div class="nav-top">
+        <a class="nav-brand" href="{% url 'admin:index' %}">
+            <span class="carmel-logo" role="img" aria-label="Carmel Hotéis"></span>
+            <small>Administração</small>
+        </a>
+        <button type="button" class="nav-collapse" id="carmel-nav-collapse" aria-label="Recolher menu" aria-pressed="false" title="Recolher menu">
+            <i data-lucide="panel-left-close" class="ico-close"></i><i data-lucide="panel-left-open" class="ico-open"></i>
+        </button>
+    </div>
     <div class="nav-scroll">
-        <a href="{% url 'admin:index' %}" class="nav-link{% if request.path == '/admin/' %} active{% endif %}">
-            <i data-lucide="layout-dashboard" class="nav-ico"></i> Painel inicial
+        <a href="{% url 'admin:index' %}" class="nav-link{% if request.path == '/admin/' %} active{% endif %}" title="Painel inicial">
+            <i data-lucide="layout-dashboard" class="nav-ico"></i><span class="nav-text">Painel inicial</span>
         </a>
         {% for group in carmel_nav %}
         <div class="nav-group">
             <h3>{{ group.title }}</h3>
             {% for item in group.items %}
-            <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}"{% if item.active %} aria-current="page"{% endif %}>
-                <i data-lucide="{{ item.icon }}" class="nav-ico"></i> {{ item.name }}
+            <a href="{{ item.url }}" class="nav-link{% if item.active %} active{% endif %}" title="{{ item.name }}"{% if item.active %} aria-current="page"{% endif %}>
+                <i data-lucide="{{ item.icon }}" class="nav-ico"></i><span class="nav-text">{{ item.name }}</span>
             </a>
             {% endfor %}
         </div>
         {% endfor %}
         <div class="nav-group">
             <h3>Portal</h3>
-            <a href="{% url 'home' %}" class="nav-link nav-portal"><i data-lucide="arrow-left-circle" class="nav-ico"></i> Voltar ao portal</a>
-            <a href="{% url 'queue' %}" class="nav-link"><i data-lucide="list-checks" class="nav-ico"></i> Fila de vídeos</a>
+            <a href="{% url 'home' %}" class="nav-link nav-portal" title="Voltar ao portal"><i data-lucide="arrow-left-circle" class="nav-ico"></i><span class="nav-text">Voltar ao portal</span></a>
+            <a href="{% url 'queue' %}" class="nav-link" title="Fila de vídeos"><i data-lucide="list-checks" class="nav-ico"></i><span class="nav-text">Fila de vídeos</span></a>
         </div>
     </div>
     <div class="nav-account">
@@ -34,9 +39,9 @@
             </span>
         </div>
         <div class="nav-actions">
-            <a href="{% url 'admin:password_change' %}" class="nav-link"><i data-lucide="key-round" class="nav-ico"></i> Senha</a>
+            <a href="{% url 'admin:password_change' %}" class="nav-link" title="Alterar senha"><i data-lucide="key-round" class="nav-ico"></i><span class="nav-text">Senha</span></a>
             <form method="post" action="{% url 'admin:logout' %}">{% csrf_token %}
-                <button type="submit" class="nav-link nav-logout"><i data-lucide="log-out" class="nav-ico"></i> Sair</button>
+                <button type="submit" class="nav-link nav-logout" title="Sair"><i data-lucide="log-out" class="nav-ico"></i><span class="nav-text">Sair</span></button>
             </form>
         </div>
     </div>

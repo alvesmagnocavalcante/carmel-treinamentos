@@ -3,8 +3,14 @@
 
 {% block extrastyle %}
 {{ block.super }}
+<script>try{if(localStorage.getItem('carmel_nav')==='1')document.documentElement.classList.add('nav-collapsed')}catch(e){}</script>
 <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
 {% include 'partials/fonts.html' %}
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+{# por último de propósito: o CSS das listas e o responsivo do Django são carregados antes de extrahead e, com a mesma especificidade, venceriam #}
 <link rel="stylesheet" href="{% static 'css/carmel_admin.css' %}">
 {% endblock %}
 
@@ -52,6 +58,20 @@
                 try { localStorage.setItem('theme', dark ? 'dark' : 'light'); localStorage.setItem('carmel_theme', dark ? 'dark' : 'light'); } catch (err) {}
             }, true);
         });
+        // Menu lateral recolhível (só ícones); a escolha fica guardada no navegador
+        var collapse = document.getElementById('carmel-nav-collapse');
+        function syncCollapse() {
+            var on = root.classList.contains('nav-collapsed');
+            if (collapse) { collapse.setAttribute('aria-pressed', on ? 'true' : 'false'); collapse.setAttribute('aria-label', on ? 'Expandir menu' : 'Recolher menu'); collapse.title = on ? 'Expandir menu' : 'Recolher menu'; }
+        }
+        if (collapse) {
+            collapse.addEventListener('click', function () {
+                var on = root.classList.toggle('nav-collapsed');
+                try { localStorage.setItem('carmel_nav', on ? '1' : '0'); } catch (err) {}
+                syncCollapse();
+            });
+            syncCollapse();
+        }
         var btn = document.getElementById('carmel-menu-btn');
         var backdrop = document.getElementById('carmel-nav-backdrop');
         function setMenu(open) {
