@@ -36,9 +36,9 @@ class ResortAccessTests(BaseTestCase):
         self.client.force_login(user)
         return {v.title for v in self.client.get(reverse("home")).context["videos"]}
 
-    def test_seed_creates_the_five_resorts(self):
+    def test_seed_creates_the_resorts_with_the_humand_names(self):
         self.assertEqual(set(Resort.objects.values_list("name", flat=True)),
-                         {"Magna/CM", "Charme", "Wind", "Taiba", "Icaraizinho"})
+                         {"CM", "Magna", "Charme", "Wind", "Taíba", "Icaraizinho"})
 
     def test_video_without_resort_is_visible_to_everyone_in_the_department(self):
         for user in (self.c_wind, self.c_taiba, self.c_both, self.c_none):
@@ -96,7 +96,8 @@ class ResortReviewTests(BaseTestCase):
     def test_admin_offers_every_active_resort(self):
         self.client.force_login(self.admin)
         resp = self.client.get(reverse("review_script", args=[self.job.id]))
-        self.assertEqual(len(resp.context["resort_choices"]), 5)
+        self.assertEqual(len(resp.context["resort_choices"]), Resort.objects.filter(active=True).count())
+        self.assertEqual(len(resp.context["resort_choices"]), 6)  # CM, Magna, Charme, Wind, Taíba e Icaraizinho
 
     def test_manager_can_pick_own_resort(self):
         self.approve(self.gestor, resorts=[self.wind.id])

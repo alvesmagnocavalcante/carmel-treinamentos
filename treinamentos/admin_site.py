@@ -11,8 +11,7 @@ Status = TrainingVideo.Status
 NAV_GROUPS = [
     ("Pessoas e acessos", [
         ("User", "users", "Usuários", "Crie contas e defina o setor e o nível de acesso de cada pessoa."),
-        ("Resort", "hotel", "Resorts", "Magna/CM, Charme, Wind, Taiba e Icaraizinho: quem acessa e para quem cada vídeo vale."),
-        ("HumandAlias", "link", "Correspondências Humand", "Liga nomes da Humand (ex.: CM) a setores e resorts do portal."),
+        ("Resort", "hotel", "Resorts", "CM, Magna, Charme, Wind, Taíba e Icaraizinho: quem acessa e para quem cada vídeo vale."),
     ]),
     ("Conteúdo", [
         ("Department", "building-2", "Setores", "Pasta do Drive, avatar e voz de cada setor."),

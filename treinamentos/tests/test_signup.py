@@ -194,35 +194,24 @@ class SignupTests(BaseTestCase):
         self.assertNotContains(self.client.get(reverse("signup_confirm")), "Função")
         self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)
 
-    def test_aliases_link_humand_names_that_differ(self):
-        magna = Resort.objects.get(code="magna-cm")
-        self.assertTrue(HumandAlias.objects.filter(resort=magna, name="CM").exists())  # já vem da migração
-        HumandAlias.objects.create(name="Governança Taíba", department=self.rh)
+    def test_humand_hotels_link_by_name_with_no_alias_table(self):
+        cm, magna = Resort.objects.get(code="cm"), Resort.objects.get(code="magna")
+        self.assertFalse(HumandAlias.objects.exists())  # nada para traduzir: os nomes são iguais
         FakeHumand(self, person(segmentations=[
             {"group": "Hotéis", "item": "CM"}, {"group": "Hotéis", "item": "Magna"},
-            {"group": "Carmel Taíba", "item": "Governança Taíba"}]))
+            {"group": "Carmel Taíba", "item": "Governança"}]))
         self.register()
         profile = User.objects.get(username=CPF_DIGITS).profile
-        self.assertEqual(list(profile.resorts.all()), [magna])
+        self.assertEqual(set(profile.resorts.all()), {cm, magna})
+        self.assertEqual(profile.department, self.gov)
+
+    def test_an_alias_still_works_for_a_future_different_name(self):
+        HumandAlias.objects.create(name="Governança Taíba", department=self.rh)
+        FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Wind"},
+                                               {"group": "Carmel Taíba", "item": "Governança Taíba"}]))
+        self.register()
+        profile = User.objects.get(username=CPF_DIGITS).profile
         self.assertEqual(profile.department, self.rh)
-
-    def test_new_collaborator_lands_on_the_catalog_of_their_own_sector(self):
-        from ..models import TrainingVideo
-        TrainingVideo.objects.filter(department=self.gov).update(title="Vídeo da Governança")
-        FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"},
-                                               {"group": "Carmel Taíba", "item": "Governança"}]))
-        self.register()
-        page = self.client.get(reverse("home")).content.decode()
-        self.assertIn("Vídeo da Governança", page)  # o do setor dele
-        self.assertNotIn("Vídeo RH", page)          # e só ele
-
-    def test_humand_sector_with_the_same_name_links_by_itself(self):
-        from ..models import Department
-        cozinha = Department.objects.create(code="cozinha", name="Cozinha")
-        FakeHumand(self, person(segmentations=[{"group": "Carmel Taíba", "item": "Cozinha"},
-                                               {"group": "Hotéis", "item": "Taíba"}]))
-        self.register()
-        self.assertEqual(User.objects.get(username=CPF_DIGITS).profile.department, cozinha)
 
     def test_unknown_department_makes_the_person_choose_it(self):
         FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"}, {"group": "X", "item": "Setor Novo"}]))
@@ -588,3 +577,56 @@ class AdminAccessTests(BaseTestCase):
         user = User.objects.get(username=CPF_DIGITS)
         self.assertFalse(user.is_staff or user.is_superuser)
         self.assertEqual(self.client.get("/admin/").status_code, 302)  # vai para o login do admin
+
+
+class HumandNamesMigrationTests(BaseTestCase):
+    """Migração 0018: resorts e RH com os nomes da Humand, sem ninguém perder acesso."""
+
+    def run_migration(self):
+        from importlib import import_module
+        from django.apps import apps
+        import_module("treinamentos.migrations.0018_nomes_iguais_aos_da_humand").apply(apps, None)
+
+    def setUp(self):
+        super().setUp()
+        # volta ao estado de antes da 0018 (o banco de teste já nasce migrado)
+        Resort.objects.filter(code="cm").update(name="Magna/CM", code="magna-cm")
+        Resort.objects.filter(code="magna").delete()
+        Resort.objects.filter(code="taiba").update(name="Taiba")
+        self.rh.code, self.rh.name = "rh", "Recursos Humanos & Cultura"
+        self.rh.save()
+        self.both = Resort.objects.get(code="magna-cm")
+        self.colab.profile.resorts.add(self.both)
+        self.v_rh.resorts.add(self.both)
+        HumandAlias.objects.create(name="CM", resort=self.both)
+        HumandAlias.objects.create(name="Magna", resort=self.both)
+        HumandAlias.objects.create(name="Recursos Humanos", department=self.rh)
+
+    def test_names_now_match_the_humand(self):
+        from ..models import Department
+        self.run_migration()
+        self.assertEqual(Department.objects.get(code="rh").name, "Recursos Humanos")
+        self.assertEqual(Resort.objects.get(code="taiba").name, "Taíba")
+        self.assertEqual(Resort.objects.get(code="cm").name, "CM")
+        self.assertEqual(Resort.objects.get(code="magna").name, "Magna")
+        self.assertFalse(Resort.objects.filter(code="magna-cm").exists())
+
+    def test_nobody_loses_access_when_magna_cm_is_split(self):
+        self.run_migration()
+        cm, magna = Resort.objects.get(code="cm"), Resort.objects.get(code="magna")
+        self.assertEqual(set(self.colab.profile.resorts.all()), {cm, magna})  # via os dois, como antes
+        self.assertEqual(set(self.v_rh.resorts.all()), {cm, magna})
+
+    def test_obsolete_aliases_are_removed_and_rh_data_is_intact(self):
+        self.rh.drive_folder_id = "pasta-rh"
+        self.rh.save()
+        self.run_migration()
+        self.assertFalse(HumandAlias.objects.exists())
+        self.rh.refresh_from_db()
+        self.assertEqual(self.rh.drive_folder_id, "pasta-rh")
+
+    def test_running_twice_changes_nothing_more(self):
+        self.run_migration()
+        total = Resort.objects.count()
+        self.run_migration()
+        self.assertEqual(Resort.objects.count(), total)

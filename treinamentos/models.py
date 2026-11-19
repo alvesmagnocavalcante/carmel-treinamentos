@@ -9,7 +9,7 @@ from .services.storage import name_key as normalize_name
 
 class Resort(models.Model):
     """
-    Resort da rede (Magna/CM, Charme, Wind, Taiba, Icaraizinho).
+    Resort da rede (CM, Magna, Charme, Wind, Taíba, Icaraizinho).
     Pessoas e vídeos podem ser ligados a vários resorts. Vídeo sem resort vale para todos.
     """
     code = models.SlugField("Código / Identificador", max_length=50, unique=True)
@@ -122,7 +122,7 @@ def ensure_user_profile(sender, instance, created, **kwargs):
 class HumandAlias(models.Model):
     """
     Liga um nome da Humand (grupo de segmentação) a um setor ou resort do portal. Nomes iguais (sem diferenciar
-    acento e maiúscula) já são ligados sozinhos; use esta tabela para os que diferem ('CM' -> Magna/CM).
+    acento e maiúscula) já são ligados sozinhos; use esta tabela só para os que diferirem no futuro.
     """
     name = models.CharField("Nome na Humand", max_length=150)
     name_key = models.CharField(max_length=150, unique=True, editable=False)
