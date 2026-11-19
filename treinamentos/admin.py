@@ -50,7 +50,7 @@ def user_resorts(obj):
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
     list_display = ('username', 'first_name', 'last_name', 'email', user_department, user_role, user_resorts, 'is_active')
-    list_filter = ('profile__department', 'profile__role', 'profile__resorts', 'is_active', 'is_staff')
+    list_filter = ('profile__self_declared', 'profile__department', 'profile__role', 'profile__resorts', 'is_active', 'is_staff')
     list_select_related = ('profile__department',)
     list_per_page = 25
 

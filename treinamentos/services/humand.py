@@ -149,6 +149,22 @@ def position_map() -> dict:
     return mapping
 
 
+POSITION_NAMES_CACHE_KEY = "humand:position-names"
+
+
+def position_names() -> list:
+    """Nomes dos cargos da Humand, para a pessoa escolher quando a Humand não traz o dela. Vazio se a consulta falhar."""
+    names = cache.get(POSITION_NAMES_CACHE_KEY)
+    if names is None:
+        try:
+            found = {" ".join(str(p.get("name", "")).split()) for p in _items("/job-positions") if not p.get("deletedAt")}
+        except HumandUnavailable:
+            return []
+        names = sorted(n for n in found if n)
+        cache.set(POSITION_NAMES_CACHE_KEY, names, POSITIONS_CACHE_SECONDS)
+    return names
+
+
 def find_position(cpf: str) -> str:
     """Cargo da pessoa, ou vazio. É só um detalhe da tela de conferência: se a consulta falhar, o cadastro segue sem ele."""
     try:

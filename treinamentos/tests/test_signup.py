@@ -14,6 +14,7 @@ CPF = "529.982.247-25"  # CPF válido de exemplo (dígitos verificadores correto
 CPF_DIGITS = "52998224725"
 SIGNUP_KEY = "signup_person"
 REAL_POSITION_MAP = humand.position_map
+REAL_POSITION_NAMES = humand.position_names
 REAL_GET = humand._get  # a consulta de verdade; cada FakeHumand a troca por uma com respostas prontas
 
 
@@ -147,8 +148,9 @@ class SignupTests(BaseTestCase):
     def test_position_is_optional(self):
         FakeHumand(self, person(), positions={"GERENTE": ["99999999999"]})  # o cargo dela não está em nenhuma lista
         self.identify()
-        self.assertNotContains(self.client.get(reverse("signup_confirm")), "Função")
-        self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)
+        self.assertContains(self.client.get(reverse("signup_confirm")), 'name="position"')  # pode escolher...
+        self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)  # ...ou deixar em branco
+        self.assertEqual(User.objects.get(username=CPF_DIGITS).profile.position, "")
 
     def test_only_reads_the_humand_never_writes(self):
         fake = FakeHumand(self, person(), positions={"GERENTE": [CPF_DIGITS]})
@@ -198,16 +200,24 @@ class SignupTests(BaseTestCase):
     def test_humand_sector_with_the_same_name_links_by_itself(self):
         from ..models import Department
         cozinha = Department.objects.create(code="cozinha", name="Cozinha")
-        FakeHumand(self, person(segmentations=[{"group": "Carmel Taíba", "item": "Cozinha"}]))
+        FakeHumand(self, person(segmentations=[{"group": "Carmel Taíba", "item": "Cozinha"},
+                                               {"group": "Hotéis", "item": "Taíba"}]))
         self.register()
         self.assertEqual(User.objects.get(username=CPF_DIGITS).profile.department, cozinha)
 
-    def test_unknown_department_still_creates_the_account_without_sector(self):
+    def test_unknown_department_makes_the_person_choose_it(self):
         FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"}, {"group": "X", "item": "Setor Novo"}]))
-        self.assertEqual(self.register().status_code, 302)
+        self.identify()
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        self.assertIn('name="department"', page)   # o setor da Humand não existe no portal: ela escolhe
+        self.assertNotIn("Setor Novo", page)
+        self.assertEqual(self.finish().status_code, 200)  # sem escolher, não conclui
+        resp = self.client.post(reverse("signup_confirm"),
+                                {"password": "segredo123", "password2": "segredo123", "department": self.gov.id})
+        self.assertEqual(resp.status_code, 302)
         profile = User.objects.get(username=CPF_DIGITS).profile
-        self.assertIsNone(profile.department)
-        self.assertEqual(list(profile.resorts.all()), [self.taiba])
+        self.assertEqual(profile.department, self.gov)
+        self.assertEqual(list(profile.resorts.all()), [self.taiba])  # o resort veio da Humand
 
     # ---- recusas ----
     def test_wrong_birthdate_inactive_deleted_and_unknown_are_all_the_same_refusal(self):
@@ -298,6 +308,97 @@ class SignupTests(BaseTestCase):
             self.assertContains(login, "<label for=\"username\">CPF</label>")
             self.client.force_login(self.colab)
             self.assertRedirects(self.client.get(reverse("signup")), reverse("home"), fetch_redirect_response=False)
+
+
+class MissingDataDropdownTests(BaseTestCase):
+    """Quando a Humand não traz setor, resort ou função, a pessoa escolhe em dropdowns e os vídeos já aparecem."""
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.gov.name = "Governança"
+        self.gov.save()
+        self.taiba = Resort.objects.get(code="taiba")
+        self.wind = Resort.objects.get(code="wind")
+
+    def start(self, segmentations=()):
+        FakeHumand(self, person(segmentations=list(segmentations)), positions={"GERENTE": ["99999999999"], "CAMAREIRA": []})
+        self.client.post(reverse("signup"), {"cpf": CPF, "birthdate": "17/05/1990", "website": ""})
+
+    def confirm(self, **data):
+        return self.client.post(reverse("signup_confirm"),
+                                {"password": "segredo123", "password2": "segredo123", **data})
+
+    def test_dropdowns_appear_for_what_the_humand_did_not_bring(self):
+        self.start()
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        for name in ('name="department"', 'name="resort"', 'name="position"'):
+            self.assertIn(name, page)
+        self.assertIn("Governança", page)   # opções vindas do portal
+        self.assertIn("Wind", page)
+        self.assertIn("GERENTE", page)      # opções vindas dos cargos da Humand
+
+    def test_nothing_is_asked_when_the_humand_brought_everything(self):
+        FakeHumand(self, person(), positions={"ANALISTA": [CPF_DIGITS]})
+        self.client.post(reverse("signup"), {"cpf": CPF, "birthdate": "17/05/1990", "website": ""})
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        for name in ('name="department"', 'name="resort"', 'name="position"'):
+            self.assertNotIn(name, page)
+
+    def test_only_the_missing_dropdown_appears(self):
+        self.start([{"group": "Hotéis", "item": "Taíba"}])  # tem resort, falta setor
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        self.assertIn('name="department"', page)
+        self.assertNotIn('name="resort"', page)
+
+    def test_chosen_values_give_access_to_that_sectors_videos(self):
+        from ..models import TrainingVideo
+        TrainingVideo.objects.filter(department=self.gov).update(title="Vídeo da Governança")
+        self.start()
+        resp = self.confirm(department=self.gov.id, resort=self.wind.id, position="GERENTE")
+        self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False)
+        profile = User.objects.get(username=CPF_DIGITS).profile
+        self.assertEqual((profile.department, list(profile.resorts.all()), profile.position),
+                         (self.gov, [self.wind], "GERENTE"))
+        self.assertTrue(profile.self_declared)  # marcado para o administrador conferir
+        page = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Vídeo da Governança", page)
+        self.assertNotIn("Vídeo RH", page)
+
+    def test_setor_and_resort_are_required_when_asked_but_position_is_optional(self):
+        self.start()
+        resp = self.confirm()
+        self.assertContains(resp, "Este campo é obrigatório")
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
+        self.assertRedirects(self.confirm(department=self.gov.id, resort=self.wind.id),
+                             reverse("home"), fetch_redirect_response=False)
+
+    def test_invalid_choices_are_refused(self):
+        self.start()
+        self.assertContains(self.confirm(department=99999, resort=self.wind.id), "escolha válida")
+        self.assertContains(self.confirm(department=self.gov.id, resort=self.wind.id, position="DIRETOR GERAL INVENTADO"),
+                            "escolha válida")
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
+
+    def test_what_the_humand_brought_cannot_be_overridden_by_the_form(self):
+        FakeHumand(self, person(), positions={"ANALISTA": [CPF_DIGITS]})
+        self.client.post(reverse("signup"), {"cpf": CPF, "birthdate": "17/05/1990", "website": ""})
+        self.confirm(department=self.rh.id, resort=self.wind.id, position="GERENTE")  # tentativa de trocar
+        profile = User.objects.get(username=CPF_DIGITS).profile
+        self.assertEqual(profile.department, self.gov)                 # vem da Humand (Governança)
+        self.assertEqual(list(profile.resorts.all()), [self.taiba])    # vem da Humand (Taíba)
+        self.assertEqual(profile.position, "ANALISTA")                 # vem da Humand
+        self.assertFalse(profile.self_declared)
+
+    def test_failure_loading_positions_just_hides_that_dropdown(self):
+        FakeHumand(self, person(segmentations=[]))
+        humand.position_names = lambda: []
+        self.addCleanup(setattr, humand, "position_names", REAL_POSITION_NAMES)
+        self.client.post(reverse("signup"), {"cpf": CPF, "birthdate": "17/05/1990", "website": ""})
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        self.assertNotIn('name="position"', page)
+        self.assertIn('name="department"', page)
 
 
 class SectorsMigrationTests(BaseTestCase):

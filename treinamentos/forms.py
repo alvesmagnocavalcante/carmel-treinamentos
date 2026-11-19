@@ -5,7 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
 
-from .models import UserProfile
+from .models import Department, Resort, UserProfile
 from .services import humand
 
 INVALID_DATA = "Não foi possível validar seus dados. Confira o CPF e a data de nascimento."
@@ -81,10 +81,31 @@ class IdentifyForm(forms.Form):
 
 
 class PasswordForm(forms.Form):
-    """Passo 2: a pessoa confere os dados que vieram da Humand e cria a senha. O login é o CPF."""
+    """
+    Passo 2: a pessoa confere os dados que vieram da Humand e cria a senha. O login é o CPF.
+    Só aparece dropdown do que a Humand NÃO trouxe (setor, resort ou função); o que veio da Humand não é editável.
+    """
 
     password = forms.CharField(label="Crie uma senha", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput)
+
+    def __init__(self, *args, need_department=False, need_resort=False, position_choices=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        if need_department:
+            self.fields["department"] = forms.ModelChoiceField(
+                label="Setor", queryset=Department.objects.order_by("name"), empty_label="Selecione o seu setor")
+        if need_resort:
+            self.fields["resort"] = forms.ModelChoiceField(
+                label="Resort / hotel", queryset=Resort.objects.filter(active=True).order_by("order", "name"),
+                empty_label="Selecione o seu resort")
+        if position_choices:
+            self.fields["position"] = forms.ChoiceField(
+                label="Função (opcional)", required=False,
+                choices=[("", "Selecione a sua função")] + [(n, n) for n in position_choices])
+        for name in ("department", "resort", "position"):
+            if name in self.fields:
+                self.fields[name].widget.attrs["class"] = "input"
+        self.order_fields(["department", "resort", "position", "password", "password2"])
 
     def clean(self):
         data = super().clean()
@@ -99,17 +120,39 @@ class PasswordForm(forms.Form):
         return data
 
 
-@transaction.atomic
-def create_account(person: "humand.HumandPerson", password: str) -> User:
-    """Conta do colaborador: usuário = CPF (só dígitos); nome, e-mail, setor e resorts vindos da Humand; sempre colaborador."""
+def missing_fields(person: "humand.HumandPerson") -> dict:
+    """O que a Humand não trouxe e a pessoa precisa escolher: setor/resort que não ligam a nada no portal e a função."""
     department, resorts = humand.match_portal(person)
+    return {
+        "need_department": department is None,
+        "need_resort": not resorts,
+        "position_choices": [] if person.position else humand.position_names(),
+    }
+
+
+@transaction.atomic
+def create_account(person: "humand.HumandPerson", password: str, department=None, resort=None, position="") -> User:
+    """
+    Conta do colaborador: usuário = CPF (só dígitos); nome, e-mail, setor, resorts e função vindos da Humand; sempre
+    colaborador. `department`, `resort` e `position` escolhidos pela pessoa só valem onde a Humand não trouxe o dado.
+    """
+    matched_department, resorts = humand.match_portal(person)
+    declared = False
+    if matched_department is None and department is not None:
+        matched_department, declared = department, True
+    if not resorts and resort is not None:
+        resorts, declared = [resort], True
+    if not person.position and position:
+        declared = True
     first, _, last = person.name.partition(" ")
     try:
         with transaction.atomic():
             user = User.objects.create_user(person.cpf, email=person.email, password=password,
                                             first_name=first, last_name=last)
             profile = user.profile  # criado pelo sinal; quem promove é o administrador
-            profile.department, profile.role = department, UserProfile.ROLE_COLABORADOR
+            profile.department, profile.role = matched_department, UserProfile.ROLE_COLABORADOR
+            profile.position = (person.position or position)[:150]
+            profile.self_declared = declared
             profile.cpf_hash = humand.cpf_hash(person.cpf)
             profile.save()
     except IntegrityError as exc:  # dois cadastros do mesmo CPF ao mesmo tempo

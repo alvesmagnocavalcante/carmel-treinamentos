@@ -34,12 +34,43 @@
         <div class="confirm-box">
             <div class="confirm-row"><span>Nome</span><strong>{{ person.name }}</strong></div>
             {% if person.position %}<div class="confirm-row"><span>Função</span><strong>{{ person.position }}</strong></div>{% endif %}
-            {% if person.departments %}<div class="confirm-row"><span>Setor</span><strong>{{ person.departments|join:", " }}</strong></div>{% endif %}
-            {% if person.resorts %}<div class="confirm-row"><span>Resort</span><strong>{{ person.resorts|join:", " }}</strong></div>{% endif %}
+            {% if person.departments and not need_department %}<div class="confirm-row"><span>Setor</span><strong>{{ person.departments|join:", " }}</strong></div>{% endif %}
+            {% if person.resorts and not need_resort %}<div class="confirm-row"><span>Resort</span><strong>{{ person.resorts|join:", " }}</strong></div>{% endif %}
         </div>
         {% for e in form.non_field_errors %}<div class="alert alert-error" role="alert">{% include 'partials/icon.html' with name='alert-circle' %} {{ e }}</div>{% endfor %}
         <form method="post" style="display:grid; gap:18px">
             {% csrf_token %}
+            {% if need_department or need_resort or form.position %}<p class="muted" style="margin:0; font-size:13px">Não encontramos tudo no seu cadastro. Escolha abaixo para liberar os seus vídeos.</p>{% endif %}
+            {% if form.department %}
+            <div class="field">
+                <label for="id_department">Setor</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='building-2' %}
+                    {{ form.department }}
+                </div>
+                {% for e in form.department.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            {% if form.resort %}
+            <div class="field">
+                <label for="id_resort">Resort / hotel</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='hotel' %}
+                    {{ form.resort }}
+                </div>
+                {% for e in form.resort.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            {% if form.position %}
+            <div class="field">
+                <label for="id_position">Função (opcional)</label>
+                <div class="input-icon">
+                    {% include 'partials/icon.html' with name='briefcase' %}
+                    {{ form.position }}
+                </div>
+                {% for e in form.position.errors %}<span class="scene-problem">{{ e }}</span>{% endfor %}
+            </div>
+            {% endif %}
             <p class="muted" style="margin:0; font-size:13px">Está certo? Crie uma senha. Seu login será o seu CPF.</p>
             <div class="field">
                 <label for="id_password">Crie uma senha</label>

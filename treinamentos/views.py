@@ -16,7 +16,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST, require_safe
 
 from .context_processors import get_profile
-from .forms import IdentifyForm, PasswordForm, create_account
+from .forms import IdentifyForm, PasswordForm, create_account, missing_fields
 from .services import humand
 from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
@@ -436,13 +436,16 @@ def signup_confirm_view(request):
         messages.error(request, 'Sua confirmação expirou. Informe o CPF novamente.')
         return redirect('signup')
 
-    form = PasswordForm(request.POST or None)
+    person = humand.HumandPerson(
+        name=data['name'], email=data['email'], position=data['position'], cpf=data['cpf'],
+        department_names=data['departments'], resort_names=data['resorts'])
+    missing = missing_fields(person)
+    form = PasswordForm(request.POST or None, **missing)
     if request.method == 'POST' and form.is_valid():
-        person = humand.HumandPerson(
-            name=data['name'], email=data['email'], position=data['position'], cpf=data['cpf'],
-            department_names=data['departments'], resort_names=data['resorts'])
+        chosen = form.cleaned_data
         try:
-            user = create_account(person, form.cleaned_data['password'])
+            user = create_account(person, chosen['password'], department=chosen.get('department'),
+                                  resort=chosen.get('resort'), position=chosen.get('position', ''))
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
@@ -453,7 +456,7 @@ def signup_confirm_view(request):
             else:
                 messages.success(request, f'Bem-vindo(a), {user.first_name}! Cadastro feito.')
             return redirect('home')
-    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data})
+    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data, **missing})
 
 
 @require_POST

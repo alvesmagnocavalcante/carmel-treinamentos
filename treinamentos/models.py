@@ -72,6 +72,11 @@ class UserProfile(models.Model):
     resorts = models.ManyToManyField(Resort, blank=True, related_name='members', verbose_name="Resorts",
                                      help_text="Resorts que a pessoa acessa. Sem nenhum, ela vê só os vídeos válidos para todos os resorts.")
 
+    position = models.CharField("Função", max_length=150, blank=True,
+                                help_text="Cargo da pessoa (vem da Humand ou é escolhido por ela no cadastro).")
+    self_declared = models.BooleanField(
+        "Dados escolhidos pela própria pessoa", default=False,
+        help_text="No cadastro, a Humand não trazia setor, resort ou função e a pessoa escolheu. Vale conferir.")
     cpf_hash = models.CharField(
         "CPF (hash)", max_length=64, unique=True, null=True, blank=True, editable=False,
         help_text="Impressão digital do CPF validado na Humand no cadastro. Impede duas contas para a mesma pessoa; "
