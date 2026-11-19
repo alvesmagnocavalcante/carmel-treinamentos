@@ -42,10 +42,10 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
             <div class="field">
-                <label for="username">CPF ou usuário</label>
+                <label for="username">CPF</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='user' %}
-                    <input id="username" type="text" name="username" class="input" autocomplete="username" data-cpf="mixed" placeholder="CPF ou usuário" value="{{ request.POST.username|default:'' }}" required autofocus>
+                    <input id="username" type="text" name="username" class="input" autocomplete="username" data-cpf="mixed" placeholder="CPF" value="{{ request.POST.username|default:'' }}" required autofocus>
                 </div>
             </div>
             <div class="field">

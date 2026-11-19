@@ -34,8 +34,8 @@
         <div class="confirm-box">
             <div class="confirm-row"><span>Nome</span><strong>{{ person.name }}</strong></div>
             {% if person.position %}<div class="confirm-row"><span>Função</span><strong>{{ person.position }}</strong></div>{% endif %}
-            {% if person.departments and not need_department %}<div class="confirm-row"><span>Setor</span><strong>{{ person.departments|join:", " }}</strong></div>{% endif %}
-            {% if person.resorts and not need_resort %}<div class="confirm-row"><span>Resort</span><strong>{{ person.resorts|join:", " }}</strong></div>{% endif %}
+            {% if shown_department %}<div class="confirm-row"><span>Setor</span><strong>{{ shown_department }}</strong></div>{% endif %}
+            {% if shown_resorts %}<div class="confirm-row"><span>Resort</span><strong>{{ shown_resorts|join:", " }}</strong></div>{% endif %}
         </div>
         {% for e in form.non_field_errors %}<div class="alert alert-error" role="alert">{% include 'partials/icon.html' with name='alert-circle' %} {{ e }}</div>{% endfor %}
         <form method="post" style="display:grid; gap:18px">

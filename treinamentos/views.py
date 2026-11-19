@@ -439,7 +439,8 @@ def signup_confirm_view(request):
     person = humand.HumandPerson(
         name=data['name'], email=data['email'], position=data['position'], cpf=data['cpf'],
         department_names=data['departments'], resort_names=data['resorts'])
-    missing = missing_fields(person)
+    matched_department, matched_resorts = humand.match_portal(person)
+    missing = missing_fields(person, (matched_department, matched_resorts))
     form = PasswordForm(request.POST or None, **missing)
     if request.method == 'POST' and form.is_valid():
         chosen = form.cleaned_data
@@ -456,7 +457,9 @@ def signup_confirm_view(request):
             else:
                 messages.success(request, f'Bem-vindo(a), {user.first_name}! Cadastro feito.')
             return redirect('home')
-    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data, 'password_policy': POLICY_TEXT, **missing})
+    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data, 'password_policy': POLICY_TEXT, **missing,
+        'shown_department': matched_department.name if matched_department else '',
+        'shown_resorts': [r.name for r in matched_resorts]})
 
 
 @require_POST

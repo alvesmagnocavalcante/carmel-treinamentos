@@ -97,7 +97,16 @@ class HumandServiceTests(SimpleTestCase):
         resorts, departments = humand.split_segmentations([
             {"group": "Hotéis", "item": "Wind"}, {"group": "Carmel Taíba", "item": "Cozinha"},
             {"group": "Gestores/ Líderes", "item": "CM"}, {"group": "CM", "item": ""}, "lixo"])
-        self.assertEqual((resorts, departments), (["Wind"], ["Cozinha"]))
+        self.assertEqual((resorts, departments), (["Wind", "Taíba"], ["Cozinha"]))  # "Carmel Taíba" = hotel Taíba
+
+    def test_hotel_comes_from_the_group_name_and_from_new_hires(self):
+        resorts, departments = humand.split_segmentations([
+            {"group": "Carmel Cumbuco", "item": "Cozinha"}, {"group": "CM", "item": "Financeiro"},
+            {"group": "Novos admitidos", "item": "Carmel Charme"}, {"group": "Hotéis", "item": "Cumbuco"}])
+        self.assertEqual(resorts, ["Cumbuco", "CM", "Charme"])        # sem repetir; "Carmel " é tirado
+        self.assertEqual(departments, ["Cozinha", "Financeiro"])      # "Novos admitidos" não é setor
+        self.assertEqual(humand.hotel_name("  Carmel Taíba "), "Taíba")
+        self.assertEqual(humand.hotel_name("Wind"), "Wind")
 
 
 class SignupTests(BaseTestCase):
@@ -196,14 +205,33 @@ class SignupTests(BaseTestCase):
 
     def test_humand_hotels_link_by_name_with_no_alias_table(self):
         cm, magna = Resort.objects.get(code="cm"), Resort.objects.get(code="magna")
-        self.assertFalse(HumandAlias.objects.exists())  # nada para traduzir: os nomes são iguais
+        self.assertFalse(HumandAlias.objects.filter(name__in=["CM", "Magna"]).exists())  # nomes iguais: nada a traduzir
         FakeHumand(self, person(segmentations=[
             {"group": "Hotéis", "item": "CM"}, {"group": "Hotéis", "item": "Magna"},
             {"group": "Carmel Taíba", "item": "Governança"}]))
         self.register()
         profile = User.objects.get(username=CPF_DIGITS).profile
-        self.assertEqual(set(profile.resorts.all()), {cm, magna})
+        self.assertEqual(set(profile.resorts.all()), {cm, magna, self.taiba})  # "Carmel Taíba" também diz o hotel
         self.assertEqual(profile.department, self.gov)
+
+    def test_cumbuco_is_the_wind_resort(self):
+        wind = Resort.objects.get(code="wind")
+        self.assertTrue(HumandAlias.objects.filter(name="Cumbuco", resort=wind).exists())  # vem da migração 0019
+        FakeHumand(self, person(segmentations=[{"group": "Carmel Cumbuco", "item": "Governança"}]))  # sem item em "Hotéis"
+        self.register()
+        profile = User.objects.get(username=CPF_DIGITS).profile
+        self.assertEqual(list(profile.resorts.all()), [wind])
+        self.assertEqual(profile.department, self.gov)
+        self.assertFalse(profile.self_declared)  # veio da Humand, ninguém precisou escolher
+
+    def test_new_hire_group_gives_the_hotel_and_the_screen_shows_portal_names(self):
+        FakeHumand(self, person(segmentations=[{"group": "Novos admitidos", "item": "Carmel Cumbuco"}]))
+        self.identify()
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        self.assertIn("Wind", page)             # o nome do portal, não "Cumbuco"
+        self.assertNotIn("Cumbuco", page)
+        self.assertNotIn('name="resort"', page)  # o hotel veio da Humand: sem dropdown
+        self.assertIn('name="department"', page)  # mas o setor não
 
     def test_an_alias_still_works_for_a_future_different_name(self):
         HumandAlias.objects.create(name="Governança Taíba", department=self.rh)
@@ -621,7 +649,7 @@ class HumandNamesMigrationTests(BaseTestCase):
         self.rh.drive_folder_id = "pasta-rh"
         self.rh.save()
         self.run_migration()
-        self.assertFalse(HumandAlias.objects.exists())
+        self.assertFalse(HumandAlias.objects.filter(name__in=["CM", "Magna", "Recursos Humanos"]).exists())
         self.rh.refresh_from_db()
         self.assertEqual(self.rh.drive_folder_id, "pasta-rh")
 

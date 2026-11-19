@@ -120,9 +120,9 @@ class PasswordForm(forms.Form):
         return data
 
 
-def missing_fields(person: "humand.HumandPerson") -> dict:
+def missing_fields(person: "humand.HumandPerson", matched=None) -> dict:
     """O que a Humand não trouxe e a pessoa precisa escolher: setor/resort que não ligam a nada no portal e a função."""
-    department, resorts = humand.match_portal(person)
+    department, resorts = matched or humand.match_portal(person)
     return {
         "need_department": department is None,
         "need_resort": not resorts,

@@ -23,7 +23,7 @@ from .storage import name_key
 
 logger = logging.getLogger(__name__)
 
-RESORT_GROUP = "hoteis"                  # grupo da Humand cujos itens são os resorts
+HOTEL_ITEM_GROUPS = {"hoteis", "novos admitidos"}  # grupos da Humand cujos itens são hotéis
 IGNORED_GROUPS = {"gestores/ lideres", "gestores/lideres"}  # grupos que não dizem setor nem resort
 
 
@@ -173,8 +173,17 @@ def find_position(cpf: str) -> str:
         return ""
 
 
+def hotel_name(text: str) -> str:
+    """'Carmel Taíba' -> 'Taíba'. O prefixo 'Carmel' é tirado para comparar com o nome do resort."""
+    text = text.strip()
+    return text[len("carmel"):].strip() if name_key(text).startswith("carmel ") else text
+
+
 def split_segmentations(segmentations) -> tuple:
-    """(resorts, setores) citados pela pessoa: grupo 'Hotéis' = resorts; os itens dos demais grupos = setores."""
+    """
+    (hotéis, setores) citados pela pessoa. Nos grupos 'Hotéis' e 'Novos admitidos' o item é o hotel. Nos grupos de cada
+    hotel (Carmel Taíba, Carmel Cumbuco, CM, Magna...) o nome do grupo é o hotel e o item é o setor.
+    """
     resorts, departments = [], []
     for seg in segmentations or []:
         if not isinstance(seg, dict):
@@ -182,8 +191,12 @@ def split_segmentations(segmentations) -> tuple:
         group, item = name_key(seg.get("group") or ""), (seg.get("item") or "").strip()
         if not item or group in IGNORED_GROUPS:
             continue
-        (resorts if group == RESORT_GROUP else departments).append(item)
-    return resorts, departments
+        if group in HOTEL_ITEM_GROUPS:
+            resorts.append(hotel_name(item))
+        else:
+            resorts.append(hotel_name(seg["group"]))
+            departments.append(item)
+    return list(dict.fromkeys(resorts)), departments
 
 
 def lookup_person(cpf: str, birthdate: date) -> Optional[HumandPerson]:
