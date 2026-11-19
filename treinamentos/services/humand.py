@@ -10,12 +10,14 @@ import hashlib
 import hmac
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional
 
 import httpx
 from django.conf import settings
+from django.core.cache import cache
 
 from .storage import name_key
 
@@ -71,7 +73,8 @@ def is_configured() -> bool:
     return bool(settings.HUMAND_API_KEY)
 
 
-def _fetch(cpf: str, transport: Optional[httpx.BaseTransport] = None) -> Optional[dict]:
+def _get(path: str, params: Optional[dict] = None, transport: Optional[httpx.BaseTransport] = None):
+    """GET na Humand. Devolve o JSON, ou None se a Humand diz que não existe (400/404). Qualquer outra falha vira HumandUnavailable."""
     if not is_configured():
         raise HumandUnavailable("HUMAND_API_KEY não configurada.")
     try:
@@ -79,7 +82,7 @@ def _fetch(cpf: str, transport: Optional[httpx.BaseTransport] = None) -> Optiona
             base_url=settings.HUMAND_BASE_URL, timeout=15, transport=transport,
             headers={"Authorization": f"Basic {settings.HUMAND_API_KEY}", "Accept": "application/json"},
         ) as client:
-            response = client.get(f"/users/{cpf}")
+            response = client.get(path, params=params)
     except httpx.RequestError as exc:
         logger.warning("Humand: falha de conexão (%s: %s)", exc.__class__.__name__, exc)
         raise HumandUnavailable(f"Falha de conexão com a Humand: {exc.__class__.__name__}") from exc
@@ -90,11 +93,68 @@ def _fetch(cpf: str, transport: Optional[httpx.BaseTransport] = None) -> Optiona
         logger.warning("Humand respondeu HTTP %s: %s", response.status_code, response.text[:200])
         raise HumandUnavailable(f"Humand respondeu HTTP {response.status_code}.")
     try:
-        data = response.json()
+        return response.json()
     except ValueError as exc:
         logger.warning("Humand: resposta não é JSON (HTTP %s): %s", response.status_code, response.text[:200])
         raise HumandUnavailable("Resposta inválida da Humand.") from exc
+
+
+def _fetch(cpf: str) -> Optional[dict]:
+    data = _get(f"/users/{cpf}")
     return data if isinstance(data, dict) else None
+
+
+def _items(path: str, params: Optional[dict] = None) -> list:
+    """Todos os itens de uma lista paginada da Humand (campo `items`)."""
+    found, page = [], 1
+    while True:
+        data = _get(path, {**(params or {}), "limit": 50, "page": page})
+        batch = data.get("items", []) if isinstance(data, dict) else []
+        found += batch
+        if len(batch) < 50 or page >= (data.get("totalPages") or page):
+            return found
+        page += 1
+
+
+POSITIONS_CACHE_KEY = "humand:positions"
+POSITIONS_CACHE_SECONDS = 6 * 3600
+
+
+def position_map() -> dict:
+    """
+    {CPF: nome do cargo} de todos os colaboradores. A Humand só diz o cargo pela lista de membros de cada cargo
+    (não vem no cadastro da pessoa), então o mapa é montado uma vez e guardado por algumas horas.
+    """
+    mapping = cache.get(POSITIONS_CACHE_KEY)
+    if mapping is not None:
+        return mapping
+    positions = [p for p in _items("/job-positions") if p.get("usersCount") and not p.get("deletedAt")]
+
+    def members_of(position):
+        try:
+            return position, _items(f"/job-positions/{position['id']}/members")
+        except HumandUnavailable:
+            return position, None  # um cargo que falha não derruba os outros
+
+    mapping, failed = {}, 0
+    with ThreadPoolExecutor(max_workers=10) as pool:  # ~65 cargos a ~0,7 s cada: em série seriam ~45 s
+        for position, members in pool.map(members_of, positions):
+            if members is None:
+                failed += 1
+                continue
+            name = " ".join(str(position.get("name", "")).split())
+            mapping.update({str(m.get("employeeInternalId")): name for m in members})
+    # mapa incompleto vale por pouco tempo, para a próxima pessoa tentar de novo
+    cache.set(POSITIONS_CACHE_KEY, mapping, 300 if failed else POSITIONS_CACHE_SECONDS)
+    return mapping
+
+
+def find_position(cpf: str) -> str:
+    """Cargo da pessoa, ou vazio. É só um detalhe da tela de conferência: se a consulta falhar, o cadastro segue sem ele."""
+    try:
+        return position_map().get(cpf, "")
+    except HumandUnavailable:
+        return ""
 
 
 def split_segmentations(segmentations) -> tuple:
@@ -110,21 +170,12 @@ def split_segmentations(segmentations) -> tuple:
     return resorts, departments
 
 
-def find_position(fields) -> str:
-    """Função/cargo: campo do perfil sem nome na Humand, identificado pelo id (HUMAND_POSITION_FIELD_ID)."""
-    wanted = settings.HUMAND_POSITION_FIELD_ID
-    for item in fields or []:
-        if isinstance(item, dict) and item.get("id") == wanted and isinstance(item.get("value"), str):
-            return " ".join(item["value"].split())
-    return ""
-
-
-def lookup_person(cpf: str, birthdate: date, transport: Optional[httpx.BaseTransport] = None) -> Optional[HumandPerson]:
+def lookup_person(cpf: str, birthdate: date) -> Optional[HumandPerson]:
     """
     A pessoa da Humand, ou None se não existe, está inativa/excluída ou a data de nascimento não confere.
     (Os três casos são iguais para quem chamou: não revelamos qual deles aconteceu.)
     """
-    data = _fetch(cpf, transport)
+    data = _fetch(cpf)
     if not data or data.get("deleted") or str(data.get("status", "")).upper() != "ACTIVE":
         return None
     if str(data.get("birthdate") or "")[:10] != birthdate.isoformat():
@@ -133,7 +184,7 @@ def lookup_person(cpf: str, birthdate: date, transport: Optional[httpx.BaseTrans
     name = " ".join(p for p in (data.get("firstName"), data.get("lastName")) if p).strip()
     return HumandPerson(name=name, email=(data.get("email") or "").strip().lower(),
                         resort_names=resorts, department_names=departments,
-                        position=find_position(data.get("fields")), cpf=cpf)
+                        position=find_position(cpf), cpf=cpf)
 
 
 def match_portal(person: HumandPerson) -> tuple:

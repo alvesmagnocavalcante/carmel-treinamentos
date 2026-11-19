@@ -155,8 +155,6 @@ SIGNUP_ENABLED = os.getenv("SIGNUP_ENABLED", "true").lower() in ("1", "true", "y
 # tolera aspas, espaços e o prefixo "Basic" colados junto com a chave (erro comum ao copiar para o painel do Render)
 HUMAND_API_KEY = os.getenv("HUMAND_API_KEY", "").strip().strip("\"'").strip().removeprefix("Basic ").strip()
 HUMAND_BASE_URL = os.getenv("HUMAND_BASE_URL", "https://api-prod.humand.co/public/api/v1").rstrip("/")
-# id do campo do perfil da Humand que guarda a função/cargo (o campo não tem nome na API)
-HUMAND_POSITION_FIELD_ID = os.getenv("HUMAND_POSITION_FIELD_ID", "2b6041ca-27d0-412d-b385-dda2fd082e7d")
 SIGNUP_MAX_ATTEMPTS = int(os.getenv("SIGNUP_MAX_ATTEMPTS", "5"))      # tentativas erradas por IP/CPF...
 SIGNUP_LOCK_MINUTES = int(os.getenv("SIGNUP_LOCK_MINUTES", "15"))     # ...dentro desta janela
 MAX_ANIMATED_SCENES = int(os.getenv("MAX_ANIMATED_SCENES", "4"))

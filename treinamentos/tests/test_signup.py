@@ -13,14 +13,14 @@ from .base import BaseTestCase
 CPF = "529.982.247-25"  # CPF válido de exemplo (dígitos verificadores corretos)
 CPF_DIGITS = "52998224725"
 SIGNUP_KEY = "signup_person"
-REAL_FETCH = humand._fetch  # a consulta de verdade; cada FakeHumand a troca por uma com respostas prontas
+REAL_POSITION_MAP = humand.position_map
+REAL_GET = humand._get  # a consulta de verdade; cada FakeHumand a troca por uma com respostas prontas
 
 
 def person(**extra):
     data = {
         "id": 1, "employeeInternalId": CPF_DIGITS, "firstName": "Maria", "lastName": "da Silva",
         "email": "maria@carmel.com", "birthdate": "1990-05-17", "status": "ACTIVE", "deleted": False,
-        "fields": [{"id": "2b6041ca-27d0-412d-b385-dda2fd082e7d", "name": None, "value": "Eletricista"}],
         "segmentations": [{"group": "Carmel Taíba", "item": "Governança"}, {"group": "Hotéis", "item": "Taíba"}],
     }
     data.update(extra)
@@ -28,19 +28,33 @@ def person(**extra):
 
 
 class FakeHumand:
-    """Troca a consulta HTTP por respostas prontas e registra o que foi pedido (só GET)."""
+    """
+    Troca a consulta HTTP por respostas prontas e registra o que foi pedido (só GET).
+    `payload`/`status` respondem a /users/{cpf}; `positions` é {nome do cargo: [CPFs]} para /job-positions.
+    """
 
-    def __init__(self, test, payload=None, status=200):
+    def __init__(self, test, payload=None, status=200, positions=None):
         self.requests = []
+        self.positions = positions or {}
+        ids = {name: str(n) for n, name in enumerate(self.positions, start=1)}
 
         def handler(request):
             self.requests.append(request)
+            path = request.url.path.removeprefix("/api")
+            if path == "/job-positions":
+                items = [{"id": ids[n], "name": n, "usersCount": len(c)} for n, c in self.positions.items()]
+                return httpx.Response(200, json={"items": items, "totalPages": 1})
+            if path.startswith("/job-positions/"):
+                name = next(n for n, i in ids.items() if i == path.split("/")[2])
+                return httpx.Response(200, json={"items": [{"employeeInternalId": c} for c in self.positions[name]],
+                                                 "totalPages": 1})
             return httpx.Response(status, json=payload if payload is not None else {})
 
         self.transport = httpx.MockTransport(handler)
         test.enterContext(override_settings(HUMAND_API_KEY="chave-teste", HUMAND_BASE_URL="https://humand.test/api"))
-        humand._fetch = lambda cpf, transport=None: REAL_FETCH(cpf, self.transport)
-        test.addCleanup(setattr, humand, "_fetch", REAL_FETCH)
+        cache.clear()
+        humand._get = lambda path, params=None, transport=None: REAL_GET(path, params, self.transport)
+        test.addCleanup(setattr, humand, "_get", REAL_GET)
 
 
 class HumandServiceTests(SimpleTestCase):
@@ -90,12 +104,12 @@ class SignupTests(BaseTestCase):
 
     # ---- fluxo feliz ----
     def test_step_one_shows_the_humand_data_and_creates_nothing_yet(self):
-        FakeHumand(self, person())
+        FakeHumand(self, person(), positions={"ELETRICISTA": [CPF_DIGITS], "GERENTE": ["99999999999"]})
         resp = self.identify()
         self.assertRedirects(resp, reverse("signup_confirm"), fetch_redirect_response=False)
         self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
         page = self.client.get(reverse("signup_confirm")).content.decode()
-        for expected in ("Maria da Silva", "Eletricista", "Governança", "Taíba"):
+        for expected in ("Maria da Silva", "ELETRICISTA", "Governança", "Taíba"):
             self.assertIn(expected, page)
         self.assertNotIn(CPF_DIGITS, page)       # o CPF não volta para a tela
         self.assertNotIn("maria@carmel.com", page)  # só o essencial: sem e-mail, nascimento, telefone
@@ -131,16 +145,33 @@ class SignupTests(BaseTestCase):
         self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False)
 
     def test_position_is_optional(self):
-        FakeHumand(self, person(fields=[]))
+        FakeHumand(self, person(), positions={"GERENTE": ["99999999999"]})  # o cargo dela não está em nenhuma lista
         self.identify()
         self.assertNotContains(self.client.get(reverse("signup_confirm")), "Função")
         self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)
 
     def test_only_reads_the_humand_never_writes(self):
-        fake = FakeHumand(self, person())
+        fake = FakeHumand(self, person(), positions={"GERENTE": [CPF_DIGITS]})
         self.register()
-        self.assertEqual([(r.method, r.url.path) for r in fake.requests], [("GET", f"/api/users/{CPF_DIGITS}")])
-        self.assertEqual(fake.requests[0].headers["Authorization"], "Basic chave-teste")
+        self.assertEqual({r.method for r in fake.requests}, {"GET"})
+        self.assertEqual(fake.requests[0].url.path, f"/api/users/{CPF_DIGITS}")
+        self.assertTrue(all(r.headers["Authorization"] == "Basic chave-teste" for r in fake.requests))
+
+    def test_positions_are_looked_up_once_and_kept_for_the_next_signups(self):
+        fake = FakeHumand(self, person(), positions={"GERENTE": [CPF_DIGITS]})
+        self.identify()
+        first = len(fake.requests)
+        self.assertIn("/api/job-positions", [r.url.path for r in fake.requests])
+        humand.position_map()  # a segunda consulta vem da memória, sem ir à Humand de novo
+        self.assertEqual(len(fake.requests), first)
+
+    def test_failure_to_read_positions_does_not_block_the_signup(self):
+        FakeHumand(self, person())
+        humand.position_map = lambda: (_ for _ in ()).throw(humand.HumandUnavailable("fora do ar"))
+        self.addCleanup(setattr, humand, "position_map", REAL_POSITION_MAP)
+        self.identify()
+        self.assertNotContains(self.client.get(reverse("signup_confirm")), "Função")
+        self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)
 
     def test_aliases_link_humand_names_that_differ(self):
         magna = Resort.objects.get(code="magna-cm")

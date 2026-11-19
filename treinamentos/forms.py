@@ -22,9 +22,9 @@ class IdentifyForm(forms.Form):
     birthdate = forms.CharField(label="Data de nascimento", max_length=12)
     website = forms.CharField(required=False)  # armadilha para robôs: pessoas não veem nem preenchem
 
-    def __init__(self, *args, ip="", transport=None, **kwargs):
+    def __init__(self, *args, ip="", **kwargs):
         super().__init__(*args, **kwargs)
-        self.ip, self.transport = ip or "?", transport
+        self.ip = ip or "?"
         self.person = None
         self.cpf_digits = None
 
@@ -68,7 +68,7 @@ class IdentifyForm(forms.Form):
             self.add_error("birthdate", "Data inválida. Use DD/MM/AAAA.")
             return data
         try:
-            self.person = humand.lookup_person(self.cpf_digits, born, self.transport)
+            self.person = humand.lookup_person(self.cpf_digits, born)
         except humand.HumandUnavailable:
             raise forms.ValidationError("Não foi possível consultar o cadastro agora. Tente novamente em instantes.")
         if self.person is None:
