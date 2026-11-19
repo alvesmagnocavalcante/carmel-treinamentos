@@ -114,7 +114,7 @@ class SignupTests(BaseTestCase):
         data.update(extra)
         return self.client.post(reverse("signup"), data)
 
-    def finish(self, password="segredo123", password2=None):
+    def finish(self, password="Segredo@2026", password2=None):
         return self.client.post(reverse("signup_confirm"),
                                 {"password": password, "password2": password2 or password})
 
@@ -154,7 +154,7 @@ class SignupTests(BaseTestCase):
         self.register()
         self.client.logout()
         for typed in (CPF, CPF_DIGITS, f"  {CPF} "):
-            resp = self.client.post(reverse("login"), {"username": typed, "password": "segredo123"})
+            resp = self.client.post(reverse("login"), {"username": typed, "password": "Segredo@2026"})
             self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False, msg_prefix=typed)
             self.client.logout()
         resp = self.client.post(reverse("login"), {"username": CPF, "password": "errada"})
@@ -232,7 +232,7 @@ class SignupTests(BaseTestCase):
         self.assertNotIn("Setor Novo", page)
         self.assertEqual(self.finish().status_code, 200)  # sem escolher, não conclui
         resp = self.client.post(reverse("signup_confirm"),
-                                {"password": "segredo123", "password2": "segredo123", "department": self.gov.id})
+                                {"password": "Segredo@2026", "password2": "Segredo@2026", "department": self.gov.id})
         self.assertEqual(resp.status_code, 302)
         profile = User.objects.get(username=CPF_DIGITS).profile
         self.assertEqual(profile.department, self.gov)
@@ -278,14 +278,14 @@ class SignupTests(BaseTestCase):
     def test_password_rules_apply_on_step_two(self):
         FakeHumand(self, person())
         self.identify()
-        self.assertContains(self.finish("segredo123", "outra"), "As senhas não são iguais")
-        self.assertContains(self.finish("123", "123"), "muito curta")
+        self.assertContains(self.finish("Segredo@2026", "outra"), "As senhas não são iguais")
+        self.assertContains(self.finish("123", "123"), "pelo menos 11 caracteres")
         self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
         self.assertRedirects(self.finish(), reverse("home"), fetch_redirect_response=False)  # ainda dá para corrigir
 
     def test_step_two_needs_a_validated_step_one(self):
         self.assertRedirects(self.client.get(reverse("signup_confirm")), reverse("signup"), fetch_redirect_response=False)
-        resp = self.client.post(reverse("signup_confirm"), {"password": "segredo123", "password2": "segredo123"})
+        resp = self.client.post(reverse("signup_confirm"), {"password": "Segredo@2026", "password2": "Segredo@2026"})
         self.assertRedirects(resp, reverse("signup"), fetch_redirect_response=False)
         self.assertEqual(User.objects.filter(username=CPF_DIGITS).count(), 0)
 
@@ -303,12 +303,45 @@ class SignupTests(BaseTestCase):
         self.assertEqual(self.identify(website="http://spam").status_code, 200)
         self.assertNotIn(SIGNUP_KEY, self.client.session)
         self.identify(role="admin", is_superuser="on", department=self.rh.id)
-        self.client.post(reverse("signup_confirm"), {"password": "segredo123", "password2": "segredo123",
+        self.client.post(reverse("signup_confirm"), {"password": "Segredo@2026", "password2": "Segredo@2026",
                                                      "role": "admin", "is_superuser": "on", "department": self.rh.id})
         user = User.objects.get(username=CPF_DIGITS)
         self.assertEqual(user.profile.role, UserProfile.ROLE_COLABORADOR)
         self.assertFalse(user.is_superuser)
         self.assertEqual(user.profile.department, self.gov)  # setor vem da Humand, não do formulário
+
+    def test_password_policy_is_enforced_with_clear_messages(self):
+        FakeHumand(self, person())
+        self.identify()
+        cases = (
+            ("Abc@123", "pelo menos 11 caracteres"),              # curta
+            ("segredosegredo1", "caracteres especiais"),          # sem especial
+            ("Segredo@Segredo", "números"),                       # sem número
+            ("12345678901@", "letras"),                           # sem letra
+            ("!@#$%^&*()_+1", "letras"),                          # só símbolos e número
+            ("a" * 129 + "A@1", "no máximo 128"),                 # absurdamente longa
+        )
+        for password, text in cases:
+            resp = self.finish(password)
+            self.assertContains(resp, text, msg_prefix=password[:20])
+        self.assertFalse(User.objects.filter(username=CPF_DIGITS).exists())
+
+    def test_strong_passwords_are_accepted_including_exactly_11_characters(self):
+        for password in ("Segredo@123", "uma frase longa 123 e segura!", "Çedilha#2026ã"):
+            cache.clear()
+            User.objects.filter(username=CPF_DIGITS).delete()
+            FakeHumand(self, person())
+            self.client.logout()
+            self.identify()
+            self.assertEqual(len("Segredo@123"), 11)
+            self.assertEqual(self.finish(password).status_code, 302, password)
+
+    def test_policy_is_shown_to_the_person_before_typing(self):
+        FakeHumand(self, person())
+        self.identify()
+        page = self.client.get(reverse("signup_confirm")).content.decode()
+        self.assertIn("Mínimo de 11 caracteres", page)
+        self.assertIn('minlength="11"', page)
 
     def test_password_fields_have_a_show_hide_button(self):
         FakeHumand(self, person())
@@ -361,7 +394,7 @@ class MissingDataDropdownTests(BaseTestCase):
 
     def confirm(self, **data):
         return self.client.post(reverse("signup_confirm"),
-                                {"password": "segredo123", "password2": "segredo123", **data})
+                                {"password": "Segredo@2026", "password2": "Segredo@2026", **data})
 
     def test_dropdowns_appear_for_what_the_humand_did_not_bring(self):
         self.start()
@@ -503,12 +536,12 @@ class AdminAccessTests(BaseTestCase):
     """Login por CPF (com ou sem pontuação) vale também no /admin/login/, e promote_admin dá acesso de administrador."""
 
     def make_person(self, cpf=CPF_DIGITS, **flags):
-        user = User.objects.create_user(cpf, password="segredo123", first_name="Maria", **flags)
+        user = User.objects.create_user(cpf, password="Segredo@2026", first_name="Maria", **flags)
         return user
 
     def test_admin_login_accepts_cpf_with_punctuation(self):
         user = self.make_person(is_staff=True, is_superuser=True)
-        resp = self.client.post("/admin/login/", {"username": CPF, "password": "segredo123", "next": "/admin/"})
+        resp = self.client.post("/admin/login/", {"username": CPF, "password": "Segredo@2026", "next": "/admin/"})
         self.assertRedirects(resp, "/admin/", fetch_redirect_response=False)
         self.assertEqual(self.client.session["_auth_user_id"], str(user.id))
 
@@ -550,7 +583,7 @@ class AdminAccessTests(BaseTestCase):
     def test_signup_alone_never_grants_admin(self):
         FakeHumand(self, person())
         self.client.post(reverse("signup"), {"cpf": CPF, "birthdate": "17/05/1990", "website": ""})
-        self.client.post(reverse("signup_confirm"), {"password": "segredo123", "password2": "segredo123",
+        self.client.post(reverse("signup_confirm"), {"password": "Segredo@2026", "password2": "Segredo@2026",
                                                      "department": self.rh.id, "resort": 1})
         user = User.objects.get(username=CPF_DIGITS)
         self.assertFalse(user.is_staff or user.is_superuser)

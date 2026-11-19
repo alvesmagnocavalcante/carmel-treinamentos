@@ -72,11 +72,12 @@
             </div>
             {% endif %}
             <p class="muted" style="margin:0; font-size:13px">Está certo? Crie uma senha. Seu login será o seu CPF.</p>
+            <p class="muted" style="margin:0; font-size:12px">{{ password_policy }}</p>
             <div class="field">
                 <label for="id_password">Crie uma senha</label>
                 <div class="input-icon">
                     {% include 'partials/icon.html' with name='lock' %}
-                    <input id="id_password" type="password" name="password" class="input has-toggle" autocomplete="new-password" required>
+                    <input id="id_password" type="password" name="password" class="input has-toggle" autocomplete="new-password" minlength="11" required>
                     <button type="button" class="pw-toggle" data-pw-toggle aria-label="Mostrar senha" aria-pressed="false">
                         <span data-pw-show>{% include 'partials/icon.html' with name='eye' %}</span>
                         <span data-pw-hide hidden>{% include 'partials/icon.html' with name='eye-off' %}</span>

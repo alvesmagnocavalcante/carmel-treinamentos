@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST, require_safe
 from .context_processors import get_profile
 from .forms import IdentifyForm, PasswordForm, create_account, missing_fields
 from .services import humand
+from .validators import POLICY_TEXT
 from .models import TrainingVideo, VideoProgress
 from .services.drive_service import GoogleDriveService
 from .services.document_parser import MAX_MOVEMENT_CHARS, clean_script, parse_scenes
@@ -455,7 +456,7 @@ def signup_confirm_view(request):
             else:
                 messages.success(request, f'Bem-vindo(a), {user.first_name}! Cadastro feito.')
             return redirect('home')
-    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data, **missing})
+    return render(request, 'treinamentos/signup_confirm.html', {'form': form, 'person': data, 'password_policy': POLICY_TEXT, **missing})
 
 
 @require_POST
