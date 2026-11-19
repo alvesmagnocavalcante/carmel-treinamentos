@@ -90,8 +90,6 @@ Tudo fica no `.env` (veja `.env.example`). Os pontos principais:
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | JSON da Service Account. Ela precisa de permissão de **Editor/Gerente de conteúdo** nas pastas dos setores (lê Roteiros e grava em Vídeos). |
 | `DJANGO_DEBUG` / `DJANGO_SECRET_KEY` / `DJANGO_ALLOWED_HOSTS` | Segurança do Django. |
 
-Valores em **Admin → Configurações do Sistema** têm prioridade sobre o `.env`; deixar o valor vazio faz o sistema usar o `.env`.
-
 ### Pastas por setor
 - **Google Drive:** cadastre o ID da **pasta do setor** em **Admin → Setores → ID da Pasta do Setor no Google Drive**. As subpastas `Roteiros`, `Imagens` e `Vídeos` são criadas automaticamente se não existirem (o nome tolera maiúsculas e acento). Google Docs nativos são exportados como `.docx`.
 - **Importante — Service Account e armazenamento:** uma Service Account **não tem cota de armazenamento** no "Meu Drive"; gravar vídeos ali falha com `storageQuotaExceeded`. Use uma **Unidade Compartilhada** (Shared Drive) da conta unificada, adicionando o e-mail da Service Account como membro com permissão de gerenciar conteúdo.

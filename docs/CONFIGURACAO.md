@@ -281,15 +281,15 @@ O portal e o Admin seguem o guia de marca da Rede Carmel Hotéis.
 | Elemento | O que foi usado |
 |---|---|
 | Cores | Café `#4C3427` (botões e logotipo), terracota `#B14D1D` (destaques), areia `#E7D0A7` e neutros `#E8E7E1`, `#DBD4CA`, `#9F9385`, `#1D1D1B` |
-| Tipografia | Cormorant nos títulos, Plus Jakarta Sans no texto e Oooh Baby no detalhe da tela de login |
-| Logotipo | Versão da rede (café no tema claro, areia no escuro) e ícone no favicon |
+| Tipografia | Inter no texto e nos títulos e Oooh Baby no detalhe da tela de login (carregadas do Google Fonts) |
+| Logotipo | Versão da rede (café no tema claro, areia no escuro); o favicon é `favicon.png` |
 | Textura | Papel areia no fundo da tela de login |
 
 **Painel administrativo.** O Admin tem página inicial própria (`/admin/`) com o resumo dos vídeos por situação, os setores sem pasta do Drive, atalhos e a atividade recente, além de um menu lateral por assunto (Pessoas e acessos, Conteúdo, Sistema). As listas mostram a situação de cada vídeo em etiquetas coloridas e os formulários são agrupados por tema. No celular, o cabeçalho tem uma linha só (menu, logotipo e tema); o menu abre em gaveta e traz também "Alterar senha" e "Encerrar sessão". As listas viram cartões (um por registro, com o nome de cada campo), o filtro fica recolhido até tocar em "Filtro" e os formulários ocupam a largura da tela.
 
 **Telas pequenas.** O portal e o Admin foram conferidos em larguras de 320 a 1024 px (celular e tablet) sem barra de rolagem horizontal na página. Foram medidas 17 páginas em 6 larguras (320, 360, 390, 414, 768 e 1024 px).
 
-Onde ficam os arquivos: cores e componentes em `static/css/carmel.css` (portal) e `static/css/carmel_admin.css` (Admin); a página inicial e o menu do Admin em `treinamentos/admin_site.py` e `templates/admin/`; fontes em `static/fonts/`; logotipo, ícone e textura em `static/img/`. Para trocar uma cor, altere as variáveis no início de `carmel.css` (as do tema escuro ficam logo abaixo, em `html.dark`).
+Onde ficam os arquivos: cores e componentes em `static/css/carmel.css` (portal) e `static/css/carmel_admin.css` (Admin); a página inicial e o menu do Admin em `treinamentos/admin_site.py` e `templates/admin/`; fontes em `templates/partials/fonts.html`; logotipo, favicon e imagens em `static/img/`. Para trocar uma cor, altere as variáveis no início de `carmel.css` (as do tema escuro ficam logo abaixo, em `html.dark`).
 
 ## Uso no dia a dia
 

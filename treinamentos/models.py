@@ -259,10 +259,6 @@ class TrainingVideo(models.Model):
         return [{"ordem": 1, "texto": self.script_text, "imagem": ""}] if text else []
 
     @property
-    def has_images(self) -> bool:
-        return any(scene.get("imagem") for scene in self.scenes or [])
-
-    @property
     def is_in_progress(self) -> bool:
         return self.status in self.IN_PROGRESS
 

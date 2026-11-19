@@ -12,7 +12,6 @@ class SceneModelTests(BaseTestCase):
         video = self.make(script_text="Olá, equipe.")
         self.assertEqual(video.scenes, [])
         self.assertEqual(video.scene_list, [{"ordem": 1, "texto": "Olá, equipe.", "imagem": ""}])
-        self.assertFalse(video.has_images)
 
     def test_empty_script_has_no_scenes(self):
         self.assertEqual(self.make().scene_list, [])
@@ -22,7 +21,6 @@ class SceneModelTests(BaseTestCase):
         video = self.make(script_text="Um.\n\nDois.", scenes=scenes)
         video.refresh_from_db()
         self.assertEqual(video.scene_list, scenes)
-        self.assertTrue(video.has_images)
 
     def test_drive_image_key_ignores_accent_and_case(self):
         img = DriveImage.objects.create(department=self.rh, name="Área Externa.PNG", drive_file_id="d1")

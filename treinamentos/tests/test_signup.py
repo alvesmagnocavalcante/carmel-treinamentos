@@ -1,7 +1,5 @@
 """Cadastro por CPF + nascimento validado na Humand (simulada: nenhum teste chama a API real)."""
 
-import json
-
 import httpx
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -157,9 +155,8 @@ class SignupTests(BaseTestCase):
         self.assertEqual(profile.department, self.rh)
 
     def test_new_collaborator_lands_on_the_catalog_of_their_own_sector(self):
-        from ..models import Department, TrainingVideo
-        gov = Department.objects.get(code="governanca") if Department.objects.filter(code="governanca").exists() else self.gov
-        TrainingVideo.objects.filter(department=gov).update(title="Vídeo da Governança")
+        from ..models import TrainingVideo
+        TrainingVideo.objects.filter(department=self.gov).update(title="Vídeo da Governança")
         FakeHumand(self, person(segmentations=[{"group": "Hotéis", "item": "Taíba"},
                                                {"group": "Carmel Taíba", "item": "Governança"}]))
         self.register()

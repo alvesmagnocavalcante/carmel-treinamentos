@@ -399,8 +399,8 @@ def _signup_open() -> bool:
 
 
 def _client_ip(request) -> str:
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    return (forwarded.split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')) if forwarded else request.META.get('REMOTE_ADDR', '')
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    return forwarded or request.META.get('REMOTE_ADDR', '')
 
 
 SIGNUP_SESSION_KEY = 'signup_person'

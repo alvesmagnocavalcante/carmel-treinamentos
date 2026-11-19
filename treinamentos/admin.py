@@ -85,7 +85,6 @@ class HumandAliasAdmin(admin.ModelAdmin):
     """Nomes da Humand que não são iguais aos do portal. Iguais (sem acento/maiúscula) já funcionam sozinhos."""
     list_display = ('name', 'department', 'resort')
     search_fields = ('name',)
-    autocomplete_fields = ()
 
 
 @admin.register(Department)
