@@ -2,7 +2,7 @@
 
 from django.test import SimpleTestCase
 
-from ..services.document_parser import clean_script, parse_scenes, scenes_text, spoken_chars
+from ..services.document_parser import clean_script, parse_scenes, scenes_text, spoken_chars, stray_marker
 
 
 class ParseScenesTests(SimpleTestCase):
@@ -58,6 +58,29 @@ class ParseScenesTests(SimpleTestCase):
     def test_marker_without_name_starts_a_scene_without_image(self):
         scenes = parse_scenes("Um.\n[IMAGEM: ]\nDois.")
         self.assertEqual([(s["texto"], s["imagem"]) for s in scenes], [("Um.", ""), ("Dois.", "")])
+
+    def test_avatar_marker_brings_the_avatar_back_between_images(self):
+        raw = "Abertura.\n[IMAGEM: a.png]\nUm.\n[AVATAR]\nAtenção.\n[IMAGEM: b.png]\nDois.\n[AVATAR]\nFecho."
+        scenes = parse_scenes(raw)
+        self.assertEqual([(s["ordem"], s["texto"], s["imagem"]) for s in scenes], [
+            (1, "Abertura.", ""), (2, "Um.", "a.png"), (3, "Atenção.", ""), (4, "Dois.", "b.png"), (5, "Fecho.", ""),
+        ])
+
+    def test_avatar_marker_is_tolerant_and_never_narrated(self):
+        for line in ("[AVATAR]", "[ avatar ]", "**[AVATAR]**", "- [Avatar]", "［AVATAR］"):
+            scenes = parse_scenes(f"[IMAGEM: a.png]\nUm.\n{line}\nDois.")
+            self.assertEqual([(s["texto"], s["imagem"]) for s in scenes], [("Um.", "a.png"), ("Dois.", "")], line)
+
+    def test_avatar_marker_without_text_is_dropped_with_a_warning(self):
+        warnings = []
+        scenes = parse_scenes("[IMAGEM: a.png]\nUm.\n[AVATAR]\n[IMAGEM: b.png]\nDois.", warnings)
+        self.assertEqual([s["imagem"] for s in scenes], ["a.png", "b.png"])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("AVATAR", warnings[0])
+
+    def test_malformed_avatar_marker_is_a_stray_marker(self):
+        self.assertTrue(stray_marker("Fale.\n[AVATAR: oi]"))
+        self.assertEqual(stray_marker("Fale normalmente."), "")
 
     def test_empty_document_has_no_scenes(self):
         self.assertEqual(parse_scenes("   \n\n"), [])

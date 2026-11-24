@@ -218,7 +218,8 @@ Em vez de só o avatar com o fundo fixo, o vídeo pode ter **cenas**: cada trech
 
 | Regra | Como funciona |
 |---|---|
-| Texto antes da primeira marcação | Vira a cena 1, sem imagem |
+| Texto antes da primeira marcação | Vira a cena 1, sem imagem (o avatar fala) |
+| `[AVATAR]` | Uma linha **sozinha** abre uma cena com o **avatar falando** (sem imagem). É assim que se intercala avatar e imagens: `[IMAGEM: a.png]` texto… `[AVATAR]` texto… `[IMAGEM: b.png]` texto… `[AVATAR]` sem texto é ignorada com aviso |
 | Sem nenhuma marcação | Uma cena só, sem imagem: tudo igual a antes |
 | A marcação | Não é narrada e não conta para o limite de 5.000 caracteres (conta só o texto falado, somando as cenas) |
 | Cena sem texto | É ignorada (a revisão avisa na mensagem do item) |

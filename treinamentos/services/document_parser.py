@@ -66,8 +66,14 @@ IMAGE_MARKER_RE = re.compile(
     r"(?:\|[^\S\r\n]*(?P<mod>[^\]\r\n]*?)[^\S\r\n]*)?\](?:\*\*|__)?[^\S\r\n]*$",
     flags=re.IGNORECASE | re.MULTILINE,
 )
-# Qualquer coisa que COMECE como uma marcação ("[IMAGEM", "[ imagem"): se sobrar no texto falado, é marcação com defeito.
-STRAY_MARKER_RE = re.compile(r"\[[^\S\r\n]*IMAGEM\b", flags=re.IGNORECASE)
+# Marcação de avatar: uma linha sozinha, [AVATAR]. Abre uma cena com o avatar falando (sem imagem), para intercalar
+# avatar e imagens. Mesmas tolerâncias de espaço, lista e negrito da marcação de imagem.
+AVATAR_MARKER_RE = re.compile(
+    r"^[^\S\r\n]*(?:[-*•>][^\S\r\n]+)?(?:\*\*|__)?\[[^\S\r\n]*AVATAR[^\S\r\n]*\](?:\*\*|__)?[^\S\r\n]*$",
+    flags=re.IGNORECASE | re.MULTILINE,
+)
+# Qualquer coisa que COMECE como uma marcação ("[IMAGEM", "[ imagem", "[AVATAR"): se sobrar no texto falado, é marcação com defeito.
+STRAY_MARKER_RE = re.compile(r"\[[^\S\r\n]*(?:IMAGEM|AVATAR)\b", flags=re.IGNORECASE)
 _INVISIBLE_RE = re.compile("[​‌‍⁠﻿]")  # espaços de largura zero e BOM
 _FULLWIDTH = str.maketrans({"［": "[", "］": "]", "：": ":", "｜": "|"})  # ［ ］ ： ｜
 
@@ -114,31 +120,39 @@ def parse_scenes(raw_text: str, warnings: Optional[List[str]] = None) -> List[di
     A marcação nunca entra no texto narrado, e o parser só divide nas marcações: não corta o texto sozinho.
     Cenas sem texto são descartadas e, se `warnings` for dado, o motivo é anotado nele.
 
+    Uma linha `[AVATAR]` abre uma cena com o avatar falando (sem imagem): é como se intercala avatar e imagens.
+
     `[IMAGEM: nome.png | animar]` (ou `| animar: como animar`) pede uma imagem animada: a cena ganha
     `animar: True` e `movimento` (o texto de instrução, vazio = o padrão). Cenas não animadas não têm essas
     chaves, então o formato antigo não muda.
     """
     warn = warnings if warnings is not None else []
     raw_text = normalize_markup(raw_text)
-    matches = list(IMAGE_MARKER_RE.finditer(raw_text))
+    matches = sorted(list(IMAGE_MARKER_RE.finditer(raw_text)) + list(AVATAR_MARKER_RE.finditer(raw_text)),
+                     key=lambda m: m.start())
 
-    pieces = []  # (imagem, animar, movimento, texto bruto)
+    pieces = []  # (imagem, animar, movimento, texto bruto, abre_avatar)
     if not matches:
-        pieces.append(("", False, "", raw_text))
+        pieces.append(("", False, "", raw_text, False))
     else:
-        pieces.append(("", False, "", raw_text[:matches[0].start()]))
+        pieces.append(("", False, "", raw_text[:matches[0].start()], False))
         for i, match in enumerate(matches):
             end = matches[i + 1].start() if i + 1 < len(matches) else len(raw_text)
+            if match.re is AVATAR_MARKER_RE:
+                pieces.append(("", False, "", raw_text[match.end():end], True))
+                continue
             image = match.group("name").strip()
             animate, movement = _parse_modifier(match.group("mod"), image, warn)
-            pieces.append((image, animate, movement, raw_text[match.end():end]))
+            pieces.append((image, animate, movement, raw_text[match.end():end], False))
 
     scenes = []
-    for image, animate, movement, raw in pieces:
+    for image, animate, movement, raw, avatar in pieces:
         text = clean_script(raw)
         if not text:
             if image:
                 warn.append(f"A imagem '{image}' ficou sem texto e a cena foi ignorada.")
+            elif avatar:
+                warn.append("Uma marcação [AVATAR] ficou sem texto e a cena foi ignorada.")
             continue
         scene = {"ordem": len(scenes) + 1, "texto": text, "imagem": image}
         if animate:
@@ -147,7 +161,7 @@ def parse_scenes(raw_text: str, warnings: Optional[List[str]] = None) -> List[di
         stray = stray_marker(text)
         if stray:
             warn.append(f"A cena {scene['ordem']} tem uma linha que parece marcação de imagem mas não foi reconhecida: "
-                        f"“{stray}”. Use uma linha sozinha, como [IMAGEM: arquivo.jpg].")
+                        f"“{stray}”. Use uma linha sozinha, como [IMAGEM: arquivo.jpg] ou [AVATAR].")
     return scenes
 
 

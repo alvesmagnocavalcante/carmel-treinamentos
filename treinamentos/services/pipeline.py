@@ -73,7 +73,7 @@ def _refuse_stray_markers(texts) -> None:
         if stray:
             raise ValueError(
                 f"A cena {number} tem uma linha que parece marcação de imagem mas não foi reconhecida (“{stray}”) "
-                "e seria lida em voz alta. Deixe a marcação sozinha numa linha, assim: [IMAGEM: arquivo.jpg]."
+                "e seria lida em voz alta. Deixe a marcação sozinha numa linha, assim: [IMAGEM: arquivo.jpg] ou [AVATAR]."
             )
 
 
