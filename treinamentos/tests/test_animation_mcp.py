@@ -24,11 +24,15 @@ class AnimationSettingsTests(SimpleTestCase):
 
     def test_default_prompt_has_subtle_motion_and_names_no_objects(self):
         text = DEFAULT_ANIMATION_PROMPT.lower()
-        for phrase in ("camera push-in", "subtle natural motion", "exactly as in the photo", "nothing new appears"):
+        for phrase in ("push-in", "already visible in the photo", "natural blinking", "everything else stays still",
+                       "exactly as in the photo", "nothing new appears"):
             self.assertIn(phrase, text)
-        for word in ("food", "hands", "animals", "logos"):  # citar o objeto, mesmo proibindo, faz a IA desenhá-lo
-            self.assertNotIn(word, text)
-            self.assertNotIn(word, ANIMATION_GUARD.lower())
+        # citar um objeto, parte do corpo, expressão ou efeito de luz, mesmo proibindo, faz a IA desenhá-lo (foi o que
+        # gerou o prato e os "flashes"); o texto vale para TODA imagem, inclusive as sem pessoas
+        for word in ("food", "animals", "logos", "light", "shimmer", "glow", "flash", "sparkle", "effect",
+                     "hand", "smile", "gesture"):
+            for source in (text, ANIMATION_GUARD.lower()):
+                self.assertNotRegex(source, rf"\b{word}", word)  # \b: "slight" não conta como "light"
         self.assertEqual(animation_prompt(""), DEFAULT_ANIMATION_PROMPT)
         self.assertEqual(animation_prompt("   "), DEFAULT_ANIMATION_PROMPT)
 

@@ -74,9 +74,10 @@ def check_scenes(department: Department, scenes: List[dict]) -> List[dict]:
 # Animar com IA é arriscado: quanto mais livre a instrução e mais longo o clipe, mais a IA inventa. Por isso o padrão
 # é SÓ movimento de câmera (a cena em si fica parada), em inglês (a IA obedece melhor) e com proibições explícitas.
 DEFAULT_ANIMATION_PROMPT = (
-    "Gentle, slow camera push-in with subtle natural motion: soft blinking, slight head and body movement, light "
-    "ambient shimmer. Keep the composition, people and background exactly as in the photo. "
-    "Nothing new appears. Realistic, photographic, stable."
+    "A natural, realistic video, like a real camera recording. Any person already visible in the photo moves "
+    "naturally and calmly, with relaxed breathing, natural blinking and small natural head movements. Everything "
+    "else stays still. The camera is steady with, at most, a very slow push-in. Keep the composition, colors, "
+    "people and background exactly as in the photo. Nothing new appears."
 )
 # Acrescentado a qualquer texto de movimento escrito pela equipe, para ele não abrir a porta para invenções.
 ANIMATION_GUARD = (
