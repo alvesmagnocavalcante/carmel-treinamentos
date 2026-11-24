@@ -22,10 +22,13 @@ class AnimationSettingsTests(SimpleTestCase):
         with override_settings(ANIMATION_CLIP_SECONDS=40):
             self.assertEqual(animation_seconds(), 15)   # acima disso a HeyGen exige aprimoramento de texto
 
-    def test_default_prompt_is_camera_only_with_explicit_prohibitions(self):
+    def test_default_prompt_has_subtle_motion_and_names_no_objects(self):
         text = DEFAULT_ANIMATION_PROMPT.lower()
-        for phrase in ("camera push-in", "do not animate, move, add, remove or change", "no new elements"):
+        for phrase in ("camera push-in", "subtle natural motion", "exactly as in the photo", "nothing new appears"):
             self.assertIn(phrase, text)
+        for word in ("food", "hands", "animals", "logos"):  # citar o objeto, mesmo proibindo, faz a IA desenhá-lo
+            self.assertNotIn(word, text)
+            self.assertNotIn(word, ANIMATION_GUARD.lower())
         self.assertEqual(animation_prompt(""), DEFAULT_ANIMATION_PROMPT)
         self.assertEqual(animation_prompt("   "), DEFAULT_ANIMATION_PROMPT)
 

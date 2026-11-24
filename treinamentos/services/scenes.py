@@ -74,13 +74,13 @@ def check_scenes(department: Department, scenes: List[dict]) -> List[dict]:
 # Animar com IA é arriscado: quanto mais livre a instrução e mais longo o clipe, mais a IA inventa. Por isso o padrão
 # é SÓ movimento de câmera (a cena em si fica parada), em inglês (a IA obedece melhor) e com proibições explícitas.
 DEFAULT_ANIMATION_PROMPT = (
-    "Very slow, subtle camera push-in. Keep the scene exactly as in the photo: do not animate, move, add, remove or "
-    "change any object, food, hands, people, animals, text or logos. No new elements. Realistic, photographic, stable."
+    "Gentle, slow camera push-in with subtle natural motion: soft blinking, slight head and body movement, light "
+    "ambient shimmer. Keep the composition, people and background exactly as in the photo. "
+    "Nothing new appears. Realistic, photographic, stable."
 )
 # Acrescentado a qualquer texto de movimento escrito pela equipe, para ele não abrir a porta para invenções.
 ANIMATION_GUARD = (
-    "Keep everything else exactly as in the photo: do not add, remove, move or deform any object, food, hands, "
-    "people, animals, text or logos."
+    "Keep everything else exactly as in the photo. Nothing new appears in the scene."
 )
 MIN_CLIP_SECONDS, MAX_CLIP_SECONDS = 5, 15  # 5 s é o mínimo da HeyGen; acima de 15 s ela exige o aprimoramento de texto
 
