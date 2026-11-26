@@ -36,7 +36,7 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = env_list(
     "DJANGO_ALLOWED_HOSTS",
     "localhost,127.0.0.1,carmel-treinamentos.onrender.com",
-    "3.139.238.73:10000",
+    "3.139.238.73:10000"
 )
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 
