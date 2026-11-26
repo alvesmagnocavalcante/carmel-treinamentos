@@ -148,7 +148,7 @@ class GoogleDriveService:
                     published += cls._scan_videos_folder(client, dept)
                 except Exception as exc:  # noqa: BLE001
                     logger.exception("Erro ao varrer a pasta do setor %s", dept.name)
-                    errors.append(f"{dept.name}: {exc}")
+                    errors.append(f"{dept.name}: {cls._friendly_drive_error(exc)}")
 
         return {
             "found": len(new_videos), "new_videos": new_videos,
@@ -156,6 +156,17 @@ class GoogleDriveService:
             "images": images_synced,
             "errors": errors, "drive_connected": bool(client),
         }
+
+    @classmethod
+    def _friendly_drive_error(cls, exc: Exception) -> str:
+        """404/403 do Drive = pasta inexistente ou não compartilhada com a conta de serviço: diz isso e com quem compartilhar."""
+        status = getattr(getattr(exc, "resp", None), "status", None)
+        if status not in (403, 404):
+            return str(exc)
+        creds = cls._load_credentials()
+        account = getattr(creds, "service_account_email", "") or "a conta de serviço"
+        return (f"pasta do Drive não encontrada ou sem acesso. Confira o ID da pasta do setor e compartilhe a pasta "
+                f"com {account} como Editor.")
 
     @staticmethod
     def _list_folder(client, folder_id: str) -> List[dict]:
