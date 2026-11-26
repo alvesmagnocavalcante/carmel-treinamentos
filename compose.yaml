@@ -29,8 +29,11 @@ services:
       - "${APP_PORT:-10000}:10000"
     volumes:
       - carmel_data:/app/data
+      # JSON da conta de serviço do Google (fica na pasta da stack); combina com
+      # GOOGLE_SERVICE_ACCOUNT_FILE=/etc/secrets/service_account.json no .env
+      - ./service_account.json:/etc/secrets/service_account.json:ro
     networks:
-      - pg   # rede do PostgreSQL: é por ela que o host "postgres" do DATABASE_URL é encontrado
+      - pg  # rede do PostgreSQL: é por ela que o host "postgres" do DATABASE_URL é encontrado
     healthcheck:
       # só testa se a porta responde (uma requisição HTTP daria 400 se 127.0.0.1 não estiver em DJANGO_ALLOWED_HOSTS)
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 10000), timeout=5).close()"]
