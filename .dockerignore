@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+.claude
+.ruff_cache
+__pycache__
+*.pyc
+.env
+.env.*
+!.env.example
+data
+docs
+*.sqlite3

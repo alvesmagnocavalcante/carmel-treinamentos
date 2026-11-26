@@ -1,0 +1,52 @@
+# Carmel Treinamentos - stack para o Dockge (ou `docker compose up -d`).
+# O banco é o PostgreSQL que já existe: informe DATABASE_URL no .env desta pasta.
+# Variáveis mínimas no .env da stack (modelo completo em .env.example):
+#   DATABASE_URL=postgres://USUARIO:SENHA@HOST:PORTA/BANCO?sslmode=require
+#   DJANGO_DEBUG=false
+#   DJANGO_SECRET_KEY=<chave longa e aleatória>
+#   DJANGO_ALLOWED_HOSTS=treinamentos.seudominio.com.br
+#   DJANGO_CSRF_TRUSTED_ORIGINS=https://treinamentos.seudominio.com.br
+#   GOOGLE_SERVICE_ACCOUNT_JSON=<conteúdo do JSON da conta de serviço, em uma linha>
+#   ADMIN_LOGINS=<CPFs ou usuários que viram administrador>
+# Atenção: com DJANGO_DEBUG=false o cookie de sessão só vale em HTTPS. Sem HTTPS (acesso por http://IP),
+# acrescente DJANGO_SECURE_COOKIES=false, senão o login não "pega".
+
+services:
+  app:
+    # O Docker clona o repositório (branch main) e constrói com o Dockerfile dele: o compose não precisa do código.
+    # Para atualizar: no Dockge, "Rebuild" (ou `docker compose build --pull --no-cache && docker compose up -d`).
+    # Repositório privado: use https://<TOKEN>@github.com/alvesmagnocavalcante/carmel-treinamentos.git#main
+    # (token com permissão só de leitura) e NÃO publique este arquivo com o token dentro.
+    build:
+      context: https://github.com/alvesmagnocavalcante/carmel-treinamentos.git#main
+    image: carmel-treinamentos:latest
+    container_name: carmel-treinamentos
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "10000"
+    ports:
+      - "${APP_PORT:-10000}:10000"
+    volumes:
+      - carmel_data:/app/data
+    healthcheck:
+      # só testa se a porta responde (uma requisição HTTP daria 400 se 127.0.0.1 não estiver em DJANGO_ALLOWED_HOSTS)
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 10000), timeout=5).close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Opcional: sincroniza o Drive sozinho a cada DRIVE_SYNC_INTERVAL_MINUTES (padrão 5).
+  # Sem este serviço, a sincronização é só pelo botão "Sincronizar Drive" do painel.
+  # sync:
+  #   image: carmel-treinamentos:latest
+  #   container_name: carmel-treinamentos-sync
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   depends_on:
+  #     - app
+  #   command: ["python", "manage.py", "sync_drive", "--watch"]
+
+volumes:
+  carmel_data:
