@@ -387,6 +387,10 @@ def mcp_endpoint(request, token=None):
     if not _authorized(request, token):
         if token is not None:
             raise Http404  # não confirma a existência do endereço a quem não tem a chave
+        if not request.headers.get("Authorization"):
+            # Sem chave nenhuma (o Claude da web sonda /mcp/ assim): 404, e NÃO 401. Um 401 com "WWW-Authenticate: Bearer"
+            # faz o Claude concluir que o servidor exige login (OAuth) e recusar o conector.
+            raise Http404
         response = HttpResponse("Não autorizado.", status=401)
         response["WWW-Authenticate"] = 'Bearer realm="carmel-treinamentos"'
         return response

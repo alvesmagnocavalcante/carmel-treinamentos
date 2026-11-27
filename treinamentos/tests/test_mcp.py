@@ -39,10 +39,16 @@ class McpConnectorTests(BaseTestCase):
         self.assertEqual(self.rpc("ping", url="/mcp/qualquer/").status_code, 404)
         self.assertEqual(self.rpc("ping", url="/mcp/").status_code, 404)
 
-    def test_wrong_path_token_is_404_and_bearer_is_401(self):
+    def test_wrong_path_token_is_404_and_wrong_bearer_is_401(self):
         self.assertEqual(self.rpc("ping", url="/mcp/errada/").status_code, 404)
-        self.assertEqual(self.rpc("ping", url="/mcp/").status_code, 401)
         self.assertEqual(self.rpc("ping", url="/mcp/", HTTP_AUTHORIZATION="Bearer errada").status_code, 401)
+
+    def test_probe_without_any_credentials_never_asks_for_login(self):
+        # o Claude da web sonda /mcp/ sem chave; um 401 com "WWW-Authenticate" o faz recusar o conector ("exige login")
+        for url in ("/mcp/", "/mcp"):
+            resp = self.rpc("ping", url=url)
+            self.assertEqual(resp.status_code, 404, url)
+            self.assertFalse(resp.has_header("WWW-Authenticate"), url)
 
     def test_bearer_header_is_accepted(self):
         resp = self.rpc("ping", url="/mcp/", HTTP_AUTHORIZATION="Bearer chave-de-teste-123")
